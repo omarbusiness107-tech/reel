@@ -306,6 +306,7 @@ footer.foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);co
 }
 [hidden]{display:none !important}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 </head>
 <body>
 
@@ -1061,6 +1062,81 @@ const TYPE_FIX = {
 const KEY = 'reel.v1';
 let state = load();
 
+/* ---------- optional cloud sync ---------- */
+const CLOUD_URL = 'https://zwedeotmsmtfkshxeezn.supabase.co';
+const CLOUD_PUBLISHABLE_KEY = 'sb_publishable_Vr6DqmUCRgtlB8j10JAvYg_EelZsKgh';
+const cloud = {client:null, user:null, loaded:false, timer:null};
+
+function cloudStatus(){
+  return cloud.user ? `Signed in as ${esc(cloud.user.email || 'your account')}` : 'Sync is off — this library is stored only in this browser.';
+}
+function normalizeState(raw){
+  const s = {...blank(), ...(raw||{})};
+  s.items = (s.items||[]).map(migrate);
+  s.ui = {...blank().ui, ...(s.ui||{})};
+  return s;
+}
+async function pullCloud(){
+  if(!cloud.client || !cloud.user || cloud.loaded) return;
+  cloud.loaded = true;
+  const {data, error} = await cloud.client
+    .from('user_libraries').select('state').eq('user_id', cloud.user.id).maybeSingle();
+  if(error){ console.warn('cloud load failed', error); toast('Cloud sync is unavailable — your local library is safe.'); return; }
+  if(data?.state){
+    state = normalizeState(data.state);
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ console.warn('local cloud cache failed',e); }
+    render();
+    toast('Cloud library loaded.');
+  }else{
+    await pushCloud();
+  }
+}
+async function pushCloud(){
+  if(!cloud.client || !cloud.user) return;
+  const {error} = await cloud.client.from('user_libraries').upsert({
+    user_id: cloud.user.id,
+    state,
+    updated_at: new Date().toISOString()
+  }, {onConflict:'user_id'});
+  if(error) console.warn('cloud save failed', error);
+}
+function scheduleCloudSync(){
+  if(!cloud.client || !cloud.user) return;
+  clearTimeout(cloud.timer);
+  cloud.timer = setTimeout(pushCloud, 900);
+}
+async function setCloudUser(user){
+  if(cloud.user?.id === user?.id && cloud.loaded) return;
+  cloud.user = user || null;
+  cloud.loaded = false;
+  if(user) await pullCloud();
+}
+function initCloud(){
+  if(!window.supabase){ console.warn('Supabase client did not load'); return; }
+  cloud.client = window.supabase.createClient(CLOUD_URL, CLOUD_PUBLISHABLE_KEY);
+  cloud.client.auth.getSession().then(({data})=>setCloudUser(data.session?.user));
+  cloud.client.auth.onAuthStateChange((_event, session)=>setTimeout(()=>setCloudUser(session?.user),0));
+}
+async function cloudSignIn(email, password){
+  const {error} = await cloud.client.auth.signInWithPassword({email,password});
+  if(error) return toast(error.message);
+  toast('Signed in. Syncing your library…');
+  modalSettings();
+}
+async function cloudSignUp(email, password){
+  const {data, error} = await cloud.client.auth.signUp({email,password});
+  if(error) return toast(error.message);
+  if(!data.session) toast('Check your email to confirm your account, then sign in.');
+  else { toast('Account created. Syncing your library…'); modalSettings(); }
+}
+async function cloudSignOut(){
+  const {error} = await cloud.client.auth.signOut();
+  if(error) return toast(error.message);
+  cloud.user = null; cloud.loaded = false;
+  toast('Signed out. Your local library stays on this device.');
+  modalSettings();
+}
+
 function blank(){
   return {items:[], ui:{theme:'dark', view:'grid', sort:'updated'}, seeded:false};
 }
@@ -1093,6 +1169,7 @@ function save(){
   saveTimer = setTimeout(()=>{
     try{ localStorage.setItem(KEY, JSON.stringify(state)); }
     catch(e){ toast('Storage full — export a backup and remove some uploaded covers.'); }
+    scheduleCloudSync();
   },120);
 }
 function storageUse(){
@@ -2057,6 +2134,24 @@ function modalSettings(){
         <p class="hint" style="margin-top:8px">Keep a copy somewhere safe — clearing browser data wipes the library.</p>
       </div>
       <div class="field">
+        <label>Cloud sync</label>
+        <p class="hint" id="cloudStatus">${cloudStatus()}</p>
+        ${cloud.user ? `
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="sCloudSync">Sync now</button>
+            <button class="btn ghost" id="sCloudSignOut">Sign out</button>
+          </div>` : `
+          <div class="two">
+            <div class="field"><label>Email</label><input id="sCloudEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+            <div class="field"><label>Password</label><input id="sCloudPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="sCloudSignIn">Sign in</button>
+            <button class="btn ghost" id="sCloudSignUp">Create account</button>
+          </div>
+          <p class="hint" style="margin-top:8px">Sign in to keep one private library across your devices.</p>`}
+      </div>
+      <div class="field">
         <label>Danger</label>
         <button class="btn danger" id="sReset">Erase everything and re-seed</button>
       </div>
@@ -2067,6 +2162,14 @@ function modalSettings(){
       $('#sExport',root).onclick = exportJSON;
       $('#sImportBtn',root).onclick = ()=>$('#sImport',root).click();
       $('#sImport',root).onchange = e=>importJSON(e.target.files[0]);
+      if(cloud.user){
+        $('#sCloudSync',root).onclick = async ()=>{ await pushCloud(); toast('Cloud sync complete.'); };
+        $('#sCloudSignOut',root).onclick = cloudSignOut;
+      }else if(cloud.client){
+        const credentials = ()=>({email:$('#sCloudEmail',root).value.trim(), password:$('#sCloudPassword',root).value});
+        $('#sCloudSignIn',root).onclick = ()=>{ const {email,password}=credentials(); if(email&&password) cloudSignIn(email,password); };
+        $('#sCloudSignUp',root).onclick = ()=>{ const {email,password}=credentials(); if(email&&password) cloudSignUp(email,password); };
+      }
       $('#sReset',root).onclick = ()=>{
         if(!confirm('Erase your whole library and start again from the original lists?')) return;
         state = blank(); seedIfEmpty(); closeSheets(); render();
@@ -2190,6 +2293,7 @@ document.addEventListener('keydown', e=>{
 /* ---------- boot ---------- */
 seedIfEmpty();
 render();
+initCloud();
 if(state.items.length && !state.items.some(i=>i.cover)){
   toast('Your lists are loaded. Fetch the poster art?', 'Fetch covers', fetchMissingCovers);
 }
