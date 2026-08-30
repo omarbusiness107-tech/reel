@@ -21,6 +21,16 @@ browser. Two consequences worth knowing:
 So: **use `⋯ → Export JSON` now and then**, and keep the backup file somewhere safe.
 `Import JSON` restores it, and asks whether you want to merge or replace.
 
+## Optional cloud sync
+
+Open **`⋯ → Cloud sync`** in the deployed app to create an account or sign in. Your
+library is then saved privately to your account and restores on your other devices after
+you sign in. The first sign-in for a new account uploads the library in that browser;
+an existing cloud library is treated as the source of truth when you sign in elsewhere.
+
+Cloud sync uses Supabase Auth and a per-user database row protected by Row Level Security.
+The app still keeps a local browser copy, so exporting a JSON backup remains a good habit.
+
 ## First run
 
 The app arrives already stocked: your 360 titles, each with a cover image, genre, release
