@@ -1,0 +1,36 @@
+parsed 531 unique titles
+resuming: 353 already done
+531 left to fetch
+lookup failed: Silence https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Ben-Hur https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  20/531 (18 hit)
+lookup failed: The Machinist https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Troy https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  40/531 (35 hit)
+lookup failed: My Oxford Year https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Vivarium https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Revolutionary Road https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  60/531 (51 hit)
+lookup failed: The Magnificent Seven https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: The Lucky One https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Shadow Force https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: The Invasion https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  80/531 (67 hit)
+lookup failed: 22 Jump Street https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  100/531 (85 hit)
+lookup failed: War of the Worlds https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Unstoppable https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: The Hating Game https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: 3-Iron https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  120/531 (101 hit)
+lookup failed: Chloe https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Pulp Fiction https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: The Unbearable Weight of Massive Talent https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Populaire https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  140/531 (116 hit)
+lookup failed: Time https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: 1992 https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Hell or High Water https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+  160/531 (133 hit)
+lookup failed: Against the Sun https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
+lookup failed: Click https://en.wikipedia.org/w/api.php?action=query&format=json& → 429
