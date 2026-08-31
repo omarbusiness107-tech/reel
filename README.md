@@ -66,6 +66,11 @@ Want with one click in the detail panel.
 **Filters** — the type tabs, the status chips and the genre dropdown all combine, and the
 genre list rebuilds itself from whatever is actually in your library.
 
+**All titles** is a separate online catalog. Search once to look across movies, series,
+anime and books, then press **+ Add** on any result to place it in your Want list. The
+catalog stays online and searchable instead of trying to download millions of titles into
+the browser.
+
 **Anything is editable.** Click a card to open the detail panel: status, rating out of 10,
 genre, runtime, year, tags, notes, cover. Changes save as you type; there's no save button.
 Deleting shows an undo toast.

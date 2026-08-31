@@ -131,6 +131,8 @@ section.shelf{margin:26px 0 8px}
 .tabs button{padding:6px 13px;border-radius:8px;font-size:13.5px;color:var(--fg2);font-weight:500;display:flex;gap:6px;align-items:center}
 .tabs button .n{font-size:11px;color:var(--fg3);font-variant-numeric:tabular-nums}
 .tabs button[aria-selected="true"]{background:var(--panel2);color:var(--fg);box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+.tabs button[data-type="catalog"]{border-left:1px solid var(--line);margin-left:2px;padding-left:14px}
+.tabs button[data-type="catalog"] .n{color:var(--accent);letter-spacing:.04em}
 html[data-theme="light"] .tabs button[aria-selected="true"]{background:var(--bg2)}
 
 .chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -214,6 +216,13 @@ select.mini{
 
 .empty{padding:70px 20px;text-align:center;color:var(--fg3)}
 .empty b{display:block;color:var(--fg2);font-size:16px;margin-bottom:6px}
+.catalog-empty{grid-column:1/-1;border:1px dashed var(--line2);border-radius:18px;margin-top:4px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 5%,var(--panel)),var(--panel));}
+.catalog-empty .catalog-kicker{display:inline-block;margin-bottom:10px;color:var(--accent);font-size:10px;
+  font-weight:750;letter-spacing:.14em;text-transform:uppercase}
+.catalog-card .quick{opacity:1;transform:none}
+.catalog-card .poster{border-color:color-mix(in srgb,var(--accent) 22%,var(--line))}
+.catalog-card .quick button[disabled]{background:rgba(0,0,0,.55);color:rgba(255,255,255,.58);cursor:default}
 
 /* ---------- overlay / drawer / modal ---------- */
 .overlay{
@@ -1300,6 +1309,7 @@ let filterType = 'all';
 let filterStatus = new Set();
 let filterGenre = '';
 let query = '';
+const catalog = {results:[], query:'', loading:false, request:0, timer:null};
 
 /** Every genre in the library, with counts, most common first. */
 function genreIndex(scope){
@@ -1310,7 +1320,7 @@ function genreIndex(scope){
 
 function visible(){
   let out = state.items;
-  if(filterType!=='all') out = out.filter(i=>i.type===filterType);
+  if(filterType!=='all' && filterType!=='catalog') out = out.filter(i=>i.type===filterType);
   if(filterStatus.size)  out = out.filter(i=>filterStatus.has(i.status));
   if(filterGenre)        out = out.filter(i=>i.genres.includes(filterGenre));
   if(query){
@@ -1334,6 +1344,13 @@ function visible(){
 function render(){
   document.documentElement.dataset.theme = state.ui.theme;
   renderTabs(); renderChips(); renderGenres(); renderRail(); renderGrid();
+  const catalogMode = filterType==='catalog';
+  $('.shelf').hidden = catalogMode;
+  $('#statusChips').hidden = catalogMode;
+  $('#genreSel').hidden = catalogMode || $('#genreSel').hidden;
+  $('#sort').hidden = catalogMode;
+  $('#btnView').hidden = catalogMode;
+  $('#q').placeholder = catalogMode ? 'Search every title…' : 'Search your library…';
   $('#sort').value = state.ui.sort;
   $('#grid').classList.toggle('list', state.ui.view==='list');
   $('#footCount').textContent =
@@ -1345,12 +1362,12 @@ function renderTabs(){
   const counts = {all: state.items.length};
   for(const t in TYPES) counts[t] = state.items.filter(i=>i.type===t).length;
   $('#typeTabs').innerHTML =
-    [['all','All'],...Object.entries(TYPES).map(([k,v])=>[k,v.label])]
+    [['all','My library'],...Object.entries(TYPES).map(([k,v])=>[k,v.label]),['catalog','All titles']]
     .map(([k,label])=>`<button role="tab" data-type="${k}" aria-selected="${filterType===k}">
-        ${esc(label)}<span class="n">${counts[k]}</span></button>`).join('');
+        ${esc(label)}<span class="n">${k==='catalog'?'online':counts[k]}</span></button>`).join('');
 }
 function renderGenres(){
-  const scope = filterType==='all' ? state.items : state.items.filter(i=>i.type===filterType);
+  const scope = filterType==='all' || filterType==='catalog' ? state.items : state.items.filter(i=>i.type===filterType);
   const list = genreIndex(scope);
   const sel = $('#genreSel');
   if(filterGenre && !list.some(([g])=>g===filterGenre)) filterGenre = '';
@@ -1391,6 +1408,7 @@ function renderRail(){
 }
 
 function renderGrid(){
+  if(filterType==='catalog'){ renderCatalogGrid(); return; }
   const items = visible();
   const g = $('#grid');
   if(!items.length){
@@ -1419,6 +1437,39 @@ function renderGrid(){
         ${it.genres.length?`<div class="genre">${it.genres.slice(0,2).map(g=>`<span>${esc(g)}</span>`).join('')}</div>`:''}
         <div class="quick">${quick}</div>
         ${pct?`<div class="pbar"><i style="width:${pct}%"></i></div>`:''}
+      </div>
+      <div class="cmeta"><h3>${esc(it.title)}</h3><p>${esc(sub)}</p></div>
+    </article>`;
+  }).join('');
+}
+
+function renderCatalogGrid(){
+  const g = $('#grid');
+  g.classList.remove('list');
+  if(catalog.loading){
+    g.innerHTML = `<div class="empty catalog-empty"><span class="catalog-kicker">Online catalog</span>
+      <b>Searching every shelf…</b>Checking movies, series, anime and books.</div>`;
+    return;
+  }
+  if(!query.trim()){
+    g.innerHTML = `<div class="empty catalog-empty"><span class="catalog-kicker">Online catalog</span>
+      <b>One search. Every kind of story.</b>Search a title above to explore movies, series, anime and books beyond your library.</div>`;
+    return;
+  }
+  if(!catalog.results.length){
+    g.innerHTML = `<div class="empty catalog-empty"><span class="catalog-kicker">Online catalog</span>
+      <b>No matches found</b>Try a shorter title or check the spelling.</div>`;
+    return;
+  }
+  g.innerHTML = catalog.results.map((it,index)=>{
+    const {style,art} = posterInner(it);
+    const already = state.items.some(x=>x.type===it.type && x.key===norm(it.title));
+    const sub = [it.year, it.genres?.[0], it.creator].filter(Boolean).join(' · ');
+    return `<article class="card catalog-card" data-catalog-index="${index}">
+      <div class="poster" style="${style}">
+        ${art}<div class="veil"></div>
+        <span class="tag">${TYPES[it.type].icon} ${esc(TYPES[it.type].one)}</span>
+        <div class="quick"><button data-catalog-add="${index}" ${already?'disabled':''}>${already?'✓ Added':'+ Add'}</button></div>
       </div>
       <div class="cmeta"><h3>${esc(it.title)}</h3><p>${esc(sub)}</p></div>
     </article>`;
@@ -1733,6 +1784,7 @@ async function lookupMovie(title, limit, year){
       const intro = d.extract || '';
       const ym = (d.description||'').match(/\b(19|20)\d{2}\b/) || intro.match(/\b(19|20)\d{2}\b/);
       out.push({
+        title: d.title.replace(/\s*\([^)]*\)\s*$/,''), type:'movie',
         cover: d.thumbnail.source.replace(/\?.*$/,''),
         genres: genresFromIntro(intro),
         year: ym ? +ym[0] : null,
@@ -1751,6 +1803,7 @@ async function lookupMovie(title, limit, year){
 async function lookupSeries(title, limit){
   const d = await getJSON('https://api.tvmaze.com/search/shows?q=' + encodeURIComponent(title));
   return (d||[]).slice(0,limit).map(({show:s})=>({
+    title: s.name, type:'series',
     cover: s.image?.original || s.image?.medium || '',
     genres: tidyGenres(s.genres||[]),
     year: s.premiered ? +s.premiered.slice(0,4) : null,
@@ -1769,6 +1822,7 @@ async function lookupAnime(title, limit){
   const d = await getJSON('https://kitsu.io/api/edge/anime?filter[text]='
     + encodeURIComponent(title) + '&page[limit]=' + limit);
   return (d.data||[]).map(a=>({
+    title: a.attributes.canonicalTitle || a.attributes.titles?.en || a.attributes.titles?.en_jp || 'Untitled anime', type:'anime',
     cover: a.attributes.posterImage?.large || a.attributes.posterImage?.medium || '',
     genres: [],
     year: a.attributes.startDate ? +a.attributes.startDate.slice(0,4) : null,
@@ -1787,6 +1841,7 @@ async function lookupBook(title, limit){
   const d = await getJSON('https://openlibrary.org/search.json?q=' + encodeURIComponent(title)
     + '&limit=' + limit + '&fields=cover_i,title,author_name,first_publish_year,number_of_pages_median,subject,ratings_average,language');
   return (d.docs||[]).filter(x=>x.cover_i).map(x=>({
+    title: x.title, type:'book',
     cover: `https://covers.openlibrary.org/b/id/${x.cover_i}-L.jpg`,
     genres: tidyGenres((x.subject||[])
       .filter(t=>/^[\x20-\x7E]+$/.test(t) && !/translat|literature|accessible|fiction in/i.test(t))
@@ -1810,6 +1865,49 @@ async function lookup(it, limit=6){
     if(it.type==='book')   return await lookupBook(t, limit);
     return await lookupMovie(t, limit, it.year);
   }catch(e){ console.warn('lookup failed:', it.title, e.message); return []; }
+}
+
+async function searchCatalog(term){
+  const q = term.trim();
+  if(!q || q===catalog.query && catalog.results.length){ renderCatalogGrid(); return; }
+  const request = ++catalog.request;
+  catalog.query = q;
+  catalog.loading = true;
+  renderCatalogGrid();
+  const settled = await Promise.allSettled([
+    lookupMovie(q,5,null), lookupSeries(q,6), lookupAnime(q,6), lookupBook(q,6)
+  ]);
+  if(request!==catalog.request) return;
+  const found = settled.flatMap(x=>x.status==='fulfilled' ? x.value : []);
+  const seen = new Set();
+  catalog.results = found.filter(it=>{
+    if(!it.title || !TYPES[it.type]) return false;
+    it.key = norm(it.title);
+    const key = `${it.type}|${it.key}|${it.year||''}`;
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+  catalog.loading = false;
+  renderCatalogGrid();
+}
+function queueCatalogSearch(){
+  clearTimeout(catalog.timer);
+  if(!query.trim()){
+    catalog.request++;
+    catalog.results = []; catalog.query = ''; catalog.loading = false;
+    renderCatalogGrid(); return;
+  }
+  catalog.timer = setTimeout(()=>searchCatalog(query),350);
+}
+function addCatalogItem(index){
+  const candidate = catalog.results[index];
+  if(!candidate) return;
+  const it = makeItem(candidate.title,candidate.type,'want');
+  if(state.items.some(x=>x.type===it.type && x.key===it.key)) return toast('Already in your library.');
+  applyMeta(it,candidate,{force:true});
+  state.items.push(it);
+  render();
+  toast(`Added “${it.title}” to Want.`);
 }
 /* Wikidata gives language as a QID; the label set is tiny, so cache it. */
 const QID_LABELS = new Map();
@@ -2227,6 +2325,7 @@ const hideToast = ()=>$('#toast').classList.remove('on');
 $('#typeTabs').addEventListener('click', e=>{
   const b = e.target.closest('[data-type]'); if(!b) return;
   filterType = b.dataset.type; render();
+  if(filterType==='catalog') queueCatalogSearch();
 });
 $('#statusChips').addEventListener('click', e=>{
   const b = e.target.closest('[data-status]'); if(!b) return;
@@ -2235,7 +2334,10 @@ $('#statusChips').addEventListener('click', e=>{
   render();
 });
 $('#genreSel').addEventListener('change', e=>{ filterGenre = e.target.value; renderGrid(); });
-$('#q').addEventListener('input', e=>{ query = e.target.value; renderGrid(); });
+$('#q').addEventListener('input', e=>{
+  query = e.target.value;
+  filterType==='catalog' ? queueCatalogSearch() : renderGrid();
+});
 $('#sort').addEventListener('change', e=>{ state.ui.sort = e.target.value; render(); });
 $('#btnView').addEventListener('click', ()=>{
   state.ui.view = state.ui.view==='grid' ? 'list' : 'grid';
@@ -2255,6 +2357,9 @@ $('#overlay').addEventListener('click', closeSheets);
 
 document.addEventListener('click', e=>{
   if(e.target.closest('[data-close]')) { closeSheets(); return; }
+
+  const catalogAdd = e.target.closest('[data-catalog-add]');
+  if(catalogAdd){ addCatalogItem(+catalogAdd.dataset.catalogAdd); return; }
 
   const resume = e.target.closest('.resume');
   if(resume){
