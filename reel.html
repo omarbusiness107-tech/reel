@@ -3,44 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>reel — watchlist &amp; reading tracker</title>
+<meta name="description" content="Track movies, series, anime and books in one personal media library.">
+<meta name="theme-color" content="#101116">
+<link rel="icon" href="assets/reel-mark.svg" type="image/svg+xml">
+<title>reel | watchlist and reading tracker</title>
 <style>
+@font-face{
+  font-family:"Reel Sans";
+  src:url("assets/fonts/Manrope-Variable.ttf") format("truetype");
+  font-weight:200 800;
+  font-display:swap;
+}
+@font-face{
+  font-family:"Reel Display";
+  src:url("assets/fonts/BarlowCondensed-SemiBold.ttf") format("truetype");
+  font-weight:600;
+  font-display:swap;
+}
 /* ============================================================
-   reel — a single-file media tracker
+   reel | a single-file media tracker
    ============================================================ */
 :root{
-  --bg:#0a0a0d; --bg2:#101016; --panel:#14141c; --panel2:#1b1b25;
-  --line:#26262f; --line2:#33333f;
-  --fg:#eceaf2; --fg2:#a09eae; --fg3:#6d6b7a;
-  --accent:#ffb02e; --accent2:#ff7043;
+  --bg:#101116; --bg2:#15171d; --panel:#1b1d24; --panel2:#242733;
+  --line:#30333f; --line2:#454957;
+  --fg:#f4f5f2; --fg2:#b8bbc6; --fg3:#858a99;
+  --accent:#6276ff; --accent2:#4f66ff; --accent-ink:#ffffff;
   --want:#5b8dee; --suggested:#2fb8a8; --going:#ffb02e; --done:#3fbf7f; --paused:#9b7fd4; --dropped:#6d6b7a;
-  --shadow:0 10px 30px -12px rgba(0,0,0,.75);
+  --shadow:0 18px 44px -24px rgba(2,5,20,.82);
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-move:cubic-bezier(.77,0,.175,1);
   --r:14px;
 }
 html[data-theme="light"]{
-  --bg:#f6f5f2; --bg2:#efeee9; --panel:#ffffff; --panel2:#f4f3ef;
-  --line:#e2e0da; --line2:#d2d0c8;
-  --fg:#1a1a20; --fg2:#63626c; --fg3:#95939d;
-  --shadow:0 10px 30px -14px rgba(0,0,0,.22);
+  --bg:#f4f5f8; --bg2:#e9ebf1; --panel:#ffffff; --panel2:#e8eaf2;
+  --line:#d8dbe4; --line2:#b9becc;
+  --fg:#17191f; --fg2:#505563; --fg3:#6f7585;
+  --accent:#425af0; --accent2:#334de3; --accent-ink:#ffffff;
+  --shadow:0 18px 44px -25px rgba(27,36,80,.30);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0; background:var(--bg); color:var(--fg);
-  font:15px/1.5 ui-sans-serif,system-ui,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+  font:15px/1.5 "Reel Sans","Segoe UI","Noto Sans Arabic",sans-serif;
   -webkit-font-smoothing:antialiased;
 }
 body::before{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.5;
-  background:
-    radial-gradient(900px 420px at 12% -8%, rgba(255,176,46,.10), transparent 60%),
-    radial-gradient(760px 400px at 92% 0%, rgba(91,141,238,.10), transparent 60%);
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+  background:linear-gradient(115deg,color-mix(in srgb,var(--accent) 7%,transparent),transparent 24%);
 }
 html[data-theme="light"] body::before{opacity:.7}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:none;padding:0}
 a{color:var(--accent)}
-::selection{background:var(--accent);color:#111}
+::selection{background:var(--accent);color:var(--accent-ink)}
 
 .wrap{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:0 22px 90px}
 
@@ -91,7 +107,7 @@ header.top{
 
 /* ---------- fetch progress ---------- */
 #fetchbar{height:2px;background:transparent;position:relative;overflow:hidden}
-#fetchbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .3s}
+#fetchbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transform:scaleX(0);transform-origin:left;transition:transform 300ms var(--ease-out)}
 
 /* ---------- shelf ---------- */
 section.shelf{margin:26px 0 8px}
@@ -275,8 +291,8 @@ select.mini{
 .seg button[aria-pressed="true"]{background:var(--c,var(--panel2));color:#fff}
 html[data-theme="light"] .seg button[aria-pressed="true"]{color:#fff}
 
-.stars{display:flex;gap:3px;align-items:center}
-.stars button{font-size:19px;color:var(--line2);line-height:1}
+.stars{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.stars button{min-width:28px;height:28px;padding:0 6px;border:1px solid var(--line);border-radius:7px;background:var(--panel);font-size:11px;color:var(--fg3);line-height:1}
 .stars button.on{color:var(--accent)}
 .stars .val{margin-left:8px;font-size:12.5px;color:var(--fg3);font-variant-numeric:tabular-nums}
 
@@ -313,31 +329,289 @@ footer.foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);co
   .resume{flex-basis:265px}
   .three{grid-template-columns:1fr 1fr}
 }
+
+/* ============================================================
+   2026 redesign | projection-booth program index
+   ============================================================ */
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 72%,white);outline-offset:3px}
+html{scrollbar-color:var(--line2) var(--bg);scrollbar-width:thin}
+body{min-width:320px}
+body.sheet-open{overflow:hidden}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.wrap,.top .row{max-width:1440px}
+.wrap{padding-inline:30px}
+
+header.top{
+  background:color-mix(in srgb,var(--bg) 90%,transparent);
+  border-color:color-mix(in srgb,var(--line) 80%,transparent);
+}
+.top .row{min-height:66px;padding:11px 30px;gap:10px;flex-wrap:nowrap}
+.brand{color:var(--fg);text-decoration:none;gap:9px;min-width:max-content}
+.brand img{width:31px;height:31px;display:block}
+.brand span{font-family:"Reel Display",sans-serif;font-size:26px;line-height:1;letter-spacing:.01em;text-transform:uppercase}
+.brand small{font-size:10px;letter-spacing:.11em;color:var(--fg3)}
+.search{margin-inline:12px}
+.search input{
+  min-height:42px;padding:10px 42px 10px 14px;border-radius:12px;
+  background:color-mix(in srgb,var(--panel) 88%,transparent);
+  transition:border-color 160ms var(--ease-out),box-shadow 160ms var(--ease-out),background-color 160ms ease;
+}
+.search input::placeholder{color:var(--fg3);opacity:1}
+.search input:focus{border-color:var(--accent);background:var(--panel);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent)}
+.search kbd{border-radius:6px}
+.btn,.icon-btn{
+  min-height:38px;border-radius:11px;font-weight:650;
+  transition:transform 140ms var(--ease-out),border-color 160ms ease,background-color 160ms ease,color 160ms ease,filter 160ms ease;
+}
+.mobile-menu-trigger,.mobile-menu{display:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:0 8px 22px -14px rgba(0,0,0,.72)}
+.btn:active,.icon-btn:active,.tabs button:active,.chip:active,.catalog-type-filters button:active,.catalog-card:active{transform:scale(.97)}
+.icon-btn{width:38px;height:38px}
+
+section.shelf{margin:32px 0 14px}
+.shelf-head{margin-bottom:12px;align-items:center}
+.shelf-head h2{
+  font-family:"Reel Display",sans-serif;font-size:29px;line-height:1;text-transform:none;
+  letter-spacing:.015em;color:var(--fg);font-weight:600;
+}
+.shelf-head .count{font-variant-numeric:tabular-nums;color:var(--fg3)}
+.rail{gap:12px;padding-bottom:10px}
+.resume{flex-basis:318px;border-radius:var(--r);box-shadow:none;padding:10px;background:color-mix(in srgb,var(--panel) 92%,transparent)}
+.resume .at{color:var(--accent);font-family:"Reel Display",sans-serif;font-size:22px;letter-spacing:.01em}
+.empty-shelf{min-height:92px;border-style:solid;background:var(--panel);color:var(--fg2)}
+
+.filters{margin:24px 0 20px;padding-top:18px;gap:8px}
+.tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;border-radius:12px;flex:0 1 auto}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{min-height:36px;padding:7px 12px;border-radius:8px;white-space:nowrap;transition:transform 140ms var(--ease-out),background-color 160ms ease,color 160ms ease}
+.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg);box-shadow:none}
+.tabs button[aria-selected="true"] .n{color:color-mix(in srgb,var(--bg) 68%,transparent)}
+.tabs button[data-type="catalog"]{border-left:0;margin-left:8px;padding-left:12px;box-shadow:-8px 0 0 var(--bg),-9px 0 0 var(--line)}
+.tabs button[data-type="catalog"] .n{color:var(--accent)}
+.tabs button[data-type="catalog"][aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.tabs button[data-type="catalog"][aria-selected="true"] .n{color:color-mix(in srgb,var(--accent-ink) 72%,transparent)}
+html[data-theme="light"] .tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+html[data-theme="light"] .tabs button[aria-selected="true"] .n{color:color-mix(in srgb,var(--bg) 68%,transparent)}
+.chips{gap:5px}
+.chip{border-radius:9px;padding:6px 9px;background:transparent;transition:transform 140ms var(--ease-out),background-color 160ms ease,border-color 160ms ease,color 160ms ease}
+.chip .swatch{width:6px;height:6px}
+select.mini,.catalog-select select{min-height:38px;border-radius:10px;outline:none;color:var(--fg);transition:border-color 160ms ease,box-shadow 160ms ease}
+select.mini:focus,.catalog-select select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+
+.grid{gap:22px 18px;grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+.card{border-radius:var(--r);transition:transform 200ms var(--ease-out)}
+.poster{box-shadow:var(--shadow);isolation:isolate;background:var(--panel2)}
+.poster::before{content:"";position:absolute;inset:-12px;opacity:0;background-image:var(--poster-bg);background-position:center;background-size:cover;filter:blur(18px) saturate(.72);transform:scale(1.1);transition:opacity 180ms ease}
+.poster.wide-art::before{opacity:.44}
+.poster img{position:relative;z-index:1;transition:filter 180ms ease,transform 220ms var(--ease-out)}
+.poster.wide-art img{object-fit:contain;padding:10px;filter:drop-shadow(0 9px 18px rgba(0,0,0,.34))}
+.poster .veil,.poster .pin,.poster .genre,.poster .quick,.poster .pbar,.poster .initials{z-index:2}
+.card .tag{display:none}
+.poster .veil{height:36%;background:linear-gradient(to top,rgba(5,7,13,.82),transparent)}
+.quick{opacity:1;transform:none;inset:auto 8px 8px 8px;justify-content:flex-end}
+.quick button{padding:6px 9px;border-radius:8px;background:rgba(13,15,22,.80);border-color:rgba(255,255,255,.24);transition:transform 140ms var(--ease-out),background-color 160ms ease,color 160ms ease}
+.quick button:active{transform:scale(.96)}
+.genre{display:none}
+.cmeta{padding:11px 1px 0}
+.cmeta .card-overline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;color:var(--fg3);font-size:10px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+.cmeta .card-overline .status-label{text-transform:none;letter-spacing:0;font-weight:600}
+.cmeta h3{font-size:14px;line-height:1.34;font-weight:700;letter-spacing:-.015em}
+.cmeta p{font-size:11.5px;color:var(--fg3);margin-top:4px}
+.grid.list .card{border-radius:var(--r);padding:9px;background:var(--panel);transition:border-color 160ms ease,transform 140ms var(--ease-out)}
+.grid.list .poster{width:54px}
+.grid.list .cmeta .card-overline{justify-content:flex-start}
+
+.catalog-tools{
+  margin:6px 0 26px;padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--panel);
+  display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:28px;align-items:end;
+}
+.catalog-heading h2{margin:0;font-family:"Reel Display",sans-serif;font-size:45px;line-height:.9;letter-spacing:.01em;text-transform:uppercase}
+.catalog-heading p{margin:10px 0 0;color:var(--fg2);max-width:38ch;font-size:13px}
+.catalog-control-deck{display:flex;justify-content:flex-end;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.catalog-type-filters{display:flex;gap:4px;flex-wrap:wrap;padding:3px;border:1px solid var(--line);background:var(--bg2);border-radius:11px}
+.catalog-type-filters button{min-height:34px;padding:7px 10px;border-radius:8px;color:var(--fg2);font-size:12px;font-weight:700;transition:transform 140ms var(--ease-out),background-color 160ms ease,color 160ms ease}
+.catalog-type-filters button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.catalog-select{display:grid;gap:5px;color:var(--fg3);font-size:10px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+.catalog-select select{min-width:132px;padding:7px 30px 7px 9px;background:var(--bg2);border:1px solid var(--line);letter-spacing:0;text-transform:none;font-size:12px;font-weight:600}
+.grid.catalog-results{display:block}
+.catalog-group{margin:0 0 34px}
+.catalog-group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.catalog-group-head h2{margin:0;font-family:"Reel Display",sans-serif;font-size:28px;line-height:1;letter-spacing:.01em}
+.catalog-group-head span{color:var(--fg3);font-size:12px;font-variant-numeric:tabular-nums}
+.catalog-row{display:flex;gap:14px;overflow-x:auto;padding:2px 2px 14px;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.catalog-row .catalog-card{flex:0 0 178px;scroll-snap-align:start}
+.catalog-card{cursor:pointer;min-width:0}
+.catalog-card .poster{border-color:var(--line)}
+.catalog-card .quick button[disabled]{background:rgba(13,15,22,.74);color:rgba(255,255,255,.66)}
+.catalog-card .public-score{color:var(--fg);font-variant-numeric:tabular-nums}
+.catalog-empty{max-width:none;min-height:250px;margin:0;border-style:solid;border-radius:16px;background:var(--panel);display:grid;place-items:center;padding:40px}
+.catalog-empty-inner{max-width:540px;text-align:left}
+.catalog-empty h2{margin:0 0 8px;font-family:"Reel Display",sans-serif;font-size:34px;line-height:1;color:var(--fg)}
+.catalog-empty p{margin:0;color:var(--fg2)}
+.catalog-empty .btn{margin-top:18px}
+.catalog-loading{display:grid;gap:28px}
+.catalog-loading-copy{display:flex;align-items:center;gap:13px;color:var(--fg2)}
+.catalog-loading-copy b{display:block;color:var(--fg);font-size:15px}
+.catalog-loading-copy span{display:block;font-size:12px;margin-top:2px}
+.exposure-loader{position:relative;width:42px;height:42px;flex:0 0 auto;border:2px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--bg2)}
+.exposure-loader::before{content:"";position:absolute;inset:5px;border:2px solid var(--accent);border-radius:8px;clip-path:inset(0 52% 0 0);animation:expose 760ms var(--ease-move) infinite alternate}
+.catalog-skeleton-row{display:flex;gap:14px;overflow:hidden}
+.catalog-skeleton-card{flex:0 0 178px}
+.catalog-skeleton-poster{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:var(--panel2)}
+.catalog-skeleton-poster::after{content:"";position:absolute;inset:10px;border:1px solid color-mix(in srgb,var(--fg) 14%,transparent);border-radius:10px;opacity:.32;animation:skeletonFocus 900ms ease-in-out infinite alternate}
+.catalog-skeleton-line{height:10px;width:72%;margin-top:11px;border-radius:5px;background:var(--panel2)}
+.catalog-skeleton-line.short{width:45%;height:8px;margin-top:7px}
+@keyframes expose{to{clip-path:inset(0 0 0 48%)}}
+@keyframes skeletonFocus{to{opacity:.82}}
+
+.drawer{width:min(590px,100%);background:var(--bg2);transition:transform 260ms cubic-bezier(.32,.72,0,1)}
+.overlay{background:rgba(6,8,14,.66)}
+.sheet-head{min-height:62px;padding-inline:22px}
+.sheet-head h3{font-family:"Reel Display",sans-serif;font-size:22px;letter-spacing:.01em}
+.sheet-body{padding:22px}
+.catalog-detail-hero{display:grid;grid-template-columns:180px 1fr;gap:22px;align-items:end;padding:22px;border-bottom:1px solid var(--line);background:var(--panel)}
+.catalog-detail-cover{width:180px;aspect-ratio:2/3;border-radius:14px;overflow:hidden}
+.catalog-detail-copy{min-width:0}
+.catalog-detail-type{color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.catalog-detail-copy h2{margin:7px 0 9px;font-family:"Reel Display",sans-serif;font-size:42px;line-height:.94;letter-spacing:.005em}
+.catalog-detail-copy p{margin:0;color:var(--fg2);font-size:13px}
+.catalog-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.detail-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-bottom:26px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.detail-fact{min-height:82px;padding:12px;background:var(--panel)}
+.detail-fact dt{color:var(--fg3);font-size:10px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+.detail-fact dd{margin:8px 0 0;font-family:"Reel Display",sans-serif;font-size:22px;line-height:1;color:var(--fg);font-variant-numeric:tabular-nums}
+.detail-section{margin:0 0 26px}
+.detail-section h3{margin:0 0 10px;font-family:"Reel Display",sans-serif;font-size:22px;letter-spacing:.01em}
+.detail-section p{margin:0;color:var(--fg2);line-height:1.7}
+.detail-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 20px}
+.detail-meta div{min-width:0}
+.detail-meta dt{color:var(--fg3);font-size:10px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+.detail-meta dd{margin:3px 0 0;color:var(--fg);overflow-wrap:anywhere}
+.detail-chips{display:flex;flex-wrap:wrap;gap:7px}
+.detail-chips span{padding:6px 9px;border-radius:9px;background:var(--panel);border:1px solid var(--line);font-size:12px;color:var(--fg2)}
+.detail-loading{padding:30px 22px}
+.detail-source{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.detail-source p{margin:0;color:var(--fg2);font-size:12px}
+.detail-source a{text-decoration:none;white-space:nowrap}
+.btn{text-decoration:none}
+
+@media (hover:hover) and (pointer:fine){
+  .btn:hover,.icon-btn:hover{border-color:var(--line2);background:var(--panel2)}
+  .btn.primary:hover{background:var(--accent2);border-color:var(--accent2);filter:none}
+  .card:hover{transform:translateY(-4px)}
+  .card:hover .poster img{transform:scale(1.018)}
+  .poster.wide-art:hover img{transform:scale(1.01)}
+  .quick button:hover{background:var(--accent);color:var(--accent-ink)}
+  .catalog-type-filters button:hover{color:var(--fg);background:var(--panel2)}
+  .catalog-type-filters button[aria-pressed="true"]:hover{background:var(--accent2);color:var(--accent-ink)}
+}
+
+@media (max-width:1120px){
+  .top .row{gap:8px}
+  .brand small,.secondary-action{display:none}
+  .catalog-tools{grid-template-columns:1fr;align-items:start}
+  .catalog-control-deck{justify-content:flex-start}
+}
+@media (max-width:760px){
+  .wrap{padding-inline:16px}
+  .top .row{padding:10px 16px;display:grid;grid-template-columns:auto 1fr auto auto}
+  .brand span{font-size:23px}.brand img{width:28px;height:28px}
+  .search{grid-column:1/-1;grid-row:2;margin:2px 0 0}
+  .utility-action{display:none}
+  .mobile-menu-trigger{display:inline-flex}
+  .mobile-menu{
+    position:fixed;top:66px;right:16px;z-index:110;display:grid;width:min(268px,calc(100vw - 32px));
+    padding:8px;border:1px solid var(--line2);border-radius:14px;background:var(--panel);
+    box-shadow:0 22px 60px rgba(0,0,0,.32);transform-origin:top right;
+  }
+  .mobile-menu button{
+    min-height:42px;padding:9px 11px;border-radius:9px;color:var(--fg);text-align:left;font-weight:650;
+    transition:transform 140ms var(--ease-out),background-color 160ms ease,color 160ms ease;
+  }
+  .mobile-menu button:hover{background:var(--panel2)}
+  .mobile-menu button:active{transform:scale(.98);background:var(--accent);color:var(--accent-ink)}
+  #btnAdd{font-size:0;width:38px;padding-inline:0;justify-content:center}
+  #btnAdd::after{content:"Add";font-size:12px}
+  #btnPick{padding-inline:10px;font-size:12px}
+  section.shelf{margin-top:24px}
+  .filters{align-items:stretch}
+  .tabs{order:0;flex-basis:100%}
+  .chips{order:1;flex-basis:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+  .chips .chip{white-space:nowrap}
+  .filters .spacer{display:none}
+  select.mini,#btnView{order:2;flex:1;min-width:0}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px}
+  .catalog-tools{margin-top:4px;padding:18px;gap:20px}
+  .catalog-heading h2{font-size:38px}
+  .catalog-control-deck{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .catalog-type-filters{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:100%;overflow:visible}
+  .catalog-type-filters button{min-width:0;padding-inline:4px;white-space:nowrap;font-size:10.5px}
+  .catalog-select select{width:100%;min-width:0}
+  .catalog-row{margin-inline:-16px;padding-inline:16px;scroll-padding-inline:16px}
+  .catalog-row .catalog-card,.catalog-skeleton-card{flex-basis:148px}
+  .catalog-skeleton-row{margin-inline:-16px;padding-inline:16px}
+  .catalog-detail-hero{grid-template-columns:112px 1fr;gap:16px;padding:18px;align-items:center}
+  .catalog-detail-cover{width:112px}
+  .catalog-detail-copy h2{font-size:31px}
+  .catalog-detail-copy p{font-size:12px}
+  .catalog-detail-actions{grid-column:1/-1}
+  .detail-facts{grid-template-columns:repeat(2,1fr)}
+  .detail-meta{grid-template-columns:1fr}
+  .sheet-body{padding:18px}
+}
+@media (max-width:410px){
+  .top .row{grid-template-columns:auto 1fr auto auto}
+  #btnPick{display:none}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .catalog-control-deck{grid-template-columns:1fr}
+  .catalog-type-filters{grid-column:1}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}
+  .card,.btn,.icon-btn,.drawer,.modal,.poster img{transition-duration:.01ms!important}
+  .card:hover,.btn:active,.icon-btn:active,.catalog-card:active{transform:none!important}
+}
 [hidden]{display:none !important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 </head>
 <body>
-
+<!--
+THESIS: Reel is a personal program index, not a streaming clone. It replaces the undifferentiated poster wall with clear shelves, source-aware detail, and direct progress actions.
+OWN-WORLD: Carbon and cool-paper surfaces, one cobalt signal color, condensed program typography, 14px media frames, crisp rules, and dense but breathable controls.
+STORY: Users see what is active, move between their library and the wider catalog, narrow the catalog, compare titles, inspect the full record, and add with confidence.
+FIRST VIEWPORT: A compact one-line brand and action bar leads into the Continue shelf, then a strong tab rail and image-led collection. All titles opens with its own filter console and consecutive medium shelves.
+FORM: Projection-booth program index, assigned grounded direction 7, seed 99aec0e2.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
 <header class="top">
   <div class="row">
-    <div class="brand"><span class="mark"></span>reel <small>watch &amp; read</small></div>
+    <a class="brand" href="#" aria-label="Reel home"><img src="assets/reel-mark.svg" alt=""><span>reel</span><small>your media index</small></a>
     <div class="search">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Search your library…" autocomplete="off">
+      <input id="q" type="search" aria-label="Search" placeholder="Search your library" autocomplete="off">
       <kbd>/</kbd>
     </div>
-    <button class="btn primary" id="btnPick" title="Decide for me">🎲 Pick</button>
-    <button class="btn" id="btnAdd">+ Add</button>
-    <button class="btn ghost" id="btnPaste" title="Paste a list of titles">Bulk</button>
-    <button class="btn ghost" id="btnCovers" title="Fetch missing posters, genres and runtimes">Fetch art</button>
-    <button class="icon-btn" id="btnTheme" title="Toggle theme">◐</button>
-    <button class="icon-btn" id="btnMore" title="Backup &amp; settings">⋯</button>
+    <button class="btn primary" id="btnPick" title="Decide for me">Pick for me</button>
+    <button class="btn" id="btnAdd">Add title</button>
+    <button class="btn ghost mobile-menu-trigger" id="btnMobileMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="mobileMenu">Menu</button>
+    <button class="btn ghost secondary-action" id="btnPaste" title="Paste a list of titles">Import</button>
+    <button class="btn ghost secondary-action" id="btnCovers" title="Fetch missing posters, genres and runtimes">Enrich</button>
+    <button class="btn ghost utility-action" id="btnTheme" title="Toggle light and dark theme">Theme</button>
+    <button class="btn ghost utility-action" id="btnMore" title="Backup and settings">Settings</button>
+    <div class="mobile-menu" id="mobileMenu" role="menu" aria-label="Reel utilities" hidden>
+      <button role="menuitem" data-mobile-action="pick">Pick for me</button>
+      <button role="menuitem" data-mobile-action="import">Import titles</button>
+      <button role="menuitem" data-mobile-action="enrich">Enrich missing info</button>
+      <button role="menuitem" data-mobile-action="theme" id="mobileTheme">Switch to light</button>
+      <button role="menuitem" data-mobile-action="settings">Settings and cloud</button>
+      <button role="menuitem" data-mobile-action="export">Export backup</button>
+    </div>
   </div>
   <div id="fetchbar"><i></i></div>
 </header>
 
-<div class="wrap">
+<main class="wrap">
+  <h1 class="sr-only">Reel media library</h1>
   <section class="shelf">
     <div class="shelf-head">
       <h2>Continue</h2><span class="count" id="continueCount"></span>
@@ -349,39 +623,74 @@ footer.foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);co
     <div class="tabs" id="typeTabs" role="tablist"></div>
     <div class="chips" id="statusChips"></div>
     <div class="spacer"></div>
-    <select class="mini" id="genreSel" title="Filter by genre"></select>
-    <select class="mini" id="sort">
+    <select class="mini" id="genreSel" title="Filter by genre" aria-label="Filter by genre"></select>
+    <select class="mini" id="sort" aria-label="Sort your library">
       <option value="updated">Recently touched</option>
       <option value="added">Recently added</option>
-      <option value="title">Title A→Z</option>
+      <option value="title">Title A to Z</option>
       <option value="rating">Rating</option>
       <option value="year">Year</option>
     </select>
-    <button class="icon-btn" id="btnView" title="Grid / list">▦</button>
+    <button class="btn ghost" id="btnView" title="Switch between grid and list">List view</button>
   </div>
+
+  <section class="catalog-tools" id="catalogTools" hidden aria-labelledby="catalogTitle">
+    <div class="catalog-heading">
+      <h2 id="catalogTitle">All titles</h2>
+      <p id="catalogSummary">Search movies, series, anime, and books from four public catalogs.</p>
+    </div>
+    <div class="catalog-control-deck">
+      <div class="catalog-type-filters" id="catalogTypeFilters" role="group" aria-label="Filter catalog by media type">
+        <button data-catalog-type="all" aria-pressed="true">Everything</button>
+        <button data-catalog-type="movie" aria-pressed="false">Movies</button>
+        <button data-catalog-type="series" aria-pressed="false">Series</button>
+        <button data-catalog-type="anime" aria-pressed="false">Anime</button>
+        <button data-catalog-type="book" aria-pressed="false">Books</button>
+      </div>
+      <label class="catalog-select"><span>Sort by</span>
+        <select id="catalogSort">
+          <option value="popularity">Popularity</option>
+          <option value="rating">Public rating</option>
+          <option value="year-desc">Newest year</option>
+          <option value="year-asc">Oldest year</option>
+          <option value="title">Title A to Z</option>
+        </select>
+      </label>
+      <label class="catalog-select"><span>Release</span>
+        <select id="catalogYear">
+          <option value="all">Any year</option>
+          <option value="2020">2020s</option>
+          <option value="2010">2010s</option>
+          <option value="2000">2000s</option>
+          <option value="1990">1990s</option>
+          <option value="classic">Before 1990</option>
+        </select>
+      </label>
+    </div>
+  </section>
 
   <div class="grid" id="grid"></div>
 
   <footer class="foot">
     <span id="footCount"></span>
     <span class="spacer"></span>
-    <span>Saved in this browser · <button class="btn sm ghost" id="btnExport2">Export backup</button></span>
+    <span>Saved in this browser. <button class="btn sm ghost" id="btnExport2">Export backup</button></span>
   </footer>
-</div>
+</main>
 
 <div class="overlay" id="overlay"></div>
 
 <!-- ============ item drawer ============ -->
-<aside class="drawer" id="drawer" aria-hidden="true">
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Title details" aria-hidden="true" inert>
   <div id="drawerContent"></div>
 </aside>
 
 <!-- ============ add / bulk / settings modal ============ -->
-<div class="modal" id="modal" role="dialog" aria-modal="true">
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Reel dialog" aria-hidden="true" inert>
   <div id="modalContent"></div>
 </div>
 
-<div id="toast"><span id="toastMsg"></span><button class="btn sm" id="toastAct" hidden></button></div>
+<div id="toast"><span id="toastMsg"></span><button class="btn sm" id="toastAct" aria-label="Toast action" hidden></button></div>
 
 <!-- ============ seed data (parsed on first run only) ============ -->
 <script type="text/plain" id="seed-movie">
@@ -979,15 +1288,24 @@ Seeing 2004
 'use strict';
 const $  = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+function labelControls(root){
+  $$('input,select,textarea',root).forEach(control=>{
+    if(control.labels?.length || control.getAttribute('aria-label') || control.getAttribute('title')) return;
+    const label = control.closest('.field')?.querySelector('label');
+    if(label) control.setAttribute('aria-label', label.textContent.trim());
+  });
+}
 const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s=>String(s??'')
+  .replace(/[—–]/g,' - ')
+  .replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now = ()=>Date.now();
 
 const TYPES = {
-  movie : {label:'Movies',  one:'Movie',  icon:'🎬'},
-  series: {label:'Series',  one:'Series', icon:'📺'},
-  anime : {label:'Anime',   one:'Anime',  icon:'⛩'},
-  book  : {label:'Books',   one:'Book',   icon:'📖'},
+  movie : {label:'Movies',  one:'Movie'},
+  series: {label:'Series',  one:'Series'},
+  anime : {label:'Anime',   one:'Anime'},
+  book  : {label:'Books',   one:'Book'},
 };
 const STATUS = {
   want     : {label:'Want',        color:'var(--want)'},
@@ -1077,7 +1395,7 @@ const CLOUD_PUBLISHABLE_KEY = 'sb_publishable_Vr6DqmUCRgtlB8j10JAvYg_EelZsKgh';
 const cloud = {client:null, user:null, loaded:false, timer:null};
 
 function cloudStatus(){
-  return cloud.user ? `Signed in as ${esc(cloud.user.email || 'your account')}` : 'Sync is off — this library is stored only in this browser.';
+  return cloud.user ? `Signed in as ${esc(cloud.user.email || 'your account')}` : 'Sync is off. This library is stored only in this browser.';
 }
 function normalizeState(raw){
   const s = {...blank(), ...(raw||{})};
@@ -1090,7 +1408,7 @@ async function pullCloud(){
   cloud.loaded = true;
   const {data, error} = await cloud.client
     .from('user_libraries').select('state').eq('user_id', cloud.user.id).maybeSingle();
-  if(error){ console.warn('cloud load failed', error); toast('Cloud sync is unavailable — your local library is safe.'); return; }
+  if(error){ console.warn('cloud load failed', error); toast('Cloud sync is unavailable. Your local library is safe.'); return; }
   if(data?.state){
     state = normalizeState(data.state);
     try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ console.warn('local cloud cache failed',e); }
@@ -1129,14 +1447,14 @@ function initCloud(){
 async function cloudSignIn(email, password){
   const {error} = await cloud.client.auth.signInWithPassword({email,password});
   if(error) return toast(error.message);
-  toast('Signed in. Syncing your library…');
+  toast('Signed in. Syncing your library.');
   modalSettings();
 }
 async function cloudSignUp(email, password){
   const {data, error} = await cloud.client.auth.signUp({email,password});
   if(error) return toast(error.message);
   if(!data.session) toast('Check your email to confirm your account, then sign in.');
-  else { toast('Account created. Syncing your library…'); modalSettings(); }
+  else { toast('Account created. Syncing your library.'); modalSettings(); }
 }
 async function cloudSignOut(){
   const {error} = await cloud.client.auth.signOut();
@@ -1177,7 +1495,7 @@ function save(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>{
     try{ localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch(e){ toast('Storage full — export a backup and remove some uploaded covers.'); }
+    catch(e){ toast('Storage full. Export a backup and remove some uploaded covers.'); }
     scheduleCloudSync();
   },120);
 }
@@ -1299,9 +1617,19 @@ function initials(t){
 function posterInner(it){
   const [h1,h2] = hues(it.key||it.title);
   const art = it.cover
-    ? `<img loading="lazy" src="${esc(it.cover)}" alt="" onerror="this.remove()">`
+    ? `<img loading="lazy" src="${esc(it.cover)}" alt="${esc(it.title)} cover" onload="posterFit(this)" onerror="this.remove()">`
     : `<span class="initials">${esc(initials(it.title))}</span>`;
   return {style:`--h1:${h1};--h2:${h2}`, art};
+}
+function posterFit(img){
+  const host = img.closest('.poster');
+  if(!host || !img.naturalWidth || !img.naturalHeight) return;
+  const wide = img.naturalWidth / img.naturalHeight > .82;
+  host.classList.toggle('wide-art', wide);
+  if(wide){
+    const safe = String(img.currentSrc||img.src).replace(/"/g,'%22');
+    host.style.setProperty('--poster-bg', `url("${safe}")`);
+  }
 }
 
 /* ---------- view state ---------- */
@@ -1309,7 +1637,40 @@ let filterType = 'all';
 let filterStatus = new Set();
 let filterGenre = '';
 let query = '';
-const catalog = {results:[], query:'', loading:false, request:0, timer:null};
+const catalog = {
+  results:[], query:'', loading:false, error:'', request:0, timer:null,
+  type:'all', sort:'popularity', year:'all', detailRequest:0
+};
+let returnFocus = null;
+
+function catalogVisible(){
+  let out = [...catalog.results];
+  if(catalog.type!=='all') out = out.filter(it=>it.type===catalog.type);
+  if(catalog.year!=='all'){
+    out = out.filter(it=>{
+      if(!it.year) return false;
+      if(catalog.year==='classic') return it.year < 1990;
+      const start = +catalog.year;
+      return it.year >= start && it.year < start + 10;
+    });
+  }
+  const sorters = {
+    popularity:(a,b)=>(b.popularity||0)-(a.popularity||0) || (b.score||0)-(a.score||0),
+    rating:(a,b)=>(b.score||0)-(a.score||0) || (b.popularity||0)-(a.popularity||0),
+    'year-desc':(a,b)=>(b.year||0)-(a.year||0) || a.title.localeCompare(b.title),
+    'year-asc':(a,b)=>(a.year||9999)-(b.year||9999) || a.title.localeCompare(b.title),
+    title:(a,b)=>a.title.localeCompare(b.title),
+  };
+  return out.sort(sorters[catalog.sort]||sorters.popularity);
+}
+
+function catalogRelevance(title, term){
+  const target = norm(title), wanted = norm(term);
+  if(!target || !wanted) return false;
+  if(target.includes(wanted) || wanted.includes(target)) return true;
+  const words = wanted.split(' ').filter(w=>w.length>1);
+  return words.length > 1 && words.filter(w=>target.includes(w)).length / words.length >= .75;
+}
 
 /** Every genre in the library, with counts, most common first. */
 function genreIndex(scope){
@@ -1346,16 +1707,29 @@ function render(){
   renderTabs(); renderChips(); renderGenres(); renderRail(); renderGrid();
   const catalogMode = filterType==='catalog';
   $('.shelf').hidden = catalogMode;
+  $('#catalogTools').hidden = !catalogMode;
   $('#statusChips').hidden = catalogMode;
-  $('#genreSel').hidden = catalogMode || $('#genreSel').hidden;
+  if(catalogMode) $('#genreSel').hidden = true;
   $('#sort').hidden = catalogMode;
   $('#btnView').hidden = catalogMode;
-  $('#q').placeholder = catalogMode ? 'Search every title…' : 'Search your library…';
+  $('#q').placeholder = catalogMode ? 'Search all titles' : 'Search your library';
   $('#sort').value = state.ui.sort;
-  $('#grid').classList.toggle('list', state.ui.view==='list');
+  $('#grid').classList.toggle('list', !catalogMode && state.ui.view==='list');
+  $('#btnView').textContent = state.ui.view==='grid' ? 'List view' : 'Grid view';
+  $('#btnTheme').textContent = state.ui.theme==='dark' ? 'Light' : 'Dark';
+  $('#mobileTheme').textContent = state.ui.theme==='dark' ? 'Switch to light' : 'Switch to dark';
+  renderCatalogControls();
   $('#footCount').textContent =
-    `${state.items.length} titles · ${state.items.filter(i=>i.status==='done').length} finished`;
+    `${state.items.length} titles, ${state.items.filter(i=>i.status==='done').length} finished`;
   save();
+}
+
+function renderCatalogControls(){
+  $$('#catalogTypeFilters [data-catalog-type]').forEach(button=>{
+    button.setAttribute('aria-pressed', String(button.dataset.catalogType===catalog.type));
+  });
+  $('#catalogSort').value = catalog.sort;
+  $('#catalogYear').value = catalog.year;
 }
 
 function renderTabs(){
@@ -1386,7 +1760,7 @@ function renderRail(){
   $('#continueCount').textContent = going.length ? going.length+' open' : '';
   if(!going.length){
     $('#rail').innerHTML = `<div class="empty-shelf">Nothing in progress. Hit
-      <b style="color:var(--accent)">&nbsp;▸ Start&nbsp;</b> on anything below and it lands here with your exact spot.</div>`;
+      <b style="color:var(--accent)">&nbsp;Start&nbsp;</b> on a title and it will appear here with your exact spot.</div>`;
     return;
   }
   $('#rail').innerHTML = going.map(it=>{
@@ -1411,6 +1785,7 @@ function renderGrid(){
   if(filterType==='catalog'){ renderCatalogGrid(); return; }
   const items = visible();
   const g = $('#grid');
+  g.classList.remove('catalog-results');
   if(!items.length){
     g.classList.remove('list');
     g.innerHTML = `<div class="empty" style="grid-column:1/-1">
@@ -1422,58 +1797,82 @@ function renderGrid(){
     const {style,art} = posterInner(it);
     const pct = progressPct(it);
     const sub = [it.year, it.genres[0], progressLabel(it) || runtimeLabel(it)]
-                  .filter(Boolean).join(' · ');
+                  .filter(Boolean).join(' / ');
     const quick = it.status==='done' ? `<button data-act="open">Edit</button>`
       : it.status==='going'
-        ? `<button data-act="bump">${it.type==='book'?'+10p':(it.type==='movie'?'✓ Done':'+1 ep')}</button>`
-        : `<button data-act="start">▸ Start</button>`;
-    return `<article class="card" data-id="${it.id}">
+        ? `<button data-act="bump">${it.type==='book'?'+10 pages':(it.type==='movie'?'Finish':'+1 episode')}</button>`
+        : `<button data-act="start">Start</button>`;
+    return `<article class="card" data-id="${it.id}" tabindex="0" aria-label="Open ${esc(it.title)} details">
       <div class="poster" style="${style}">
         ${art}<div class="veil"></div>
-        <span class="tag">${TYPES[it.type].icon} ${esc(TYPES[it.type].one)}</span>
-        <span class="pin">${it.rating?`<span class="rate">★ ${it.rating}</span>`:(it.score?`<span class="rate pub">${it.score.toFixed(1)}</span>`:'')}
-          ${it.fav?'<span class="star">★</span>':''}
-          <span class="state" style="background:${STATUS[it.status].color}" title="${STATUS[it.status].label}"></span></span>
-        ${it.genres.length?`<div class="genre">${it.genres.slice(0,2).map(g=>`<span>${esc(g)}</span>`).join('')}</div>`:''}
         <div class="quick">${quick}</div>
         ${pct?`<div class="pbar"><i style="width:${pct}%"></i></div>`:''}
       </div>
-      <div class="cmeta"><h3>${esc(it.title)}</h3><p>${esc(sub)}</p></div>
+      <div class="cmeta">
+        <div class="card-overline"><span>${esc(TYPES[it.type].one)}</span><span class="status-label">${it.fav?'Favourite / ':''}${esc(STATUS[it.status].label)}</span></div>
+        <h3>${esc(it.title)}</h3><p>${esc(sub)}</p>
+      </div>
     </article>`;
   }).join('');
 }
 
 function renderCatalogGrid(){
   const g = $('#grid');
-  g.classList.remove('list');
+  g.classList.remove('list'); g.classList.add('catalog-results');
   if(catalog.loading){
-    g.innerHTML = `<div class="empty catalog-empty"><span class="catalog-kicker">Online catalog</span>
-      <b>Searching every shelf…</b>Checking movies, series, anime and books.</div>`;
+    g.innerHTML = `<div class="catalog-loading" role="status" aria-live="polite">
+      <div class="catalog-loading-copy"><span class="exposure-loader" aria-hidden="true"></span>
+        <div><b>Searching four catalogs</b><span>Finding films, series, anime, and books</span></div>
+      </div>
+      ${[0,1].map(()=>`<div class="catalog-skeleton-row" aria-hidden="true">${[0,1,2,3,4,5,6].map(()=>`
+        <div class="catalog-skeleton-card"><div class="catalog-skeleton-poster"></div>
+        <div class="catalog-skeleton-line"></div><div class="catalog-skeleton-line short"></div></div>`).join('')}</div>`).join('')}
+    </div>`;
+    $('#catalogSummary').textContent = 'Searching movies, series, anime, and books from four public catalogs.';
     return;
   }
   if(!query.trim()){
-    g.innerHTML = `<div class="empty catalog-empty"><span class="catalog-kicker">Online catalog</span>
-      <b>One search. Every kind of story.</b>Search a title above to explore movies, series, anime and books beyond your library.</div>`;
+    g.innerHTML = `<div class="catalog-empty"><div class="catalog-empty-inner">
+      <h2>Find your next title</h2><p>Search once to compare movies, series, anime, and books in separate shelves.</p>
+    </div></div>`;
+    $('#catalogSummary').textContent = 'Search movies, series, anime, and books from four public catalogs.';
     return;
   }
-  if(!catalog.results.length){
-    g.innerHTML = `<div class="empty catalog-empty"><span class="catalog-kicker">Online catalog</span>
-      <b>No matches found</b>Try a shorter title or check the spelling.</div>`;
+  if(catalog.error){
+    g.innerHTML = `<div class="catalog-empty"><div class="catalog-empty-inner">
+      <h2>The catalogs did not respond</h2><p>${esc(catalog.error)}</p>
+      <button class="btn primary" data-catalog-retry>Try again</button>
+    </div></div>`;
+    $('#catalogSummary').textContent = 'Catalog search is temporarily unavailable.';
     return;
   }
-  g.innerHTML = catalog.results.map((it,index)=>{
-    const {style,art} = posterInner(it);
-    const already = state.items.some(x=>x.type===it.type && x.key===norm(it.title));
-    const sub = [it.year, it.genres?.[0], it.creator].filter(Boolean).join(' · ');
-    return `<article class="card catalog-card" data-catalog-index="${index}">
-      <div class="poster" style="${style}">
-        ${art}<div class="veil"></div>
-        <span class="tag">${TYPES[it.type].icon} ${esc(TYPES[it.type].one)}</span>
-        <div class="quick"><button data-catalog-add="${index}" ${already?'disabled':''}>${already?'✓ Added':'+ Add'}</button></div>
-      </div>
-      <div class="cmeta"><h3>${esc(it.title)}</h3><p>${esc(sub)}</p></div>
-    </article>`;
-  }).join('');
+  const shown = catalogVisible();
+  if(!shown.length){
+    g.innerHTML = `<div class="catalog-empty"><div class="catalog-empty-inner">
+      <h2>No titles match these filters</h2><p>Change the media type or release decade to see the full result set.</p>
+      <button class="btn" data-catalog-reset>Clear filters</button>
+    </div></div>`;
+    $('#catalogSummary').textContent = `${catalog.results.length} results found. Current filters hide all of them.`;
+    return;
+  }
+  const groups = ['movie','series','anime','book'].map(type=>[type,shown.filter(it=>it.type===type)]).filter(([,items])=>items.length);
+  $('#catalogSummary').textContent = `${shown.length} results across ${groups.length} ${groups.length===1?'shelf':'shelves'}, sorted by ${$('#catalogSort').selectedOptions[0].textContent.toLowerCase()}.`;
+  g.innerHTML = groups.map(([type,items])=>`<section class="catalog-group" aria-labelledby="catalog-${type}">
+    <div class="catalog-group-head"><h2 id="catalog-${type}">${esc(TYPES[type].label)}</h2><span>${items.length} result${items.length===1?'':'s'}</span></div>
+    <div class="catalog-row">${items.map(it=>{
+      const index = catalog.results.indexOf(it);
+      const {style,art} = posterInner(it);
+      const already = state.items.some(x=>x.type===it.type && x.key===norm(it.title));
+      const sub = [it.year, it.genres?.[0], it.creator].filter(Boolean).join(' / ');
+      return `<article class="card catalog-card" data-catalog-index="${index}" tabindex="0" aria-label="Open ${esc(it.title)} details">
+        <div class="poster" style="${style}">${art}<div class="veil"></div>
+          <div class="quick"><button data-catalog-add="${index}" ${already?'disabled':''}>${already?'In library':'Add'}</button></div>
+        </div>
+        <div class="cmeta"><div class="card-overline"><span>${esc(TYPES[it.type].one)}</span>${it.score?`<span class="public-score">${it.score.toFixed(1)} / 10</span>`:''}</div>
+          <h3>${esc(it.title)}</h3><p>${esc(sub)}</p></div>
+      </article>`;
+    }).join('')}</div>
+  </section>`).join('');
 }
 
 /* ============================================================
@@ -1482,19 +1881,20 @@ function renderCatalogGrid(){
 let openId = null;
 function openItem(id){
   const it = state.items.find(i=>i.id===id); if(!it) return;
+  returnFocus = document.activeElement;
   openId = id;
   const {style,art} = posterInner(it);
   const prog = it.type==='book'
     ? `<div class="two">
          <div class="field"><label>Page</label><input type="number" min="0" data-f="page" value="${it.page||0}"></div>
-         <div class="field"><label>Total pages</label><input type="number" min="0" data-f="pages" value="${it.pages??''}" placeholder="—"></div>
+         <div class="field"><label>Total pages</label><input type="number" min="0" data-f="pages" value="${it.pages??''}" placeholder="Not set"></div>
        </div>`
     : it.type==='movie'
       ? ''
       : `<div class="three">
            ${it.type==='series'?`<div class="field"><label>Season</label><input type="number" min="1" data-f="season" value="${it.season||1}"></div>`:''}
            <div class="field"><label>Episode</label><input type="number" min="0" data-f="episode" value="${it.episode||0}"></div>
-           <div class="field"><label>Total eps</label><input type="number" min="0" data-f="pages" value="${it.pages??''}" placeholder="—"></div>
+           <div class="field"><label>Total eps</label><input type="number" min="0" data-f="pages" value="${it.pages??''}" placeholder="Not set"></div>
          </div>`;
 
   // Built into a fresh node every time: #drawerContent itself outlives each open, so
@@ -1503,8 +1903,8 @@ function openItem(id){
   host.innerHTML = `
     <div class="sheet-head">
       <h3>Details</h3>
-      <button class="btn sm ghost" id="favBtn">${it.fav?'★ Favourite':'☆ Favourite'}</button>
-      <button class="icon-btn" data-close>✕</button>
+      <button class="btn sm ghost" id="favBtn">${it.fav?'Remove favourite':'Add favourite'}</button>
+      <button class="btn sm ghost" data-close>Close</button>
     </div>
     <div class="hero" style="${style}">
       ${it.cover?`<img src="${esc(it.cover)}" alt="">`:''}
@@ -1512,7 +1912,7 @@ function openItem(id){
         <div class="p poster" style="${style}">${art}</div>
         <div style="min-width:0">
           <h2>${esc(it.title)}</h2>
-          <div class="sub">${[TYPES[it.type].icon+' '+TYPES[it.type].one, it.year, it.genres.join(', '),
+          <div class="sub">${[TYPES[it.type].one, it.year, it.genres.join(', '),
               runtimeLabel(it), progressLabel(it)].filter(Boolean).map(esc).join(' · ')}</div>
         </div>
       </div>
@@ -1528,12 +1928,12 @@ function openItem(id){
 
       ${prog}
       ${it.type!=='movie'?`<div class="field"><button class="btn sm" id="quickBump">${it.type==='book'?'+10 pages':'+1 episode'}</button>
-        ${it.type==='series'?`<button class="btn sm ghost" id="nextSeason">Next season →</button>`:''}</div>`:''}
+        ${it.type==='series'?`<button class="btn sm ghost" id="nextSeason">Next season</button>`:''}</div>`:''}
 
       <div class="field">
         <label>Rating</label>
         <div class="stars" id="stars">
-          ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button data-n="${n}" class="${it.rating>=n?'on':''}">•</button>`).join('')}
+          ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button data-n="${n}" class="${it.rating>=n?'on':''}" aria-label="Rate ${n} out of 10">${n}</button>`).join('')}
           <span class="val">${it.rating? it.rating+'/10' : 'unrated'}</span>
         </div>
       </div>
@@ -1542,7 +1942,7 @@ function openItem(id){
         <div class="field"><label>Type</label>
           <select data-f="type">${Object.entries(TYPES).map(([k,v])=>
             `<option value="${k}" ${it.type===k?'selected':''}>${v.one}</option>`).join('')}</select></div>
-        <div class="field"><label>Year</label><input type="number" data-f="year" value="${it.year??''}" placeholder="—"></div>
+        <div class="field"><label>Year</label><input type="number" data-f="year" value="${it.year??''}" placeholder="Not set"></div>
       </div>
 
       <div class="two">
@@ -1550,16 +1950,16 @@ function openItem(id){
           <input data-f="genres" value="${esc(it.genres.join(', '))}" placeholder="Thriller, Crime"></div>
         <div class="field"><label>${it.type==='book'?'Pages':(it.type==='movie'?'Runtime (min)':'Minutes / episode')}</label>
           <input type="number" min="0" data-f="${it.type==='book'?'pages':'runtime'}"
-                 value="${(it.type==='book'?it.pages:it.runtime)??''}" placeholder="—"></div>
+                 value="${(it.type==='book'?it.pages:it.runtime)??''}" placeholder="Not set"></div>
       </div>
       <div class="field"><label>${ {book:'Author', movie:'Director', anime:'Studio', series:'Network'}[it.type] }</label>
-        <input data-f="creator" value="${esc(it.creator)}" placeholder="—"></div>
+        <input data-f="creator" value="${esc(it.creator)}" placeholder="Not set"></div>
       ${it.cast.length?`<div class="field"><label>Cast</label>
         <p class="hint" style="color:var(--fg2);margin:0">${esc(it.cast.join(' · '))}</p></div>`:''}
       ${(it.country||it.language||it.ageRating||it.score!=null||it.seasons||it.showStatus)?`
       <div class="field"><label>Facts</label>
         <div class="chips">
-          ${it.score!=null?`<span class="chip" style="--c:var(--accent)">★ ${it.score.toFixed(1)} public</span>`:''}
+          ${it.score!=null?`<span class="chip" style="--c:var(--accent)">${it.score.toFixed(1)} public rating</span>`:''}
           ${it.country?`<span class="chip">${esc(it.country)}</span>`:''}
           ${it.language?`<span class="chip">${esc(it.language)}</span>`:''}
           ${it.seasons?`<span class="chip">${it.seasons} season${it.seasons>1?'s':''}</span>`:''}
@@ -1572,17 +1972,17 @@ function openItem(id){
       <div class="field"><label>Title</label><input data-f="title" value="${esc(it.title)}"></div>
       <div class="field"><label>Your tags <span style="text-transform:none;letter-spacing:0">(comma separated)</span></label>
         <input data-f="tags" value="${esc(it.tags.join(', '))}" placeholder="korean, heist, rewatch"></div>
-      <div class="field"><label>Notes</label><textarea data-f="notes" placeholder="Where you stopped, who recommended it, what you thought…">${esc(it.notes)}</textarea></div>
+      <div class="field"><label>Notes</label><textarea data-f="notes" placeholder="Where you stopped, who recommended it, what you thought">${esc(it.notes)}</textarea></div>
 
       <div class="field">
         <label>Cover art</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
           <button class="btn sm" id="findCovers">Find art + info</button>
-          <button class="btn sm ghost" id="uploadBtn">Upload…</button>
+          <button class="btn sm ghost" id="uploadBtn">Upload</button>
           ${it.cover?`<button class="btn sm ghost" id="clearCover">Remove</button>`:''}
           <input type="file" accept="image/*" id="fileInput" hidden>
         </div>
-        <input data-f="cover" value="${esc(it.cover)}" placeholder="…or paste an image URL">
+        <input data-f="cover" value="${esc(it.cover)}" placeholder="Or paste an image URL">
         <div class="covers" id="coverResults"></div>
       </div>
 
@@ -1593,15 +1993,23 @@ function openItem(id){
       <button class="btn danger" id="delBtn">Delete this title</button>
     </div>`;
   $('#drawerContent').replaceChildren(host);
+  labelControls(host);
 
+  document.body.classList.add('sheet-open');
+  $('#drawer').removeAttribute('inert');
   $('#drawer').classList.add('on'); $('#overlay').classList.add('on');
   $('#drawer').setAttribute('aria-hidden','false');
   wireDrawer(it, host);
+  setTimeout(()=>host.querySelector('[data-close]')?.focus(),0);
 }
 function closeSheets(){
   $('#drawer').classList.remove('on'); $('#modal').classList.remove('on');
   $('#overlay').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true');
+  $('#drawer').setAttribute('inert',''); $('#modal').setAttribute('aria-hidden','true'); $('#modal').setAttribute('inert',''); document.body.classList.remove('sheet-open');
+  catalog.detailRequest++;
   openId = null;
+  if(returnFocus?.isConnected) returnFocus.focus();
+  returnFocus = null;
 }
 
 function wireDrawer(it, d){
@@ -1646,7 +2054,7 @@ function wireDrawer(it, d){
 
   $('#findCovers',d).onclick = async ()=>{
     const box = $('#coverResults',d);
-    box.innerHTML = `<div class="hint" style="grid-column:1/-1">Searching…</div>`;
+    box.innerHTML = `<div class="catalog-loading-copy" style="grid-column:1/-1"><span class="exposure-loader" aria-hidden="true"></span><div><b>Searching for artwork</b><span>Checking the matching catalog</span></div></div>`;
     const cands = await lookup(it);
     box.innerHTML = cands.length
       ? cands.map((c,n)=>`<button data-n="${n}" title="${esc([c.year,...c.genres].filter(Boolean).join(' · '))}">
@@ -1680,7 +2088,7 @@ function removeItem(id){
    ============================================================ */
 async function getJSON(url){
   const r = await fetch(url, {mode:'cors'});
-  if(!r.ok) throw new Error(url.slice(0,60)+' → '+r.status);
+  if(!r.ok) throw new Error(url.slice(0,60)+': '+r.status);
   return r.json();
 }
 const stripTags = s => String(s||'').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
@@ -1776,24 +2184,32 @@ async function lookupMovie(title, limit, year){
     + '&srsearch=' + encodeURIComponent(q));
   const hits = (s.query?.search||[]).slice(0, limit);
   const out = [];
-  for(const h of hits){
+  for(const [index,h] of hits.entries()){
     try{
       const d = await getJSON('https://en.wikipedia.org/api/rest_v1/page/summary/'
         + encodeURIComponent(h.title.replace(/ /g,'_')));
-      if(!d.thumbnail?.source) continue;
+      if(!d.thumbnail?.source && !d.originalimage?.source) continue;
       const intro = d.extract || '';
-      const ym = (d.description||'').match(/\b(19|20)\d{2}\b/) || intro.match(/\b(19|20)\d{2}\b/);
+      const description = d.description || '';
+      const classifier = (description + ' ' + intro.slice(0,180)).toLowerCase();
+      if(!/\bfilm\b/.test(classifier) || /film series|media franchise|novel|soundtrack|album|song|episode/.test(description.toLowerCase())) continue;
+      const ym = description.match(/\b(19|20)\d{2}\b/)
+        || (!/\bupcoming\b/i.test(description) ? intro.slice(0,180).match(/\b(19|20)\d{2}\b/) : null);
       out.push({
         title: d.title.replace(/\s*\([^)]*\)\s*$/,''), type:'movie',
-        cover: d.thumbnail.source.replace(/\?.*$/,''),
+        cover: (d.originalimage?.source || d.thumbnail.source).replace(/\?.*$/,''),
         genres: genresFromIntro(intro),
         year: ym ? +ym[0] : null,
         runtime: null,
         pages: null,
         synopsis: intro.split('. ').slice(0,2).join('. ').slice(0,300),
-        creator: (d.description||'').replace(/^.*\bby\s+/,'').trim().slice(0,60) || '',
+        creator: description.replace(/^.*\bby\s+/,'').trim().slice(0,60) || '',
         cast: castFromIntro(intro),
         country: countryFromIntro(intro),
+        format: description,
+        popularity: Math.max(1,100-index*12+Math.min(12,Math.log10((h.wordcount||1)+1)*3)),
+        sourceName:'Wikipedia',
+        sourceUrl:d.content_urls?.desktop?.page || '',
         wd: d.wikibase_item || null      // resolved to runtime + language on demand
       });
     }catch(e){ /* skip this hit */ }
@@ -1802,7 +2218,7 @@ async function lookupMovie(title, limit, year){
 }
 async function lookupSeries(title, limit){
   const d = await getJSON('https://api.tvmaze.com/search/shows?q=' + encodeURIComponent(title));
-  return (d||[]).slice(0,limit).map(({show:s})=>({
+  return (d||[]).slice(0,limit).map(({show:s,score:searchScore},index)=>({
     title: s.name, type:'series',
     cover: s.image?.original || s.image?.medium || '',
     genres: tidyGenres(s.genres||[]),
@@ -1815,13 +2231,21 @@ async function lookupSeries(title, limit){
     country: s.network?.country?.name || s.webChannel?.country?.name || '',
     language: s.language || '',
     showStatus: s.status || '',
+    premiered:s.premiered || '',
+    ended:s.ended || '',
+    format:s.type || '',
+    schedule:[...(s.schedule?.days||[]),s.schedule?.time].filter(Boolean).join(' / '),
+    officialSite:s.officialSite || '',
+    popularity:Math.max(1,Math.min(100,(s.weight||0)+(searchScore||0)*10-index)),
+    sourceName:'TVMaze',
+    sourceUrl:s.url || '',
     tvmaze: s.id                          // resolved to cast + seasons on demand
   })).filter(c=>c.cover);
 }
 async function lookupAnime(title, limit){
   const d = await getJSON('https://kitsu.io/api/edge/anime?filter[text]='
     + encodeURIComponent(title) + '&page[limit]=' + limit);
-  return (d.data||[]).map(a=>({
+  return (d.data||[]).map((a,index)=>({
     title: a.attributes.canonicalTitle || a.attributes.titles?.en || a.attributes.titles?.en_jp || 'Untitled anime', type:'anime',
     cover: a.attributes.posterImage?.large || a.attributes.posterImage?.medium || '',
     genres: [],
@@ -1832,15 +2256,28 @@ async function lookupAnime(title, limit){
     creator: '',
     score: a.attributes.averageRating ? +(a.attributes.averageRating/10).toFixed(1) : null,
     ageRating: a.attributes.ageRating || '',
+    ageRatingGuide:a.attributes.ageRatingGuide || '',
     showStatus: a.attributes.status || '',
+    premiered:a.attributes.startDate || '',
+    ended:a.attributes.endDate || '',
+    format:a.attributes.subtype || '',
+    popularityRank:a.attributes.popularityRank || null,
+    ratingRank:a.attributes.ratingRank || null,
+    userCount:a.attributes.userCount || null,
+    favouritesCount:a.attributes.favoritesCount || null,
+    popularity:a.attributes.popularityRank
+      ? Math.max(1,110-Math.log10(a.attributes.popularityRank+1)*28)
+      : Math.max(1,(a.attributes.averageRating||0)/10-index),
     language: 'Japanese', country: 'Japan',
+    sourceName:'Kitsu',
+    sourceUrl:`https://kitsu.app/anime/${a.id}`,
     kitsu: a.id                          // resolved to categories on demand
   })).filter(c=>c.cover);
 }
 async function lookupBook(title, limit){
   const d = await getJSON('https://openlibrary.org/search.json?q=' + encodeURIComponent(title)
-    + '&limit=' + limit + '&fields=cover_i,title,author_name,first_publish_year,number_of_pages_median,subject,ratings_average,language');
-  return (d.docs||[]).filter(x=>x.cover_i).map(x=>({
+    + '&limit=' + limit + '&fields=key,cover_i,title,author_name,first_publish_year,number_of_pages_median,subject,ratings_average,ratings_count,want_to_read_count,already_read_count,edition_count,language,publisher,isbn,first_sentence');
+  return (d.docs||[]).filter(x=>x.cover_i).map((x,index)=>({
     title: x.title, type:'book',
     cover: `https://covers.openlibrary.org/b/id/${x.cover_i}-L.jpg`,
     genres: tidyGenres((x.subject||[])
@@ -1852,8 +2289,18 @@ async function lookupBook(title, limit){
     synopsis: '',
     creator: (x.author_name||[])[0] || '',
     score: x.ratings_average ? +(x.ratings_average*2).toFixed(1) : null,
+    ratingsCount:x.ratings_count || null,
+    wantToReadCount:x.want_to_read_count || null,
+    alreadyReadCount:x.already_read_count || null,
+    editions:x.edition_count || null,
+    publisher:(x.publisher||[])[0] || '',
+    isbn:(x.isbn||[])[0] || '',
+    firstSentence:Array.isArray(x.first_sentence) ? x.first_sentence[0] : (x.first_sentence||''),
+    popularity:Math.max(1,Math.min(100,Math.log10((x.ratings_count||0)+(x.want_to_read_count||0)+1)*22-index)),
     language: (x.language||[]).includes('eng') ? 'English'
-              : ((x.language||[])[0] ? String((x.language||[])[0]).toUpperCase() : '')
+              : ((x.language||[])[0] ? String((x.language||[])[0]).toUpperCase() : ''),
+    sourceName:'Open Library',
+    sourceUrl:x.key ? `https://openlibrary.org${x.key}` : ''
   }));
 }
 /** Candidate matches for an item, best first. */
@@ -1873,12 +2320,15 @@ async function searchCatalog(term){
   const request = ++catalog.request;
   catalog.query = q;
   catalog.loading = true;
+  catalog.error = '';
   renderCatalogGrid();
   const settled = await Promise.allSettled([
     lookupMovie(q,5,null), lookupSeries(q,6), lookupAnime(q,6), lookupBook(q,6)
   ]);
   if(request!==catalog.request) return;
-  const found = settled.flatMap(x=>x.status==='fulfilled' ? x.value : []);
+  const failures = settled.filter(x=>x.status==='rejected');
+  const found = settled.flatMap(x=>x.status==='fulfilled' ? x.value : [])
+    .filter(it=>catalogRelevance(it.title,q));
   const seen = new Set();
   catalog.results = found.filter(it=>{
     if(!it.title || !TYPES[it.type]) return false;
@@ -1888,26 +2338,104 @@ async function searchCatalog(term){
     seen.add(key); return true;
   });
   catalog.loading = false;
+  catalog.error = failures.length===settled.length
+    ? 'Check your connection, then try the same search again.' : '';
   renderCatalogGrid();
 }
 function queueCatalogSearch(){
   clearTimeout(catalog.timer);
   if(!query.trim()){
     catalog.request++;
-    catalog.results = []; catalog.query = ''; catalog.loading = false;
+    catalog.results = []; catalog.query = ''; catalog.loading = false; catalog.error = '';
     renderCatalogGrid(); return;
   }
   catalog.timer = setTimeout(()=>searchCatalog(query),350);
 }
-function addCatalogItem(index){
+async function addCatalogItem(index){
   const candidate = catalog.results[index];
   if(!candidate) return;
   const it = makeItem(candidate.title,candidate.type,'want');
   if(state.items.some(x=>x.type===it.type && x.key===it.key)) return toast('Already in your library.');
+  toast(`Adding ${candidate.title} with available details.`);
+  await topUp(candidate);
   applyMeta(it,candidate,{force:true});
   state.items.push(it);
   render();
-  toast(`Added “${it.title}” to Want.`);
+  toast(`Added "${it.title}" to Want.`);
+}
+
+const countLabel = value=>value==null || value==='' ? '' : Number(value).toLocaleString();
+const dateLabel = value=>{
+  if(!value) return '';
+  const d = new Date(value + (String(value).length===10 ? 'T12:00:00' : ''));
+  return Number.isNaN(d.valueOf()) ? String(value) : d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});
+};
+function detailMetric(candidate){
+  if(candidate.type==='book') return candidate.pages ? `${countLabel(candidate.pages)} pages` : '';
+  if(candidate.type==='movie') return runtimeLabel(candidate);
+  return candidate.pages ? `${countLabel(candidate.pages)} episodes` : runtimeLabel(candidate);
+}
+function catalogDetailMarkup(c,index){
+  const {style,art} = posterInner(c);
+  const already = state.items.some(x=>x.type===c.type && x.key===norm(c.title));
+  const role = {movie:'Director',series:'Network',anime:'Studio',book:'Author'}[c.type];
+  const meta = [
+    [role,c.creator],['Format',c.format],['Country',c.country],['Language',c.language],
+    ['Status',c.showStatus],['Premiered',dateLabel(c.premiered)],['Ended',dateLabel(c.ended)],
+    ['Schedule',c.schedule],['Age rating',c.ageRating],['Rating guide',c.ageRatingGuide],
+    ['Seasons',c.seasons],['Episodes',c.episodeCount || (c.type!=='book' ? c.pages : '')],
+    ['Cast',c.cast?.join(', ')],['Publisher',c.publisher],['ISBN',c.isbn],['Editions',countLabel(c.editions)],
+    ['Public ratings',countLabel(c.ratingsCount)],['Want to read',countLabel(c.wantToReadCount)],
+    ['Already read',countLabel(c.alreadyReadCount)],['Community members',countLabel(c.userCount)],
+    ['Community favourites',countLabel(c.favouritesCount)],['Popularity rank',c.popularityRank ? `#${countLabel(c.popularityRank)}` : ''],
+    ['Rating rank',c.ratingRank ? `#${countLabel(c.ratingRank)}` : '']
+  ].filter(([,value])=>value!=='' && value!=null && value!==0);
+  const facts = [
+    ['Release',c.year || 'Unknown'],
+    [c.type==='book'?'Length':c.type==='movie'?'Runtime':'Episodes',detailMetric(c) || 'Unknown'],
+    ['Public score',c.score!=null ? `${Number(c.score).toFixed(1)} / 10` : 'Unrated'],
+    [c.type==='book'?'Editions':c.type==='series'?'Seasons':'Catalog',c.type==='book'?(countLabel(c.editions)||'Unknown'):c.type==='series'?(c.seasons||'Unknown'):(c.sourceName||'Public')]
+  ];
+  return `
+    <div class="sheet-head"><h3>Catalog details</h3><button class="btn sm ghost" data-close>Close</button></div>
+    <div class="catalog-detail-hero">
+      <div class="catalog-detail-cover poster" style="${style}">${art}</div>
+      <div class="catalog-detail-copy">
+        <div class="catalog-detail-type">${esc(TYPES[c.type].one)}</div>
+        <h2>${esc(c.title)}</h2>
+        <p>${[c.year,c.creator,c.genres?.slice(0,2).join(' / ')].filter(Boolean).map(esc).join(' / ')}</p>
+        <div class="catalog-detail-actions">
+          <button class="btn primary" data-catalog-add="${index}" ${already?'disabled':''}>${already?'Already in library':'Add to library'}</button>
+          ${c.officialSite?`<a class="btn ghost" href="${esc(c.officialSite)}" target="_blank" rel="noopener">Official site</a>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <dl class="detail-facts">${facts.map(([label,value])=>`<div class="detail-fact"><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
+      ${c.genres?.length?`<section class="detail-section"><h3>Genres</h3><div class="detail-chips">${c.genres.map(g=>`<span>${esc(g)}</span>`).join('')}</div></section>`:''}
+      ${(c.synopsis||c.firstSentence)?`<section class="detail-section"><h3>Overview</h3>${c.synopsis?`<p>${esc(c.synopsis)}</p>`:''}${c.firstSentence?`<p style="margin-top:10px">${esc(c.firstSentence)}</p>`:''}</section>`:''}
+      ${meta.length?`<section class="detail-section"><h3>All available information</h3><dl class="detail-meta">${meta.map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></section>`:''}
+      ${c.sourceUrl?`<section class="detail-source"><p>Catalog information supplied by ${esc(c.sourceName||'the source catalog')}.</p><a class="btn sm ghost" href="${esc(c.sourceUrl)}" target="_blank" rel="noopener">View source</a></section>`:''}
+    </div>`;
+}
+async function openCatalogItem(index){
+  const candidate = catalog.results[index];
+  if(!candidate) return;
+  returnFocus = document.activeElement;
+  const request = ++catalog.detailRequest;
+  openId = `catalog:${index}`;
+  const host = document.createElement('div');
+  host.innerHTML = `<div class="sheet-head"><h3>Catalog details</h3><button class="btn sm ghost" data-close>Close</button></div>
+    <div class="detail-loading" role="status"><div class="catalog-loading-copy"><span class="exposure-loader" aria-hidden="true"></span><div><b>Preparing the full record</b><span>Collecting runtime, credits, dates, and community data</span></div></div></div>`;
+  $('#drawerContent').replaceChildren(host);
+  document.body.classList.add('sheet-open');
+  $('#drawer').removeAttribute('inert');
+  $('#drawer').classList.add('on'); $('#overlay').classList.add('on');
+  $('#drawer').setAttribute('aria-hidden','false');
+  await topUp(candidate);
+  if(request!==catalog.detailRequest || openId!==`catalog:${index}`) return;
+  host.innerHTML = catalogDetailMarkup(candidate,index);
+  host.querySelector('[data-close]')?.focus();
 }
 /* Wikidata gives language as a QID; the label set is tiny, so cache it. */
 const QID_LABELS = new Map();
@@ -1935,12 +2463,14 @@ async function topUp(c){
     }
     if(c?.tvmaze){
       // one call gives the principal cast; another the season count
-      const [cast, seasons] = await Promise.all([
+      const [cast, seasons, episodes] = await Promise.all([
         getJSON('https://api.tvmaze.com/shows/' + c.tvmaze + '/cast').catch(()=>[]),
-        getJSON('https://api.tvmaze.com/shows/' + c.tvmaze + '/seasons').catch(()=>[])
+        getJSON('https://api.tvmaze.com/shows/' + c.tvmaze + '/seasons').catch(()=>[]),
+        getJSON('https://api.tvmaze.com/shows/' + c.tvmaze + '/episodes').catch(()=>[])
       ]);
-      c.cast = (cast||[]).slice(0,4).map(x=>x.person?.name).filter(Boolean);
+      c.cast = (cast||[]).slice(0,8).map(x=>x.person?.name).filter(Boolean);
       if((seasons||[]).length) c.seasons = seasons.length;
+      if((episodes||[]).length){ c.episodeCount = episodes.length; c.pages = episodes.length; }
     }
     if(c?.kitsu && !c.genres.length){
       const d = await getJSON('https://kitsu.io/api/edge/anime/' + c.kitsu + '/categories?page[limit]=20');
@@ -1974,6 +2504,9 @@ function applyMeta(it, c, {force=false}={}){
   if(c.showStatus && (force || !it.showStatus)) it.showStatus = c.showStatus;
   if(c.seasons && (force || !it.seasons)) it.seasons = c.seasons;
   if(c.ageRating && (force || !it.ageRating)) it.ageRating = c.ageRating;
+  for(const field of ['format','premiered','ended','schedule','officialSite','ageRatingGuide','episodeCount','publisher','isbn','editions','ratingsCount','wantToReadCount','alreadyReadCount','userCount','favouritesCount','popularityRank','ratingRank','sourceName','sourceUrl','firstSentence']){
+    if(c[field] != null && c[field] !== '' && (force || it[field] == null || it[field] === '')) it[field] = c[field];
+  }
 }
 function runtimeLabel(it){
   if(it.type==='book') return it.pages ? it.pages+' pages' : '';
@@ -1996,7 +2529,7 @@ async function fetchMissingCovers(){
   fetching = true;
   const bar = $('#fetchbar i');
   let hit = 0, done = 0, next = 0;
-  toast(`Fetching art + genres for ${todo.length} titles… you can keep using the app.`);
+  toast(`Fetching art and genres for ${todo.length} titles. You can keep using the app.`);
 
   // Four workers pull from one queue: fast enough to matter, gentle enough on the APIs.
   const worker = async ()=>{
@@ -2009,13 +2542,13 @@ async function fetchMissingCovers(){
         it.metaTried = true;
       }catch(e){ it.noCover = true; }
       done++;
-      bar.style.width = (done/todo.length*100)+'%';
+      bar.style.transform = `scaleX(${done/todo.length})`;
       if(done % 8 === 0){ save(); renderGrid(); renderRail(); }
       await new Promise(r=>setTimeout(r, 90));
     }
   };
   await Promise.all([worker(),worker(),worker(),worker()]);
-  bar.style.width = '0%';
+  bar.style.transform = 'scaleX(0)';
   fetching = false;
   save(); render();
   const missed = todo.length - hit;
@@ -2046,14 +2579,20 @@ function shrink(file, maxW=360, maxH=540){
    modals: add · bulk · settings
    ============================================================ */
 function showModal(html, wire){
+  returnFocus = document.activeElement;
   $('#modalContent').innerHTML = html;
+  labelControls($('#modalContent'));
+  document.body.classList.add('sheet-open');
+  $('#modal').removeAttribute('inert');
   $('#modal').classList.add('on'); $('#overlay').classList.add('on');
+  $('#modal').setAttribute('aria-hidden','false');
   wire && wire($('#modalContent'));
+  setTimeout(()=>$('#modalContent').querySelector('input[autofocus],[data-close],button,input,select,textarea')?.focus(),0);
 }
 
 function modalAdd(){
   showModal(`
-    <div class="sheet-head"><h3>Add a title</h3><button class="icon-btn" data-close>✕</button></div>
+    <div class="sheet-head"><h3>Add a title</h3><button class="btn sm ghost" data-close>Close</button></div>
     <div class="sheet-body">
       <div class="field"><label>Title</label><input id="aTitle" placeholder="e.g. Memories of Murder" autofocus></div>
       <div class="two">
@@ -2085,7 +2624,7 @@ function modalAdd(){
 
 function modalBulk(){
   showModal(`
-    <div class="sheet-head"><h3>Paste a list</h3><button class="icon-btn" data-close>✕</button></div>
+    <div class="sheet-head"><h3>Paste a list</h3><button class="btn sm ghost" data-close>Close</button></div>
     <div class="sheet-body">
       <div class="two">
         <div class="field"><label>Type</label><select id="bType">
@@ -2104,7 +2643,7 @@ function modalBulk(){
       $('#bGo',root).onclick = ()=>{
         const n = ingest($('#bText',root).value, $('#bType',root).value, $('#bStatus',root).value);
         closeSheets(); render();
-        toast(n ? `Added ${n} titles.` : 'Nothing new — all of those were already in.',
+        toast(n ? `Added ${n} titles.` : 'Nothing new. All of those were already in.',
               n?'Fetch covers':null, n?fetchMissingCovers:null);
       };
       setTimeout(()=>$('#bText',root).focus(),50);
@@ -2116,7 +2655,7 @@ const pickPrefs = {type:'all', genre:'', max:0};
 function modalPick(){
   const pool0 = state.items.filter(i=>i.status==='want' || i.status==='going' || i.status==='paused');
   showModal(`
-    <div class="sheet-head"><h3>What am I in the mood for?</h3><button class="icon-btn" data-close>✕</button></div>
+    <div class="sheet-head"><h3>What am I in the mood for?</h3><button class="btn sm ghost" data-close>Close</button></div>
     <div class="sheet-body">
       <div class="three">
         <div class="field"><label>Kind</label><select id="pType">
@@ -2135,7 +2674,7 @@ function modalPick(){
       <div id="pResult"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
         <button class="btn ghost" data-close>Close</button>
-        <button class="btn primary" id="pRoll">🎲 Pick one</button>
+        <button class="btn primary" id="pRoll">Pick another</button>
       </div>
     </div>`, root=>{
       const gsel = $('#pGenre',root);
@@ -2161,7 +2700,7 @@ function modalPick(){
         const box = $('#pResult',root);
         if(!p.length){
           box.innerHTML = `<div class="empty" style="padding:34px 10px">
-            <b>Nothing fits</b>Loosen a filter — or run <b>Covers</b> so runtimes and genres are filled in.</div>`;
+            <b>Nothing fits</b>Loosen a filter or run <b>Enrich</b> so runtimes and genres are filled in.</div>`;
           return;
         }
         const it = p[Math.floor(Math.random()*p.length)];
@@ -2173,7 +2712,7 @@ function modalPick(){
             <div style="min-width:0;flex:1">
               <h2 style="margin:0 0 5px;font-size:18px;line-height:1.25">${esc(it.title)}</h2>
               <div class="hint" style="margin-bottom:8px">
-                ${TYPES[it.type].icon} ${esc(TYPES[it.type].one)}${it.year?' · '+it.year:''}
+                ${esc(TYPES[it.type].one)}${it.year?' / '+it.year:''}
                 ${runtimeLabel(it)?' · '+esc(runtimeLabel(it)):''}
                 ${it.creator?' · '+esc(it.creator):''}
               </div>
@@ -2208,7 +2747,7 @@ function modalSettings(){
   const u = storageUse();
   const c = {}; for(const k in STATUS) c[k] = state.items.filter(i=>i.status===k).length;
   showModal(`
-    <div class="sheet-head"><h3>Library &amp; backup</h3><button class="icon-btn" data-close>✕</button></div>
+    <div class="sheet-head"><h3>Library &amp; backup</h3><button class="btn sm ghost" data-close>Close</button></div>
     <div class="sheet-body">
       <div class="stat-strip">
         <div class="stat"><b>${state.items.length}</b><span>Titles</span></div>
@@ -2226,10 +2765,10 @@ function modalSettings(){
         <label>Backup</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="sExport">Export JSON</button>
-          <button class="btn" id="sImportBtn">Import JSON…</button>
+          <button class="btn" id="sImportBtn">Import JSON</button>
           <input type="file" accept="application/json" id="sImport" hidden>
         </div>
-        <p class="hint" style="margin-top:8px">Keep a copy somewhere safe — clearing browser data wipes the library.</p>
+        <p class="hint" style="margin-top:8px">Keep a copy somewhere safe. Clearing browser data wipes the library.</p>
       </div>
       <div class="field">
         <label>Cloud sync</label>
@@ -2319,6 +2858,27 @@ function toast(msg, actionLabel, onAction){
 }
 const hideToast = ()=>$('#toast').classList.remove('on');
 
+function closeMobileMenu(restoreFocus=false){
+  const menu = $('#mobileMenu');
+  if(menu.hidden) return;
+  menu.hidden = true;
+  $('#btnMobileMenu').setAttribute('aria-expanded','false');
+  if(restoreFocus) $('#btnMobileMenu').focus();
+}
+
+function toggleMobileMenu(){
+  const menu = $('#mobileMenu');
+  const opening = menu.hidden;
+  menu.hidden = !opening;
+  $('#btnMobileMenu').setAttribute('aria-expanded',String(opening));
+  if(opening) setTimeout(()=>menu.querySelector('[role="menuitem"]')?.focus(),0);
+}
+
+function toggleTheme(){
+  state.ui.theme = state.ui.theme==='dark' ? 'light' : 'dark';
+  render();
+}
+
 /* ============================================================
    events
    ============================================================ */
@@ -2341,25 +2901,45 @@ $('#q').addEventListener('input', e=>{
 $('#sort').addEventListener('change', e=>{ state.ui.sort = e.target.value; render(); });
 $('#btnView').addEventListener('click', ()=>{
   state.ui.view = state.ui.view==='grid' ? 'list' : 'grid';
-  $('#btnView').textContent = state.ui.view==='grid' ? '▦' : '☰';
   render();
 });
-$('#btnTheme').addEventListener('click', ()=>{
-  state.ui.theme = state.ui.theme==='dark' ? 'light' : 'dark'; render();
-});
+$('#btnTheme').addEventListener('click', toggleTheme);
 $('#btnPick').addEventListener('click', modalPick);
 $('#btnAdd').addEventListener('click', modalAdd);
 $('#btnPaste').addEventListener('click', modalBulk);
 $('#btnMore').addEventListener('click', modalSettings);
 $('#btnCovers').addEventListener('click', fetchMissingCovers);
 $('#btnExport2').addEventListener('click', exportJSON);
+$('#btnMobileMenu').addEventListener('click', e=>{ e.stopPropagation(); toggleMobileMenu(); });
+$('#mobileMenu').addEventListener('click', e=>{
+  const button = e.target.closest('[data-mobile-action]'); if(!button) return;
+  const action = button.dataset.mobileAction;
+  closeMobileMenu();
+  $('#btnMobileMenu').focus();
+  ({pick:modalPick,import:modalBulk,enrich:fetchMissingCovers,theme:toggleTheme,settings:modalSettings,export:exportJSON}[action])?.();
+});
 $('#overlay').addEventListener('click', closeSheets);
+$('#catalogTypeFilters').addEventListener('click', e=>{
+  const button = e.target.closest('[data-catalog-type]'); if(!button) return;
+  catalog.type = button.dataset.catalogType; renderCatalogControls(); renderCatalogGrid();
+});
+$('#catalogSort').addEventListener('change', e=>{ catalog.sort=e.target.value; renderCatalogGrid(); });
+$('#catalogYear').addEventListener('change', e=>{ catalog.year=e.target.value; renderCatalogGrid(); });
 
 document.addEventListener('click', e=>{
+  if(!e.target.closest('#mobileMenu')) closeMobileMenu();
   if(e.target.closest('[data-close]')) { closeSheets(); return; }
+
+  if(e.target.closest('[data-catalog-retry]')){ searchCatalog(query); return; }
+  if(e.target.closest('[data-catalog-reset]')){
+    catalog.type='all'; catalog.year='all'; renderCatalogControls(); renderCatalogGrid(); return;
+  }
 
   const catalogAdd = e.target.closest('[data-catalog-add]');
   if(catalogAdd){ addCatalogItem(+catalogAdd.dataset.catalogAdd); return; }
+
+  const catalogCard = e.target.closest('.catalog-card');
+  if(catalogCard){ openCatalogItem(+catalogCard.dataset.catalogIndex); return; }
 
   const resume = e.target.closest('.resume');
   if(resume){
@@ -2388,11 +2968,29 @@ document.addEventListener('click', e=>{
 });
 
 document.addEventListener('keydown', e=>{
+  if(e.key==='Escape' && !$('#mobileMenu').hidden){ closeMobileMenu(true); return; }
   if(e.key==='Escape'){ closeSheets(); return; }
+  if(e.key==='Tab'){
+    const panel = $('#modal').classList.contains('on') ? $('#modal') : ($('#drawer').classList.contains('on') ? $('#drawer') : null);
+    if(panel){
+      const focusable = $$('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',panel)
+        .filter(el=>el.getClientRects().length);
+      if(focusable.length){
+        const first=focusable[0], last=focusable[focusable.length-1];
+        if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+      }
+    }
+  }
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
   if(typing) return;
   if(e.key==='/'){ e.preventDefault(); $('#q').focus(); }
   if(e.key==='n'){ e.preventDefault(); modalAdd(); }
+  if((e.key==='Enter'||e.key===' ') && document.activeElement.matches('.catalog-card')){
+    e.preventDefault(); openCatalogItem(+document.activeElement.dataset.catalogIndex);
+  }else if((e.key==='Enter'||e.key===' ') && document.activeElement.matches('.card[data-id]')){
+    e.preventDefault(); openItem(document.activeElement.dataset.id);
+  }
 });
 
 /* ---------- boot ---------- */

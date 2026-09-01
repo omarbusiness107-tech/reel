@@ -1,1 +1,4 @@
 .vercel/
+.agents/
+.impeccable/
+skills-lock.json

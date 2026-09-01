@@ -1,7 +1,11 @@
-# reel
+# Reel
 
-A single-file tracker for movies, series, anime and books — what you've watched, what you
+A single-file tracker for movies, series, anime, and books: what you have watched, what you
 want to watch, and exactly where you stopped.
+
+The interface is designed as a compact media program index. It includes a responsive dark
+and light theme, the custom Reel mark, grouped online catalog shelves, source-aware detail
+records, and poster handling for both vertical and horizontal artwork.
 
 ## Running it
 
@@ -18,12 +22,12 @@ browser. Two consequences worth knowing:
 - Clearing your browser data wipes the library.
 - Opening `reel.html` in a *different* browser gives you an empty library.
 
-So: **use `⋯ → Export JSON` now and then**, and keep the backup file somewhere safe.
+So: use **Settings > Export JSON** now and then, and keep the backup file somewhere safe.
 `Import JSON` restores it, and asks whether you want to merge or replace.
 
 ## Optional cloud sync
 
-Open **`⋯ → Cloud sync`** in the deployed app to create an account or sign in. Your
+Open **Settings > Cloud sync** in the deployed app to create an account or sign in. Your
 library is then saved privately to your account and restores on your other devices after
 you sign in. The first sign-in for a new account uploads the library in that browser;
 an existing cloud library is treated as the source of truth when you sign in elsewhere.
@@ -54,7 +58,7 @@ one and use **Find art + info**, paste an image URL, or upload your own picture.
 top with your exact spot — `S2 · E7`, `E14`, `p.142 / 380` — and a one-click `+1 ep` /
 `+10 pages` button, so updating where you stopped never needs a dialog.
 
-**🎲 Pick** answers "what do I watch right now": choose a kind, a genre, and how much time
+**Pick for me** answers "what do I watch right now": choose a kind, a genre, and how much time
 you have, and it draws a random title from your unwatched pile, with its synopsis and
 runtime. *Start it* drops it straight onto the Continue shelf.
 
@@ -63,13 +67,18 @@ titles reel added for you sit in Suggested, so your real watchlist is never dilu
 someone else's picks. Filter to Suggested to browse them, and move anything you like into
 Want with one click in the detail panel.
 
-**Filters** — the type tabs, the status chips and the genre dropdown all combine, and the
+**Filters** combine the type tabs, status chips, and genre dropdown, and the
 genre list rebuilds itself from whatever is actually in your library.
 
-**All titles** is a separate online catalog. Search once to look across movies, series,
-anime and books, then press **+ Add** on any result to place it in your Want list. The
-catalog stays online and searchable instead of trying to download millions of titles into
-the browser.
+**All titles** is a separate online catalog. One search looks across movies, series, anime,
+and books. Results are placed into consecutive shelves by media type. Filter them by media
+type and decade, then sort by popularity, public rating, year, or title. Open a result for
+runtime or page count, dates, credits, community data, genres, overview, and its source,
+then press **Add to library** to place it in your Want list. The catalog stays online and
+searchable instead of trying to download millions of titles into the browser.
+
+Horizontal catalog artwork is fitted inside the vertical card with a softened background,
+so the complete image remains visible instead of being stretched or aggressively cropped.
 
 **Anything is editable.** Click a card to open the detail panel: status, rating out of 10,
 genre, runtime, year, tags, notes, cover. Changes save as you type; there's no save button.
@@ -84,9 +93,9 @@ All keyless and free — nothing to sign up for, no API keys in the file.
 | Type | Source | What it provides |
 |---|---|---|
 | Movies | Wikipedia + Wikidata | poster, genre, year, director, cast, runtime, country, language, synopsis |
-| Series | TVMaze | poster, genre, year, network, cast, seasons, rating, status, country, language, summary |
-| Anime | Kitsu | poster, genre, year, episodes, episode length, rating, age rating, synopsis |
-| Books | Open Library | cover, subjects, first published, author, page count, rating, language |
+| Series | TVMaze | poster, genre, year, network, cast, seasons, episodes, rating, dates, schedule, status, country, language, summary |
+| Anime | Kitsu | poster, genre, year, episodes, episode length, rating, ranks, community counts, age rating, dates, synopsis |
+| Books | Open Library | cover, subjects, first published, author, pages, ratings, reading counts, editions, publisher, ISBN, language |
 
 Movie cast and country are parsed from the Wikipedia opening sentence ("...is a 2019 South
 Korean black comedy thriller film ... It stars Song Kang-ho, Lee Sun-kyun"). The search is
@@ -132,5 +141,12 @@ checkpoints every 20 titles — run it more than once and it picks up where it s
 
 ## Adding more
 
-**+ Add** for one title. **Bulk** for a pasted list, one per line — the same parser that
+**Add title** adds one title. **Import** accepts a pasted list, one per line. It uses the same parser that
 read the original lists, so trailing years and duplicates are handled the same way.
+
+## Brand assets
+
+- `assets/reel-mark.svg` is the flat production mark used by the header and favicon.
+- `assets/reel-logo-source.png` is the generated concept source.
+- `assets/reel-logo-source.provenance.json` records how that source was created.
+- Self-hosted Manrope and Barlow Condensed files live in `assets/fonts` with their OFL licenses.
