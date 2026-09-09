@@ -14,12 +14,13 @@ colors:
   cobalt: "#6276ff"
   cobalt-pressed: "#4f66ff"
   signal-ink: "#ffffff"
-  want: "#5b8dee"
-  suggested: "#2fb8a8"
-  going: "#ffb02e"
-  done: "#3fbf7f"
-  paused: "#9b7fd4"
-  dropped: "#6d6b7a"
+  want: "#6d8cf7"
+  suggested: "#dc72a8"
+  going: "#e6a11c"
+  done: "#38bd83"
+  paused: "#aa8be0"
+  dropped: "#7d8190"
+  waiting: "#ef7658"
   light-canvas: "#f4f5f8"
   light-raised: "#e9ebf1"
   light-panel: "#ffffff"
@@ -147,7 +148,7 @@ The palette behaves like a dim screening room with a cool printed program: neutr
 
 ### Secondary
 
-- **Status Blue** (`#5b8dee`), **Teal** (`#2fb8a8`), **Amber** (`#ffb02e`), **Green** (`#3fbf7f`), **Lilac** (`#9b7fd4`), and **Slate** (`#6d6b7a`): Distinguish want, suggested, in-progress, done, paused, and dropped states. Use them as small swatches, meters, and selected-state tints rather than large surfaces.
+- **Status Indigo** (`#6d8cf7`), **Rose** (`#dc72a8`), **Amber** (`#e6a11c`), **Green** (`#38bd83`), **Lilac** (`#aa8be0`), **Slate** (`#7d8190`), and **Coral** (`#ef7658`): Distinguish want, suggested, in-progress, done, paused, dropped, and awaiting-next-season states. Unselected controls remain neutral; reserve these hues for icons, progress strips, and selected-state tints.
 
 ### Neutral
 
@@ -183,9 +184,49 @@ The palette behaves like a dim screening room with a cool printed program: neutr
 
 ## Layout
 
+### Responsive behavior
+
+Navigation stays on one uninterrupted horizontal rail at every width. Desktop tabs share
+the available space; compact screens keep readable icon-and-label buttons in a touch-scrollable
+row with proximity snapping and no visible scrollbar. Tabs never wrap or cause the content
+below them to jump. Online retains its cobalt treatment and small counts stay beside labels.
+Settings may hide or restore individual media tabs without deleting their titles; My library
+and All titles are permanent endpoints.
+
+Header utilities move into Menu at 1280px; search moves onto its own row at 900px.
+At 760px, poster grids use two columns, filter controls use a two-column grid, and
+catalog media filters use four columns. Status filters fill seven columns on desktop
+and four columns below 900px, with the longer waiting status spanning two cells.
+Status filters and genre/sort actions have separate full-width rows. Under 520px, modal forms stack and ratings use
+five columns. Custom selects fit the width of their container, with wrapping options
+and an option highlight that follows the actual row height.
+
+Dialogs fit the dynamic viewport height, detail facts and status controls reflow,
+and page padding respects safe areas. On short landscape screens the header scrolls
+with the page. Touch controls have a 44px minimum height, and text inputs use 16px
+on mobile to avoid automatic input zoom. These rules apply equally to both themes
+and English, French, and Arabic text.
+
+### Facts and watch progress
+
+This is an Operate-mode refinement: DESIGN_VARIANCE=3, MOTION_INTENSITY=3,
+VISUAL_DENSITY=6. Keep the current identity, navigation, and typography.
+Facts are labeled definition-list rows near the title, not unlabeled chips. Show
+release, duration, series production status, available seasons and episodes, and
+community rating with its known source. Keep personal rating visibly separate.
+In light mode, mix rating hues toward the text token for readable contrast.
+Details lead with the user's three primary controls in this order: Status, Progress,
+and Your rating. Labeled title facts follow them. Progress inputs show season-local limits alongside the value. Use explicit loading,
+unavailable, and validation messages, not invented totals. Awaiting next season is a
+distinct warm-coral information status; Finished is a stronger success green; Suggested
+uses rose rather than the previous green-adjacent teal. Each keeps its own text and icon
+cues and does not rely on color alone. Awaiting next season does
+not claim a renewal. Back to top is a small
+theme-aware arrow button that yields to open dialogs and respects reduced motion.
+
 The desktop surface uses a centered `1440px` maximum canvas with `30px` horizontal padding. The library grid fills available space with columns no narrower than `168px`, while catalog results form consecutive horizontal shelves with `178px` cards and proximity scroll snapping. The All Titles console is a two-column panel that pairs a compact introduction with right-aligned filters.
 
-At `1120px`, secondary header actions yield and the catalog console stacks. At `760px`, page gutters reduce to `16px`, the header becomes a two-row grid, library cards settle into two columns, utilities move into a compact menu, catalog filters form a five-part strip, and drawer facts collapse from four columns to two. Catalog cards narrow to `148px`. At `410px`, the Pick action yields and the catalog controls become a single-column stack.
+On compact screens, catalog cards narrow to `148px`. Navigation, controls, and forms follow the responsive behavior above; labels remain available instead of being replaced by an icon-only navigation strip.
 
 Spacing follows a tight working rhythm of `4px`, `8px`, `12px`, `18px`, `24px`, and `30px`. Sections use larger intervals, while metadata, controls, and card copy use the smaller steps. Horizontal shelves may reach the mobile viewport edge to preserve a continuous browsing gesture.
 
@@ -208,7 +249,7 @@ Reel is flat by default and layered through surface tone, one-pixel rules, and p
 
 The signature silhouette is a gently rounded `14px` media frame. Controls use tighter `8px` to `12px` corners, large panels use `16px`, and dialogs use `18px`. Fully circular geometry belongs only to tiny status swatches, progress tracks, and scroll thumbs. Borders are crisp one-pixel rules; image and panel clipping must respect the same radius as the visible container.
 
-Wide or horizontal artwork stays inside the vertical `2:3` media frame with `object-fit: contain`, `10px` internal breathing room, and a softened, blurred version of the same image behind it. Never crop incompatible artwork into false poster proportions.
+Every card image uses one edge-to-edge `2:3` image plane with proportional `object-fit: cover`, centered positioning, no duplicate blurred layer, and no internal padding. Portrait posters are preferred for cards. When both orientations exist, the portrait file owns the card and small detail cover while the landscape file owns the expandable detail banner.
 
 ## Components
 
@@ -222,7 +263,7 @@ Wide or horizontal artwork stays inside the vertical `2:3` media frame with `obj
 ### Chips
 
 - **Style:** Compact rectangular chips use a `9px` radius, `6px 9px` padding, muted text, a one-pixel rule, and an optional six-pixel status swatch.
-- **State:** Selected status chips tint the panel with their semantic hue. Catalog media filters use cobalt fill and white text when pressed.
+- **State:** Unselected status chips use the same neutral text and border, with only the icon carrying a restrained semantic hue. Selected chips reveal a low-intensity semantic tint and stronger border. Catalog media filters use cobalt fill and white text when pressed.
 
 ### Cards / Containers
 
@@ -234,17 +275,18 @@ Wide or horizontal artwork stays inside the vertical `2:3` media frame with `obj
 
 ### Inputs / Fields
 
-- **Style:** Search uses a `42px` height, `12px` radius, one-pixel rule, panel fill, and `10px 42px 10px 14px` padding. Selects use `38px` height and `10px` radius.
+- **Style:** Search uses a `42px` height, `12px` radius, one-pixel rule, panel fill, and `10px 42px 10px 14px` padding. Select triggers use a `38px` pill that joins the open menu into one continuous `10px`-corner surface.
 - **Focus:** Border shifts to cobalt and a three-pixel translucent cobalt ring appears. No field uses a color change alone as its focus cue.
 - **Error / Disabled:** Disabled quick actions retain visible text with reduced contrast. Catalog errors use a bordered panel and plain recovery action rather than a decorative alert.
+- **Motion:** Select menus travel four pixels from their trigger while fading and settling from `0.985` scale over `220ms`. Closing reverses the same path before the menu is removed. Trigger corners change on the same timeline, and reduced motion keeps only a short opacity transition.
 
 ### Navigation
 
-The sticky header uses a translucent canvas layer with a `14px` backdrop blur and a one-pixel bottom rule. Tabs live in a bordered tonal track; the selected library tab reverses to Cool Paper on Carbon, while the selected All Titles tab uses cobalt. At mobile widths, search occupies a second row and secondary actions move into a text-led utility menu.
+The sticky header uses a translucent canvas layer with a `14px` backdrop blur and a one-pixel bottom rule. Tabs live in a single-line bordered tonal track; the selected library tab reverses to Cool Paper on Carbon, while the selected All Titles tab uses cobalt. At mobile widths, the rail scrolls horizontally, search occupies a second row, and secondary actions move into a text-led utility menu.
 
 ### Poster Card
 
-Poster cards are the system's primary browsing unit. Every frame is vertical (`2:3`), carries a concise uppercase media overline, a two-line title, and compact secondary metadata. Direct actions stay visible at the lower edge. Hover lifts the card and scales compatible artwork to `1.018`; catalog results also compress on active feedback. Horizontal artwork uses the contained treatment described in Shapes.
+Poster cards are the system's primary browsing unit. Every frame is vertical (`2:3`), carries a concise uppercase media overline, a two-line title, and compact secondary metadata. Direct actions stay visible at the lower edge. Hover lifts the card and scales compatible artwork to `1.018`; catalog results also compress on active feedback. A title may store independent `cover` and `banner` artwork so a wide source never has to masquerade as a portrait card.
 
 ### Catalog Shelf
 
@@ -260,7 +302,7 @@ The loading mark is a `42px` framed aperture with a cobalt inner exposure sweepi
 
 - **Do** preserve cobalt as the single general interaction signal in both themes.
 - **Do** keep poster shelves image-led and place dense metadata in disciplined overlines, facts, and drawer sections.
-- **Do** fit horizontal artwork inside vertical cards with the softened same-image backdrop.
+- **Do** keep card artwork edge-to-edge and proportional, with the uncropped source available in details.
 - **Do** provide visible focus, tactile active feedback, keyboard access, and reduced-motion behavior for every new interactive pattern.
 - **Do** use short transitions, generally `140ms` to `260ms`, only for feedback, hierarchy, or spatial continuity.
 
@@ -268,6 +310,6 @@ The loading mark is a `42px` framed aperture with a cobalt inner exposure sweepi
 
 - **Don't** introduce purple gradients, broad glass panels, decorative label noise, or streaming-service hero conventions.
 - **Don't** turn status hues into competing action colors or large decorative surfaces.
-- **Don't** crop wide artwork into unreadable vertical fragments.
+- **Don't** stretch artwork, soften it behind itself, or reduce raster quality to force it into the card. Keep the uncropped source available in the details viewer.
 - **Don't** use `transition: all`, animate from `scale(0)`, or add motion that survives reduced-motion preferences.
 - **Don't** hide essential mobile utilities without a text-led replacement.

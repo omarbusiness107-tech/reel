@@ -1,0 +1,16 @@
+{
+  "purpose": "Verified portrait card artwork for the eight Harry Potter films",
+  "retrieved": "2026-09-09",
+  "source": "Internet Movie Poster Awards",
+  "source_url": "https://www.impawards.com/",
+  "files": [
+    {"file":"01-philosophers-stone.jpg","film":"Harry Potter and the Philosopher's Stone","year":2001,"page":"https://www.impawards.com/2001/harry_potter_and_the_sorcerers_stone_ver4.html","dimensions":"2003x2970"},
+    {"file":"02-chamber-of-secrets.jpg","film":"Harry Potter and the Chamber of Secrets","year":2002,"page":"https://www.impawards.com/2002/harry_potter_and_the_chamber_of_secrets_ver2.html","dimensions":"998x1468"},
+    {"file":"03-prisoner-of-azkaban.jpg","film":"Harry Potter and the Prisoner of Azkaban","year":2004,"page":"https://www.impawards.com/2004/harry_potter_and_the_prisoner_of_azkaban_ver4.html","dimensions":"1016x1500"},
+    {"file":"04-goblet-of-fire.jpg","film":"Harry Potter and the Goblet of Fire","year":2005,"page":"https://www.impawards.com/2005/harry_potter_and_the_goblet_of_fire.html","dimensions":"2006x3000"},
+    {"file":"05-order-of-the-phoenix.jpg","film":"Harry Potter and the Order of the Phoenix","year":2007,"page":"https://www.impawards.com/2007/harry_potter_and_the_order_of_the_phoenix_ver2.html","dimensions":"1944x2880"},
+    {"file":"06-half-blood-prince.jpg","film":"Harry Potter and the Half-Blood Prince","year":2009,"page":"https://www.impawards.com/2009/harry_potter_and_the_half_blood_prince.html","dimensions":"1297x2000"},
+    {"file":"07-deathly-hallows-part-1.jpg","film":"Harry Potter and the Deathly Hallows: Part 1","year":2010,"page":"https://www.impawards.com/2010/harry_potter_and_the_deathly_hallows_part_i_ver20.html","dimensions":"1600x2560"},
+    {"file":"08-deathly-hallows-part-2.jpg","film":"Harry Potter and the Deathly Hallows: Part 2","year":2011,"page":"https://www.impawards.com/2011/harry_potter_and_the_deathly_hallows_part_two_ver28.html","dimensions":"1600x2333"}
+  ]
+}

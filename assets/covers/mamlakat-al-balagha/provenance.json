@@ -1,0 +1,54 @@
+{
+  "series": "مملكة البلاغة",
+  "author": "حنان لاشين",
+  "publisher": "عصير الكتب للنشر والتوزيع",
+  "verified": "2026-09-08",
+  "seriesSources": [
+    "https://daralsun.com/سلسلة-مملكة-البلاغة---حنان-لاشين/p934104371",
+    "https://www.alfokara.com/كتاب/مملكه-البلاغه"
+  ],
+  "covers": [
+    {
+      "volume": 1,
+      "title": "إيكادولي",
+      "file": "01-ikadoli.jpg",
+      "sourcePage": "https://daralsun.com/حنان-لاشين---إيكادولي/p245240079"
+    },
+    {
+      "volume": 2,
+      "title": "أوبال",
+      "file": "02-opal.jpg",
+      "sourcePage": "https://nss-book.com/أوبال/p1344768050"
+    },
+    {
+      "volume": 3,
+      "title": "أمانوس",
+      "file": "03-amanos.jpg",
+      "sourcePage": "https://www.centrepointstores.com/sa/en/Books/Books/Arabic-Books/Arabic-Books/KETABAKLBABAK-Amanos---Hanan-Lashin-%28Arabic-Version%29/p/167207153"
+    },
+    {
+      "volume": 4,
+      "title": "كويكول",
+      "file": "04-quickol.jpg",
+      "sourcePage": "https://roouckan.com/VyNvVl"
+    },
+    {
+      "volume": 5,
+      "title": "سقطرى",
+      "file": "05-socotra.jpg",
+      "sourcePage": "https://www.alkirtas.com/roman-langue-arabe/49447-سقطرى-د-حنان-لاشين-9789779921686.html"
+    },
+    {
+      "volume": 6,
+      "title": "سيروش",
+      "file": "06-sirosh.jpg",
+      "sourcePage": "https://darzerrouk.com/products/سيروش-حنان-لاشين"
+    },
+    {
+      "volume": 7,
+      "title": "أبادول",
+      "file": "07-abadol.jpg",
+      "sourcePage": "https://nss-book.com/أبادول/p386089464"
+    }
+  ]
+}
