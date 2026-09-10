@@ -28,8 +28,10 @@ const url = pathToFileURL(path.resolve(__dirname, '../reel.html')).href;
     });
     await page.click('#btnPick'); await page.waitForSelector('.rec-shell');
     assert.equal(await page.locator('[data-source][aria-pressed="true"]').textContent(), 'My List');
+    assert.equal(await page.locator('[data-media]').count(), 7, 'All exact media formats must be directly available');
     await page.fill('#recInput', 'I want a fantasy movie under 170 minutes'); await page.click('.rec-form button[type="submit"]');
     await page.waitForSelector('.rec-result');
+    assert.equal(await page.locator('[data-media="movie"]').getAttribute('aria-pressed'), 'true');
     const first = await page.locator('.rec-result h2').textContent();
     assert.equal(await page.evaluate(() => window.recSearchCalls), 0, 'My List must make zero catalog searches');
     await page.screenshot({ path: path.join(output, 'recommendations-desktop.png'), fullPage: true });
@@ -47,9 +49,17 @@ const url = pathToFileURL(path.resolve(__dirname, '../reel.html')).href;
     await page.click('[data-rec="reset"]'); await page.click('[data-mode="ask"]');
     await page.waitForSelector('.rec-question');
     assert.ok(await page.locator('.rec-main [data-answer]').count() >= 3);
+    assert.equal(await page.locator('[data-mode="ask"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('.rec-chat').count(), 1);
+    await page.click('[data-mode="tell"]');
+    assert.equal(await page.locator('[data-mode="tell"]').getAttribute('aria-selected'), 'true');
+    assert.match(await page.locator('.rec-main').textContent(), /Describe your perfect next pick/);
+    await page.click('[data-mode="ask"]');
+    assert.equal(await page.locator('[data-mode="ask"]').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('.rec-chat').count(), 1, 'Guided conversation survives mode switches');
     assert.ok(await page.locator('#recInput').isVisible());
     await page.keyboard.press('Escape'); assert.equal(await page.locator('#modal').getAttribute('aria-hidden'), 'true');
-    await page.click('#btnPick'); assert.match(await page.locator('.rec-main').textContent(), /What would feel good/);
+    await page.click('#btnPick'); assert.match(await page.locator('.rec-main').textContent(), /Conversation/);
     // The UI remains within the viewport in both themes, at desktop and narrow widths.
     for (const theme of ['dark', 'light']) for (const width of [1440, 768, 390, 320]) {
       await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
@@ -61,7 +71,17 @@ const url = pathToFileURL(path.resolve(__dirname, '../reel.html')).href;
       assert.equal(overflow, false, `${theme} at ${width}px overflows`);
       const composerOnscreen = await page.locator('#recInput').evaluate(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
       assert.equal(composerOnscreen, true, `Reply input must stay visible at ${width}px`);
-      if (width === 390) await page.screenshot({ path: path.join(output, `recommendations-mobile-${theme}.png`), fullPage: true });
+      if (width === 390) {
+        const formatsFit = await page.locator('.rec-formats .rec-segment').evaluate(el => {
+          const bounds = el.getBoundingClientRect();
+          return [...el.children].every(child => {
+            const item = child.getBoundingClientRect();
+            return item.left >= bounds.left - 1 && item.right <= bounds.right + 1;
+          });
+        });
+        assert.equal(formatsFit, true, 'Every media format must remain visible in the compact mobile grid');
+        await page.screenshot({ path: path.join(output, `recommendations-mobile-${theme}.png`), fullPage: true });
+      }
     }
     await page.emulateMedia({ reducedMotion: 'reduce' });
     assert.equal(await page.locator('.rec-question').evaluate(el => getComputedStyle(el).animationName), 'none');
@@ -117,6 +137,6 @@ const url = pathToFileURL(path.resolve(__dirname, '../reel.html')).href;
     assert.equal(aiRankCalls, 2);
     await hosted.close();
     assert.deepEqual(errors, []);
-    console.log('PASS: My List isolation, preserved constraints, no repeats, feedback, empty state, Ask Me chips/free text, session reopening, add, cancellation, reduced motion, 8 theme/viewport layouts, always-visible reply field, hosted AI pipeline and hard-constraint preservation.');
+    console.log('PASS: My List isolation, preserved constraints, no repeats, feedback, empty state, Guide me conversation/chips/free text, exact formats, mode switching, session reopening, add, cancellation, reduced motion, 8 theme/viewport layouts, always-visible reply field, hosted AI pipeline and hard-constraint preservation.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -2,10 +2,11 @@
 
 ## Architecture and scope
 
-`Pick for me` now opens a temporary conversational recommendation session. Tell Reel,
-Ask Me, and Surprise Me share a source selector (My List / Discover / Mix), a
-Watch / Read / Anything selector, removable intent chips, free-text input, and
-poster-led results. The composer stays visible while the conversation scrolls.
+`Pick for me` opens a temporary conversational recommendation session. Ask Reel,
+Guide me, and Surprise me share a source selector (My List / Discover / Mix), an
+exact All / Movies / Series / Anime / Books / Manga / Manhwa selector, removable
+intent chips, free-text input, and poster-led results. Guide me keeps a visible
+Reel-and-user transcript. The composer stays visible while the conversation scrolls.
 
 The session includes structured source/type, current and desired mood, audience,
 context, genres, semantic themes, inclusion/exclusion signals, runtime/page bounds,

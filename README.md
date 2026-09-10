@@ -12,8 +12,8 @@ records, and poster handling for both vertical and horizontal artwork.
 Double-click **`reel.html`**. That's it. No install, no server, no Node.
 
 Keep the accompanying `assets` folder beside the file. Library tracking and basic
-recommendations work this way. The new **Pick for me** conversation adds Tell Reel,
-Ask Me, Surprise Me, source controls, and context-preserving refinements. AI matching
+recommendations work this way. The **Pick for me** conversation adds Ask Reel,
+Guide me, Surprise me, exact media-format and source controls, and context-preserving refinements. AI matching
 requires the hosted app, sign-in, and server configuration. See
 [recommendation setup and architecture](RECOMMENDATIONS.md).
 

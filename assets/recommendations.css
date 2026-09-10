@@ -4,49 +4,54 @@
    FIRST VIEWPORT: Compact mode/source controls above an open question and composer;
    the result pairs a substantial portrait with facts and decisive actions.
    FEEL: A 180ms question/result entrance, stable controls, reduced-motion parity. */
-.modal:has(.rec-shell){width:min(900px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:hidden}
+.modal:has(.rec-shell){width:min(1040px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:hidden}
 .rec-shell{--rec-ease:cubic-bezier(.16,1,.3,1);--rec-accent:#425af0;--rec-accent-hover:#334de3;display:flex;flex-direction:column;max-height:calc(100dvh - 32px)}
 .rec-shell>.sheet-head{flex-shrink:0}
 .rec-shell .sheet-head h3{font-family:"Reel Display",sans-serif;font-size:27px;font-weight:600}
-.rec-body{padding:22px 24px 18px;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:var(--line2) var(--bg2)}
-.rec-modes{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:12px}
-.rec-modes button{flex:1;min-height:44px;border-radius:9px;color:var(--fg2);font-weight:650;display:flex;align-items:center;justify-content:center;gap:8px}
-.rec-modes button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
-.rec-controls{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.rec-body{padding:14px 20px 12px;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:var(--line2) var(--bg2);scroll-behavior:smooth}
+.rec-modes{display:flex;gap:5px;margin-bottom:12px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.rec-modes button{flex:1;min-width:0;min-height:42px;border-radius:8px;color:var(--fg2);font-weight:650;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.rec-modes button[aria-selected="true"]{background:var(--fg);color:var(--bg);box-shadow:0 6px 18px -12px rgba(0,0,0,.72)}
+.rec-controls{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.8fr);gap:12px;align-items:end;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .rec-controls fieldset{border:0;margin:0;padding:0;min-width:0;flex:1}
-.rec-controls legend{font-size:12px;color:var(--fg2);margin-bottom:7px}
+.rec-controls legend{font-size:11px;color:var(--fg2);margin-bottom:5px}
 .rec-segment{display:flex;gap:3px;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:11px}
-.rec-segment button{flex:1;white-space:nowrap;min-height:38px;padding:5px 10px;border-radius:8px;color:var(--fg2);font-size:13px;font-weight:650}
+.rec-segment button{flex:1;min-width:0;white-space:nowrap;min-height:36px;padding:5px 8px;border-radius:8px;color:var(--fg2);font-size:12px;font-weight:650}
+.rec-formats .rec-segment{overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+.rec-formats .rec-segment::-webkit-scrollbar{display:none}
+.rec-formats .rec-segment button{min-width:max-content;scroll-snap-align:start}
 .rec-segment button[aria-pressed="true"],.rec-shell .btn.primary{background:var(--rec-accent);color:#ffffff}
-.rec-main{padding:26px 0 20px;min-height:210px}
-.rec-main h2{font-family:"Reel Display",sans-serif;font-size:36px;line-height:1.1;font-weight:600;margin:0 0 12px;text-wrap:balance}
+.rec-main{padding:16px 0 12px;min-height:240px}
+.rec-main h2{font-family:"Reel Display",sans-serif;font-size:33px;line-height:1.05;font-weight:600;margin:0 0 9px;text-wrap:balance}
 .rec-main p{color:var(--fg2);max-width:65ch;line-height:1.7;margin:0 0 16px;overflow-wrap:anywhere}
-.rec-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.rec-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
 .rec-chip{min-height:40px;padding:8px 12px;border:1px solid var(--line2);border-radius:9px;color:var(--fg);text-align:start;font-size:13px}
 .rec-shell button{transition:background-color 150ms ease,color 150ms ease,border-color 150ms ease,transform 140ms var(--rec-ease)}
 .rec-shell button:hover:not(:disabled){background-color:var(--panel2)}
 .rec-shell .btn.primary:hover:not(:disabled),.rec-segment button[aria-pressed="true"]:hover{background-color:var(--rec-accent-hover);color:#ffffff}
-.rec-modes button[aria-pressed="true"]:hover:not(:disabled){background:var(--fg);color:var(--bg)}
+.rec-modes button[aria-selected="true"]:hover:not(:disabled){background:var(--fg);color:var(--bg)}
 .rec-shell button:active:not(:disabled){transform:scale(.97)}
 .rec-shell :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .rec-shell button:disabled{cursor:wait;opacity:.55}
-.rec-context{display:flex;gap:6px;flex-wrap:wrap;padding-top:14px}
+.rec-context{display:flex;gap:6px;flex-wrap:nowrap;padding-top:9px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+.rec-context::-webkit-scrollbar{display:none}
 .rec-context:empty{display:none}
-.rec-context button{min-height:32px;display:flex;gap:7px;align-items:center;padding:5px 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:11px;text-align:start}
+.rec-context button{min-height:32px;flex:0 0 auto;scroll-snap-align:start;display:flex;gap:7px;align-items:center;padding:5px 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:11px;text-align:start}
 .rec-context button span{color:var(--fg2)}
-.rec-form{border-top:1px solid var(--line);padding:14px 24px 20px;flex-shrink:0;background:var(--bg2)}
+.rec-form{border-top:1px solid var(--line);padding:10px 20px 14px;flex-shrink:0;background:var(--bg2)}
 .rec-form label{display:block;color:var(--fg2);font-size:12px;margin-bottom:7px}
 .rec-composer{display:flex;gap:9px;align-items:flex-end}
-.rec-composer textarea{flex:1;min-width:0;min-height:64px;max-height:180px;resize:vertical;padding:12px;border:1px solid var(--line2);border-radius:11px;background:var(--panel);color:var(--fg);line-height:1.5;caret-color:var(--accent)}
+.rec-composer textarea{flex:1;min-width:0;min-height:54px;max-height:128px;resize:vertical;padding:10px 12px;border:1px solid var(--line2);border-radius:11px;background:var(--panel);color:var(--fg);line-height:1.5;caret-color:var(--accent)}
 .rec-composer textarea::placeholder{color:var(--fg2)}
 .rec-composer .btn{min-height:48px}
-.rec-privacy{margin-top:14px;color:var(--fg2);font-size:11px;line-height:1.6}
+.rec-privacy{margin-top:9px;color:var(--fg2);font-size:11px;line-height:1.6}
 .rec-privacy summary{cursor:pointer;width:fit-content}
 .rec-privacy label{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}
 .rec-privacy input{accent-color:var(--accent);width:17px;height:17px}
-.rec-engine{display:flex;align-items:center;gap:7px;margin:10px 0 0;color:var(--fg2);font-size:11px;line-height:1.6}
+.rec-engine{display:flex;align-items:center;gap:7px;margin:7px 0 0;color:var(--fg2);font-size:11px;line-height:1.5}
 .rec-engine .lucide{flex-shrink:0;width:14px;height:14px}
-.rec-result{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:26px;align-items:start;animation:rec-arrive 180ms var(--rec-ease)}
+.rec-engine button{margin-left:auto;min-height:30px;padding:4px 8px;border:1px solid var(--line2);border-radius:8px;color:var(--fg);font-size:11px;white-space:nowrap}
+.rec-result{display:grid;grid-template-columns:minmax(140px,178px) minmax(0,1fr);gap:18px;align-items:start;animation:rec-arrive 180ms var(--rec-ease)}
 .rec-cover{width:100%;aspect-ratio:2/3;object-fit:contain;background:var(--panel);border-radius:14px;display:block}
 .rec-result>.rec-cover{grid-row:1/span 2}
 .rec-description{grid-column:2}
@@ -70,21 +75,38 @@
 .rec-question{animation:rec-arrive 180ms var(--rec-ease)}
 .rec-request{font-size:12px;color:var(--fg2);margin:0 0 14px;white-space:pre-wrap;overflow-wrap:anywhere}
 @keyframes rec-arrive{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.rec-mode-ask{display:grid;grid-template-columns:minmax(210px,.72fr) minmax(0,1.55fr);gap:18px;align-items:start}
+.rec-chat{min-width:0;max-height:310px;overflow:auto;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;scrollbar-color:var(--line2) transparent}
+.rec-chat-head{display:flex;align-items:center;gap:7px;padding:1px 3px 8px;color:var(--fg2);font-size:11px;font-weight:700}
+.rec-chat-head .lucide{width:14px;height:14px}
+.rec-chat-turns{display:flex;flex-direction:column;gap:8px}
+.rec-turn{max-width:92%;padding:8px 10px;border-radius:10px;background:var(--bg2);border:1px solid var(--line)}
+.rec-turn.user{align-self:flex-end;background:color-mix(in srgb,var(--rec-accent) 18%,var(--panel));border-color:color-mix(in srgb,var(--rec-accent) 48%,var(--line))}
+.rec-turn span{display:block;margin-bottom:2px;color:var(--fg2);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.rec-turn p{margin:0;font-size:12px;line-height:1.45;color:var(--fg)}
+.rec-stage{min-width:0}
+.rec-view-result.rec-mode-ask .rec-chat{max-height:280px}
 @media(max-width:600px){
   .modal:has(.rec-shell){width:calc(100% - 16px);max-height:calc(100dvh - 16px)}
   .rec-shell{max-height:calc(100dvh - 16px)}
   .rec-shell>.sheet-head{padding:12px 14px;gap:6px;flex-wrap:nowrap}
   .rec-shell .sheet-head h3{font-size:24px}
   .rec-shell .sheet-head .btn{padding:8px;font-size:11px}
-  .rec-form{padding:12px 16px 16px}
-  .rec-body{padding:16px}.rec-controls{gap:14px}.rec-controls fieldset{flex-basis:100%}
-  .rec-modes{gap:3px}.rec-modes button{font-size:12px;gap:5px}.rec-modes .lucide{width:15px}
-  .rec-main{padding:22px 0 18px}.rec-main h2{font-size:30px}
-  .rec-result{grid-template-columns:112px minmax(0,1fr);gap:16px}
+  .rec-form{padding:9px 12px 12px}
+  .rec-body{padding:10px 12px}.rec-controls{grid-template-columns:1fr;gap:8px}
+  .rec-formats .rec-segment{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}
+  .rec-formats .rec-segment button{min-width:0;padding-inline:4px}
+  .rec-modes{gap:3px;margin-bottom:9px}.rec-modes button{font-size:11px;gap:4px;padding-inline:5px}.rec-modes .lucide{width:14px}
+  .rec-main{padding:12px 0 10px;min-height:210px}.rec-main h2{font-size:27px}
+  .rec-mode-ask{grid-template-columns:1fr;gap:10px}.rec-chat{max-height:128px}.rec-view-result.rec-mode-ask .rec-chat{max-height:96px}
+  .rec-result{grid-template-columns:96px minmax(0,1fr);gap:12px}
   .rec-result>.rec-cover{grid-row:1}
   .rec-result .rec-description{grid-column:1/-1}.rec-result .rec-actions{margin-top:8px}
-  .rec-result dl{gap:10px 14px}.rec-result h2{font-size:28px}
+  .rec-result dl{gap:8px 11px}.rec-result h2{font-size:24px}
   .rec-composer{align-items:stretch}.rec-composer textarea{font-size:16px}.rec-composer .btn{padding:10px}
   .rec-chip,.rec-segment button,.rec-context button{min-height:44px}
 }
-@media(prefers-reduced-motion:reduce){.rec-shell *{animation:none!important;transition:none!important}}
+@media(max-height:680px) and (min-width:601px){
+  .rec-body{padding-top:9px}.rec-modes{margin-bottom:8px}.rec-modes button{min-height:36px}.rec-controls{padding-bottom:8px}.rec-main{padding-top:10px;min-height:190px}.rec-result{grid-template-columns:124px minmax(0,1fr)}.rec-form{padding-block:8px 10px}.rec-composer textarea{min-height:46px;max-height:78px}.rec-chat{max-height:220px}
+}
+@media(prefers-reduced-motion:reduce){.rec-shell *{animation:none!important;transition:none!important}.rec-body{scroll-behavior:auto}}

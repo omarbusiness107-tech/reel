@@ -53,6 +53,7 @@ test('read/watch and exact media types stay distinct', () => {
   const s = R.session('mix', 'read');
   assert.equal(R.rank([movie('Movie'), R.candidate({ title: 'Book', type: 'book' })], s).length, 1);
   R.interpret(s, 'I want manhwa'); assert.deepEqual(R.mediaTypes(s.intent), ['manhwa']);
+  R.interpret(s, 'any format'); assert.deepEqual(R.mediaTypes(s.intent), R.types);
 });
 test('completed, dropped, waiting, shown and rejected records are not repeated', () => {
   const s = R.session(); const rejected = movie('Rejected'); R.show(s, rejected); R.reject(s);
@@ -78,7 +79,7 @@ test('only public shortlist facts leave the client', () => {
   const serialized = JSON.stringify(R.facts(c)); assert.ok(!serialized.includes('SECRET')); assert.ok(!serialized.includes('private-local-id'));
   assert.equal(R.facts(c).rating, undefined);
 });
-test('Ask Me is bounded and never repeats the same question', () => {
+test('Guide me is bounded and never repeats the same question', () => {
   const s = R.session(); s.mode = 'ask';
   for (const answer of ['Something relaxing', 'Something to watch', 'Under 120 minutes']) {
     const q = R.question(s); assert.ok(q); assert.ok(q.chips.length >= 3); s.questions.push(q.id); R.interpret(s, answer);

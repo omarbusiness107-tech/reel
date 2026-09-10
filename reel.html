@@ -4778,7 +4778,7 @@ window.reelRecommendationBridge = {
   escape:esc,icon,icons:refreshIcons,show:showModal,toast,runtime:runtimeLabel,
   library:()=>state.items,language:()=>state.ui.language||'en',signedIn:()=>!!cloud.user,
   token:async()=>{const session=await cloud.client?.auth.getSession();return session?.data?.session?.access_token||null;},
-  find:recommendationLibraryItem,add:addRecommendation,
+  find:recommendationLibraryItem,add:addRecommendation,settings:()=>{closeSheets();modalSettings();},
   seen:async candidate=>{const item=addRecommendation(candidate);await changeItemStatus(item,'done');refreshLibrarySurfaces({counts:true});},
   details:candidate=>{
     const saved=recommendationLibraryItem(candidate);

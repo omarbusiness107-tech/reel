@@ -241,7 +241,7 @@ Spacing follows a tight working rhythm of `4px`, `8px`, `12px`, `18px`, `24px`, 
 
 ### Recommendation dialog
 
-The recommendation dialog has a scrollable conversation body and a separate, always-visible reply composer within the dynamic viewport. It reaches a maximum width of `900px`; the result places a portrait up to `220px` wide beside title facts and explanation. At `600px` and below, the portrait is `112px` wide, source/media groups stack, and the explanation and actions span the full row below the title. Answer, source/media, and removable preference controls have a `44px` mobile minimum height; the mobile reply field uses `16px` text.
+The recommendation dialog has a scrollable conversation body and a separate, always-visible reply composer within the dynamic viewport. It reaches a maximum width of `1040px`; compact mode, source, and exact-format controls keep the result in the first view. The result places a contained portrait up to `178px` wide beside title facts and explanation. Guide me uses a persistent Reel-and-user transcript beside the current question or result on desktop, then stacks into a short scrollable transcript on mobile. At `600px` and below, the portrait is `96px` wide and the explanation and actions span the full row below the title. Answer, source/media, and removable preference controls have a `44px` mobile minimum height; the mobile reply field uses `16px` text.
 
 ## Elevation & Depth
 
@@ -311,7 +311,7 @@ The loading mark is a `42px` framed aperture with a cobalt inner exposure sweepi
 
 ### Recommendation Conversation
 
-A precise extension of Pick for me, using the existing carbon/paper surfaces, condensed headings, and Manrope controls. Present one contextual question with optional answer chips, retain the free-text composer, and show the active source and removable preferences above the conversation. Selected mode buttons reverse theme foreground and background; selected source/media buttons and primary actions use the recommendation cobalt variants.
+A precise extension of Pick for me, using the existing carbon/paper surfaces, condensed headings, and Manrope controls. Ask Reel accepts a direct request, Guide me keeps a visible conversation with contextual answer chips, and Surprise me makes one varied choice. Retain the free-text composer, and show the active source, exact format, and removable preferences above the conversation. Selected mode buttons reverse theme foreground and background; selected source/media buttons and primary actions use the recommendation cobalt variants.
 
 Results pair real cover artwork with labeled catalog facts, a grounded explanation, and visible Another, View details, and library actions. Show an explicit cover-unavailable state when artwork is absent. Loading, empty, and failure states retain the composer and preferences; input is temporarily disabled during matching. After an asynchronous update, keyboard focus returns to a surviving action or the new heading. Questions and results arrive over `180ms` with a `5px` upward settle; reduced motion removes all recommendation animation and transitions.
 

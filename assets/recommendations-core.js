@@ -60,6 +60,7 @@
     for (const [type, re] of Object.entries(typePatterns)) if (re.test(t) && !negative(type + 's?')) { i.mediaType = type; break; }
     if (/^something to read$|^read$/.test(t)) i.mediaType = 'read';
     if (/^something to watch$|^watch$/.test(t)) i.mediaType = 'watch';
+    if (/^(?:any format|anything|all formats)$/.test(t)) i.mediaType = 'any';
     for (const mood of ['tired', 'sad', 'lonely', 'stressed', 'happy', 'bored']) if (t.includes(mood)) add('currentMood', mood);
     if (/long day|stressful day/.test(t)) add('currentMood', 'tired');
     const desired = { funny: /funny|laugh|humou?r|comedy/, comforting: /comfort|cozy|cosy/, relaxing: /relax|easy|chill|distraction/, suspenseful: /hooked|suspense|thriller/, thoughtful: /think|mind.blow|psychological/, emotional: /emotional|match my mood/, scary: /scary|horror/, imaginative: /imaginative|fantasy/ };
@@ -96,8 +97,8 @@
     const q = (id, text, chips) => s.questions.includes(id) ? null : { id, text, chips };
     if (i.currentMood.length && !i.desiredMood.length) return q('mood', 'Do you want to match that feeling, or change it?', ['Something comforting', 'Make me laugh', 'A distraction', 'Match my mood']);
     if (s.mode !== 'ask') return null;
-    if (!i.desiredMood.length && !i.genres.length && !i.themes.length) return q('experience', 'What would feel good right now?', ['Something relaxing', 'Make me laugh', 'Keep me hooked', 'Make me think', 'Surprise me']);
-    if (i.mediaType === 'any') return q('medium', 'Would you rather watch or read?', ['Something to watch', 'Something to read', 'Either is good']);
+    if (!i.desiredMood.length && !i.genres.length && !i.themes.length) return q('experience', 'What kind of experience are you looking for?', ['Something relaxing', 'Make me laugh', 'Keep me hooked', 'Make me think', 'Surprise me']);
+    if (i.mediaType === 'any') return q('medium', 'Which format sounds best right now?', ['A movie', 'A series', 'An anime', 'A book', 'Any format']);
     if (!i.maxRuntime && !['book', 'manga', 'manhwa', 'read'].includes(i.mediaType)) return q('time', 'How much time do you have?', ['Under 30 minutes', 'About an hour', 'Under 120 minutes', 'No time limit']);
     return null;
   }
