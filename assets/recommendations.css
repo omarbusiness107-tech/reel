@@ -1,0 +1,90 @@
+/* THESIS: One decision, one conversation, not a wall of filters.
+   OWN-WORLD: Reel's carbon/paper panels, cobalt signal, Manrope and condensed headings.
+   STORY: Choose a source, describe a feeling, inspect a grounded pick, refine it.
+   FIRST VIEWPORT: Compact mode/source controls above an open question and composer;
+   the result pairs a substantial portrait with facts and decisive actions.
+   FEEL: A 180ms question/result entrance, stable controls, reduced-motion parity. */
+.modal:has(.rec-shell){width:min(900px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:hidden}
+.rec-shell{--rec-ease:cubic-bezier(.16,1,.3,1);--rec-accent:#425af0;--rec-accent-hover:#334de3;display:flex;flex-direction:column;max-height:calc(100dvh - 32px)}
+.rec-shell>.sheet-head{flex-shrink:0}
+.rec-shell .sheet-head h3{font-family:"Reel Display",sans-serif;font-size:27px;font-weight:600}
+.rec-body{padding:22px 24px 18px;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:var(--line2) var(--bg2)}
+.rec-modes{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.rec-modes button{flex:1;min-height:44px;border-radius:9px;color:var(--fg2);font-weight:650;display:flex;align-items:center;justify-content:center;gap:8px}
+.rec-modes button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.rec-controls{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.rec-controls fieldset{border:0;margin:0;padding:0;min-width:0;flex:1}
+.rec-controls legend{font-size:12px;color:var(--fg2);margin-bottom:7px}
+.rec-segment{display:flex;gap:3px;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:11px}
+.rec-segment button{flex:1;white-space:nowrap;min-height:38px;padding:5px 10px;border-radius:8px;color:var(--fg2);font-size:13px;font-weight:650}
+.rec-segment button[aria-pressed="true"],.rec-shell .btn.primary{background:var(--rec-accent);color:#ffffff}
+.rec-main{padding:26px 0 20px;min-height:210px}
+.rec-main h2{font-family:"Reel Display",sans-serif;font-size:36px;line-height:1.1;font-weight:600;margin:0 0 12px;text-wrap:balance}
+.rec-main p{color:var(--fg2);max-width:65ch;line-height:1.7;margin:0 0 16px;overflow-wrap:anywhere}
+.rec-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.rec-chip{min-height:40px;padding:8px 12px;border:1px solid var(--line2);border-radius:9px;color:var(--fg);text-align:start;font-size:13px}
+.rec-shell button{transition:background-color 150ms ease,color 150ms ease,border-color 150ms ease,transform 140ms var(--rec-ease)}
+.rec-shell button:hover:not(:disabled){background-color:var(--panel2)}
+.rec-shell .btn.primary:hover:not(:disabled),.rec-segment button[aria-pressed="true"]:hover{background-color:var(--rec-accent-hover);color:#ffffff}
+.rec-modes button[aria-pressed="true"]:hover:not(:disabled){background:var(--fg);color:var(--bg)}
+.rec-shell button:active:not(:disabled){transform:scale(.97)}
+.rec-shell :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.rec-shell button:disabled{cursor:wait;opacity:.55}
+.rec-context{display:flex;gap:6px;flex-wrap:wrap;padding-top:14px}
+.rec-context:empty{display:none}
+.rec-context button{min-height:32px;display:flex;gap:7px;align-items:center;padding:5px 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:11px;text-align:start}
+.rec-context button span{color:var(--fg2)}
+.rec-form{border-top:1px solid var(--line);padding:14px 24px 20px;flex-shrink:0;background:var(--bg2)}
+.rec-form label{display:block;color:var(--fg2);font-size:12px;margin-bottom:7px}
+.rec-composer{display:flex;gap:9px;align-items:flex-end}
+.rec-composer textarea{flex:1;min-width:0;min-height:64px;max-height:180px;resize:vertical;padding:12px;border:1px solid var(--line2);border-radius:11px;background:var(--panel);color:var(--fg);line-height:1.5;caret-color:var(--accent)}
+.rec-composer textarea::placeholder{color:var(--fg2)}
+.rec-composer .btn{min-height:48px}
+.rec-privacy{margin-top:14px;color:var(--fg2);font-size:11px;line-height:1.6}
+.rec-privacy summary{cursor:pointer;width:fit-content}
+.rec-privacy label{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}
+.rec-privacy input{accent-color:var(--accent);width:17px;height:17px}
+.rec-engine{display:flex;align-items:center;gap:7px;margin:10px 0 0;color:var(--fg2);font-size:11px;line-height:1.6}
+.rec-engine .lucide{flex-shrink:0;width:14px;height:14px}
+.rec-result{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr);gap:26px;align-items:start;animation:rec-arrive 180ms var(--rec-ease)}
+.rec-cover{width:100%;aspect-ratio:2/3;object-fit:contain;background:var(--panel);border-radius:14px;display:block}
+.rec-result>.rec-cover{grid-row:1/span 2}
+.rec-description{grid-column:2}
+.rec-no-cover{display:grid;place-items:center;padding:20px;color:var(--fg2);text-align:center;border:1px solid var(--line)}
+.rec-result h2{margin-bottom:8px}
+.rec-result .rec-meta{font-size:12px;color:var(--fg2);line-height:1.7;margin-bottom:15px}
+.rec-result dl{margin:0 0 16px;display:flex;gap:12px 20px;flex-wrap:wrap}
+.rec-result dt{font-size:11px;color:var(--fg2)}
+.rec-result dd{margin:3px 0 0;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
+.rec-result h4{font-size:13px;margin:17px 0 5px}
+.rec-result .rec-why{font-size:13px;margin-bottom:15px}
+.rec-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.rec-actions .btn{min-height:42px}
+.rec-secondary{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.rec-secondary button{min-height:36px;font-size:12px;text-decoration:underline;text-underline-offset:4px;color:var(--fg2)}
+.rec-busy{display:flex;gap:18px;align-items:center;min-height:180px}
+.rec-busy b{display:block;font-size:17px;margin-bottom:5px}
+.rec-busy p{font-size:13px;margin:0}
+.rec-error{padding:18px;background:var(--panel);border-radius:12px;border:1px solid var(--line)}
+.rec-error h2{font-size:28px}
+.rec-question{animation:rec-arrive 180ms var(--rec-ease)}
+.rec-request{font-size:12px;color:var(--fg2);margin:0 0 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+@keyframes rec-arrive{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){
+  .modal:has(.rec-shell){width:calc(100% - 16px);max-height:calc(100dvh - 16px)}
+  .rec-shell{max-height:calc(100dvh - 16px)}
+  .rec-shell>.sheet-head{padding:12px 14px;gap:6px;flex-wrap:nowrap}
+  .rec-shell .sheet-head h3{font-size:24px}
+  .rec-shell .sheet-head .btn{padding:8px;font-size:11px}
+  .rec-form{padding:12px 16px 16px}
+  .rec-body{padding:16px}.rec-controls{gap:14px}.rec-controls fieldset{flex-basis:100%}
+  .rec-modes{gap:3px}.rec-modes button{font-size:12px;gap:5px}.rec-modes .lucide{width:15px}
+  .rec-main{padding:22px 0 18px}.rec-main h2{font-size:30px}
+  .rec-result{grid-template-columns:112px minmax(0,1fr);gap:16px}
+  .rec-result>.rec-cover{grid-row:1}
+  .rec-result .rec-description{grid-column:1/-1}.rec-result .rec-actions{margin-top:8px}
+  .rec-result dl{gap:10px 14px}.rec-result h2{font-size:28px}
+  .rec-composer{align-items:stretch}.rec-composer textarea{font-size:16px}.rec-composer .btn{padding:10px}
+  .rec-chip,.rec-segment button,.rec-context button{min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){.rec-shell *{animation:none!important;transition:none!important}}

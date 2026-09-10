@@ -1,6 +1,6 @@
 # Reel
 
-A single-file tracker for movies, series, anime, manga, manhwa, and books: what you have watched, what you
+A lightweight tracker for movies, series, anime, manga, manhwa, and books: what you have watched, what you
 want to watch, and exactly where you stopped.
 
 The interface is designed as a compact media program index. It includes a responsive dark
@@ -10,6 +10,12 @@ records, and poster handling for both vertical and horizontal artwork.
 ## Running it
 
 Double-click **`reel.html`**. That's it. No install, no server, no Node.
+
+Keep the accompanying `assets` folder beside the file. Library tracking and basic
+recommendations work this way. The new **Pick for me** conversation adds Tell Reel,
+Ask Me, Surprise Me, source controls, and context-preserving refinements. AI matching
+requires the hosted app, sign-in, and server configuration. See
+[recommendation setup and architecture](RECOMMENDATIONS.md).
 
 The same file adapts from 320px phones to large desktop screens. Navigation always stays
 in one horizontal line; on smaller screens its labeled tabs swipe smoothly instead of

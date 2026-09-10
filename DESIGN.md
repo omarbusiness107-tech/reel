@@ -91,6 +91,13 @@ components:
     rounded: "{rounded.control}"
     padding: "8px 13px"
     height: "38px"
+  recommendation-primary:
+    backgroundColor: "{colors.light-cobalt}"
+    textColor: "{colors.signal-ink}"
+    rounded: "{rounded.control}"
+  recommendation-primary-hover:
+    backgroundColor: "{colors.light-cobalt-pressed}"
+    textColor: "{colors.signal-ink}"
   search-field:
     backgroundColor: "{colors.carbon-panel}"
     textColor: "{colors.cool-paper}"
@@ -145,6 +152,8 @@ The palette behaves like a dim screening room with a cool printed program: neutr
 
 - **Projection Cobalt** (`#6276ff`): Marks primary actions, selected catalog controls, focus treatment, progress, and source links. Its pressed and hover state uses Deep Cobalt (`#4f66ff`).
 - **Light Projection Cobalt** (`#425af0`): Replaces Projection Cobalt in light mode so the signal remains distinct on paper-colored surfaces. Its pressed state is (`#334de3`).
+
+Recommendation primary actions and selected source/media controls use the Light Projection Cobalt variants in both themes for readable white labels. This is a scoped component treatment; mode selection instead inverts the current foreground and canvas colors, including on hover.
 
 ### Secondary
 
@@ -230,6 +239,10 @@ On compact screens, catalog cards narrow to `148px`. Navigation, controls, and f
 
 Spacing follows a tight working rhythm of `4px`, `8px`, `12px`, `18px`, `24px`, and `30px`. Sections use larger intervals, while metadata, controls, and card copy use the smaller steps. Horizontal shelves may reach the mobile viewport edge to preserve a continuous browsing gesture.
 
+### Recommendation dialog
+
+The recommendation dialog has a scrollable conversation body and a separate, always-visible reply composer within the dynamic viewport. It reaches a maximum width of `900px`; the result places a portrait up to `220px` wide beside title facts and explanation. At `600px` and below, the portrait is `112px` wide, source/media groups stack, and the explanation and actions span the full row below the title. Answer, source/media, and removable preference controls have a `44px` mobile minimum height; the mobile reply field uses `16px` text.
+
 ## Elevation & Depth
 
 Reel is flat by default and layered through surface tone, one-pixel rules, and poster imagery. The standard poster and dialog shadow is structural rather than decorative. Hover lift is reserved for media cards; menus and sheets receive stronger depth because they cross the page plane.
@@ -249,7 +262,7 @@ Reel is flat by default and layered through surface tone, one-pixel rules, and p
 
 The signature silhouette is a gently rounded `14px` media frame. Controls use tighter `8px` to `12px` corners, large panels use `16px`, and dialogs use `18px`. Fully circular geometry belongs only to tiny status swatches, progress tracks, and scroll thumbs. Borders are crisp one-pixel rules; image and panel clipping must respect the same radius as the visible container.
 
-Every card image uses one edge-to-edge `2:3` image plane with proportional `object-fit: cover`, centered positioning, no duplicate blurred layer, and no internal padding. Portrait posters are preferred for cards. When both orientations exist, the portrait file owns the card and small detail cover while the landscape file owns the expandable detail banner.
+Browsing card images use one edge-to-edge `2:3` image plane with proportional `object-fit: cover`, centered positioning, no duplicate blurred layer, and no internal padding. Portrait posters are preferred for cards. When both orientations exist, the portrait file owns the card and small detail cover while the landscape file owns the expandable detail banner. Recommendation results preserve the entire cover with proportional containment inside the same portrait shape.
 
 ## Components
 
@@ -295,6 +308,14 @@ All Titles groups Movies, Series, Anime, and Books into named consecutive rows. 
 ### Exposure Loader
 
 The loading mark is a `42px` framed aperture with a cobalt inner exposure sweeping across opposite halves over `760ms`. Poster skeletons use a quiet inset focus frame that fades between two opacity levels over `900ms`, without scrolling content. Both collapse to effectively static feedback when reduced motion is requested.
+
+### Recommendation Conversation
+
+A precise extension of Pick for me, using the existing carbon/paper surfaces, condensed headings, and Manrope controls. Present one contextual question with optional answer chips, retain the free-text composer, and show the active source and removable preferences above the conversation. Selected mode buttons reverse theme foreground and background; selected source/media buttons and primary actions use the recommendation cobalt variants.
+
+Results pair real cover artwork with labeled catalog facts, a grounded explanation, and visible Another, View details, and library actions. Show an explicit cover-unavailable state when artwork is absent. Loading, empty, and failure states retain the composer and preferences; input is temporarily disabled during matching. After an asynchronous update, keyboard focus returns to a surviving action or the new heading. Questions and results arrive over `180ms` with a `5px` upward settle; reduced motion removes all recommendation animation and transitions.
+
+Source: `assets/recommendations.css` and `assets/recommendations.js`. Surface direction: design variance `3`, motion intensity `3`, visual density `4`; these values describe this conversation rather than changing the library's density.
 
 ## Do's and Don'ts
 

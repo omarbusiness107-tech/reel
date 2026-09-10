@@ -1091,6 +1091,7 @@ body.sheet-open .back-to-top{visibility:hidden}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="assets/recommendations.css">
 </head>
 <body>
 <div id="pageTop" aria-hidden="true" style="height:1px"></div>
@@ -3396,6 +3397,7 @@ function openItem(id){
   }
 }
 function closeSheets(){
+  window.ReelRecommendationUI?.close();
   closeSmartSelect();
   $('#drawer').classList.remove('on'); $('#modal').classList.remove('on');
   $('#overlay').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true');
@@ -4309,6 +4311,10 @@ function modalBulk(){
 /* ---------- "what should I watch right now?" ---------- */
 const pickPrefs = {type:'all', genre:'', max:0};
 function modalPick(){
+  if(window.ReelRecommendationUI) return window.ReelRecommendationUI.open();
+  return modalLegacyPick();
+}
+function modalLegacyPick(){
   const pool0 = state.items.filter(i=>i.status==='want' || i.status==='going' || i.status==='paused');
   showModal(`
     <div class="sheet-head"><h3>What am I in the mood for?</h3><button class="btn sm ghost" data-close>Close</button></div>
@@ -4758,6 +4764,51 @@ document.addEventListener('keydown', e=>{
 });
 
 /* ---------- boot ---------- */
+// Narrow adapter: recommendations reuse storage, trusted lookups, and existing details.
+const recommendationLibraryItem = candidate => catalogLibraryItem(candidate) || state.items.find(item=>
+  item.id===candidate.id || (item.type===candidate.type && norm(item.title)===norm(candidate.title) && item.year===candidate.year));
+function addRecommendation(candidate){
+  const existing=recommendationLibraryItem(candidate);if(existing)return existing;
+  const item=makeItem(candidate.title,candidate.type,'want');
+  applyMeta(item,candidate,{force:true});item.catalogId=catalogIdentity(candidate);
+  state.items.push(item);refreshLibrarySurfaces({genres:true});
+  toast(`Added "${item.title}" to Want.`);return item;
+}
+window.reelRecommendationBridge = {
+  escape:esc,icon,icons:refreshIcons,show:showModal,toast,runtime:runtimeLabel,
+  library:()=>state.items,language:()=>state.ui.language||'en',signedIn:()=>!!cloud.user,
+  token:async()=>{const session=await cloud.client?.auth.getSession();return session?.data?.session?.access_token||null;},
+  find:recommendationLibraryItem,add:addRecommendation,
+  seen:async candidate=>{const item=addRecommendation(candidate);await changeItemStatus(item,'done');refreshLibrarySurfaces({counts:true});},
+  details:candidate=>{
+    const saved=recommendationLibraryItem(candidate);
+    if(saved){closeSheets();openItem(saved.id);return;}
+    closeSheets();
+    showModal(catalogDetailMarkup(candidate,-1),root=>{
+      const add=root.querySelector('[data-catalog-add]');
+      if(add){add.removeAttribute('data-catalog-add');add.onclick=()=>{const item=addRecommendation(candidate);closeSheets();openItem(item.id);};}
+    });
+  },
+  search:async(title,type,limit)=>{
+    if(type==='movie')return lookupMovie(title,limit,null);
+    if(type==='series')return lookupSeries(title,limit);
+    if(type==='anime')return lookupAnime(title,limit);
+    if(type==='book')return lookupBook(title,limit);
+    return (await lookupManga(title,Math.max(limit,10))).filter(c=>c.type===type);
+  },
+  enrich:async candidate=>{
+    await topUp(candidate);
+    // Factual US film classification from Wikidata, never an AI-generated age rating.
+    if(candidate.type==='movie' && candidate.wd && !candidate.ageRating){
+      try{
+        const data=await getJSON('https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&origin=*&property=P1657&entity='+encodeURIComponent(candidate.wd));
+        const rating=data.claims?.P1657?.find(claim=>claim.rank!=='deprecated')?.mainsnak?.datavalue?.value?.id;
+        if(rating){const label=await qidLabel(rating);if(/^(G|PG|PG-13|R|NC-17)$/.test(label))candidate.ageRating=label;}
+      }catch(e){/* Unknown suitability stays unknown and fails the child-safety constraint. */}
+    }
+    return candidate;
+  }
+};
 seedIfEmpty();
 render();
 initCloud();
@@ -4767,5 +4818,7 @@ if(state.items.length && !state.items.some(i=>i.cover)){
   toast('Your lists are loaded. Fetch the poster art?', 'Fetch covers', fetchMissingCovers);
 }
 </script>
+<script src="assets/recommendations-core.js"></script>
+<script src="assets/recommendations.js"></script>
 </body>
 </html>

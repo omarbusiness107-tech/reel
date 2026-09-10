@@ -1,0 +1,13 @@
+{
+  "name": "reel",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Reel watchlist, reading tracker and grounded recommendations",
+  "dependencies": { "@vercel/oidc": "^3.8.7" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "check": "node tools/check-syntax.cjs",
+    "test": "node --test tests/recommendations.test.cjs tests/recommend-api.test.cjs",
+    "test:recommendations-ui": "node tools/check-recommendations.cjs"
+  }
+}

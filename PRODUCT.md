@@ -31,6 +31,14 @@ The primary workflow is a lightweight daily check-in: search or browse, choose s
 - Catalog breadth and metadata completeness are limited by the public sources. The interface must distinguish unavailable facts from loading or failure.
 - Existing tab labels and main interaction paths remain recognizable. The requested redesign may improve hierarchy and grouping without changing the product model.
 
+### Recommendations
+
+`Pick for me` opens a temporary conversation with Tell Reel, Ask Me, and Surprise Me modes. My List, Discover, and Mix are explicit source choices; My List retrieves saved titles only, and an empty result never silently broadens the source or relaxes a hard preference. Recommendations use actual library or public-catalog records, with missing required length or classification data treated as unknown rather than a match.
+
+The conversation stays in tab memory across closing and reopening; Start over or reload clears it. Mood and rejection feedback do not become permanent preferences. Optional local genre affinity is off by default and requires at least three personal ratings of 8–10 in a genre. AI receives the request and a limited shortlist of title facts, excluding personal notes and the full library.
+
+Basic matching works without AI configuration. Live AI requires the hosted endpoint, server configuration, sign-in, and authorized access; it has not been activated or validated live in this implementation pass. New static controls and the basic parser are English; AI language support does not translate those controls. Persistent recommendation history, advanced behavioral learning, roulette, and collaborative picks remain deferred. See `RECOMMENDATIONS.md` and `assets/recommendations-core.js` for the implemented scope and limits.
+
 ## Brand Commitments
 
 The product name is `reel`. Its voice is concise, practical, media-aware, and free of inflated marketing language. A new logo is part of this redesign. The identity should feel at home around films, television, anime, and books without copying a streaming service.
