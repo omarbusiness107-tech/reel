@@ -64,10 +64,11 @@ test('ranking rejects invented IDs and unsupported evidence', async () => {
     return { ok: true, json: async () => ({ status: 'completed', output: [{ content: [{ type: 'output_text', text: JSON.stringify({ choices: [
       { id: 'invented', fits: true, why: 'Made up', evidence: { field: 'genres', quote: 'Comedy' } },
       { id: 'real', fits: true, why: 'Made up', evidence: { field: 'synopsis', quote: 'Spaceships everywhere' } },
-      { id: 'real', fits: true, why: 'A comedy matches your funny request.', evidence: { field: 'genres', quote: 'Comedy' } }
+      { id: 'real', fits: true, why: 'A comedy matches your funny request.', evidence: { field: 'genres', quote: 'Comedy' } },
+      { id: 'real', fits: true, why: 'Duplicate choice', evidence: { field: 'genres', quote: 'Comedy' } }
     ] }) }] }] }) };
   } });
-  const res = await invoke(handler, { action: 'rank', intent: { source: 'library' }, candidates: [{ id: 'real', title: 'Real', type: 'movie', genres: ['Comedy'], inLibrary: true }] });
+  const res = await invoke(handler, { action: 'rank', count: 5, intent: { source: 'library' }, candidates: [{ id: 'real', title: 'Real', type: 'movie', genres: ['Comedy'], inLibrary: true }] });
   assert.deepEqual(res.body.choices, [{ id: 'real', why: 'A comedy matches your funny request.' }]);
 });
 test('provider refusal and incomplete output are recoverable errors', async () => {

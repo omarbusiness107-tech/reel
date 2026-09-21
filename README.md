@@ -12,8 +12,8 @@ records, and poster handling for both vertical and horizontal artwork.
 Double-click **`reel.html`**. That's it. No install, no server, no Node.
 
 Keep the accompanying `assets` folder beside the file. Library tracking and basic
-recommendations work this way. The **Pick for me** conversation adds Ask Reel,
-Guide me, Surprise me, exact media-format and source controls, and context-preserving refinements. AI matching
+recommendations work this way. The **Pick 4 me** mini-app adds a combined conversational picker,
+Surprise me, exact media-format and source controls, single/list output, and context-preserving refinements. AI matching
 requires the hosted app, sign-in, and server configuration. See
 [recommendation setup and architecture](RECOMMENDATIONS.md).
 
@@ -69,9 +69,9 @@ So: use **Settings > Export JSON** now and then, and keep the backup file somewh
 
 ## Optional cloud sync
 
-Open **Settings > Cloud sync** in the deployed app to create an account or sign in. Your
-library is then saved privately to your account and restores on your other devices after
-you sign in. The first sign-in for a new account uploads the library in that browser;
+Use **Sign in** in the main navigation, or open the side drawer and choose **Sign in** or
+**Create account**. Your library is then saved privately to your account and restores on
+your other devices after you sign in. The first sign-in for a new account uploads the library in that browser;
 an existing cloud library is treated as the source of truth when you sign in elsewhere.
 
 Cloud sync uses Supabase Auth and a per-user database row protected by Row Level Security.
@@ -103,9 +103,15 @@ top with your exact spot — `0:42:18`, `S2 · E7`, `E14`, `Ch 33`, `p.142 / 380
 direct progress action. Movies open their timestamp details instead of showing a false
 `+1 ep` action.
 
-**Pick for me** answers "what do I watch right now": choose a kind, a genre, and how much time
-you have, and it draws a random title from your unwatched pile, with its synopsis and
-runtime. *Start it* drops it straight onto the Continue shelf.
+**Pick 4 me** answers “what should I watch or read right now?” Its desktop decision
+room keeps the recommendation and the conversation visible together; phones use clear
+Chat and Pick panels. Choose a source and format, then describe any combination of mood,
+person, origin, setting, theme, similarity, audience, or available time. Reel answers
+direct requests and asks only useful follow-ups in the same conversation. Ask for one
+pick or a natural list such as “give me 5 gun movies.” Every result uses a real library
+or catalog record, explains the match or closest tradeoff, avoids session repeats, and
+stays linked to the request that produced it. Surprise me keeps the same result workspace
+but removes the composer.
 
 **Suggested** is a separate status from **Want**. Your own 360 titles stay in Want; the
 titles reel added for you sit in Suggested, so your real watchlist is never diluted by

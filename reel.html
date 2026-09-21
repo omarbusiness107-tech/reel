@@ -489,7 +489,7 @@ select.mini:focus,.catalog-select select:focus{border-color:var(--accent);box-sh
 .catalog-loading-copy span{display:block;font-size:12px;margin-top:2px}
 .exposure-loader{position:relative;width:40px;height:40px;flex:0 0 auto;border-radius:50%;background:conic-gradient(from 20deg,transparent 0 36%,color-mix(in srgb,var(--accent) 35%,transparent) 54%,var(--accent) 94%,transparent 100%);animation:reelSpin 760ms linear infinite}
 .exposure-loader::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--bg2);box-shadow:inset 0 0 0 1px var(--line)}
-.exposure-loader::after{content:"";position:absolute;left:50%;top:0;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px color-mix(in srgb,var(--accent) 68%,transparent);transform:translateX(-50%)}
+.exposure-loader::after{content:"";position:absolute;left:50%;top:0;width:7px;height:7px;border-radius:50%;background:var(--accent);transform:translateX(-50%)}
 .catalog-skeleton-row{display:flex;gap:14px;overflow:hidden}
 .catalog-skeleton-card{flex:0 0 178px}
 .catalog-skeleton-poster{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;background:var(--panel2)}
@@ -536,9 +536,10 @@ select.mini:focus,.catalog-select select:focus{border-color:var(--accent);box-sh
 .lucide{width:16px;height:16px;stroke-width:2;flex:0 0 auto;pointer-events:none}
 .btn .lucide,.icon-btn .lucide{transition:transform 160ms var(--ease-out),color 160ms ease}
 .pick-button{
-  color:#07141b;border-color:transparent;
-  background:linear-gradient(110deg,#77e8ff 0%,#ffe06c 54%,#ff9b62 100%);
-  box-shadow:0 8px 24px -16px rgba(119,232,255,.8);
+  --pick-surface:linear-gradient(110deg,#77e8ff 0%,#ffe06c 54%,#ff9b62 100%);
+  color:#07141b;border:0;padding:9px 14px;
+  background:var(--pick-surface);
+  box-shadow:0 8px 24px -18px rgba(0,0,0,.72);
 }
 .pick-button .lucide{color:#1d4ed8;fill:rgba(255,255,255,.36)}
 .search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);width:28px;height:28px;padding:0;border-radius:8px;display:block;line-height:0;color:var(--fg2);cursor:pointer;transition:background-color 140ms ease,color 140ms ease,transform 140ms var(--ease-out)}
@@ -738,7 +739,7 @@ html[dir="rtl"] .status-strip i{transform-origin:right}
   .brand:hover span{color:var(--accent)}
   .brand img,.brand span{transition:transform 180ms var(--ease-out),color 160ms ease}
   .btn:hover .lucide,.icon-btn:hover .lucide{transform:translateY(-1px) rotate(-3deg)}
-  .pick-button:hover{background:linear-gradient(110deg,#93efff 0%,#ffe98f 52%,#ffae7d 100%);border-color:transparent;box-shadow:0 12px 30px -17px rgba(255,224,108,.9)}
+  .btn.pick-button:hover{background:var(--pick-surface);border:0;box-shadow:0 10px 24px -17px rgba(0,0,0,.72)}
   .search-clear:hover{background:var(--panel2);color:var(--fg)}
   .cast-card:hover{transform:translateY(-3px);border-color:var(--line2);background:var(--panel2)}
   .zoomable:hover{transform:scale(1.025);box-shadow:0 18px 45px -18px rgba(0,0,0,.8)}
@@ -969,6 +970,96 @@ html[dir="rtl"] .status-strip i{transform-origin:right}
   .card:hover,.btn:active,.icon-btn:active,.catalog-card:active{transform:none!important}
   .tab-indicator,.smart-select-highlight,.status-strip i{transition-duration:.01ms!important}
 }
+
+/* Production shell: compact auth, account menu, and left navigation drawer. */
+body.nav-open{overflow:hidden}
+.top .row{display:flex;flex-wrap:nowrap;align-items:center}
+.nav-menu-trigger{display:grid;flex:0 0 auto;background:transparent}
+.search{flex:1 1 360px;margin-inline:8px;min-width:96px}
+.auth-nav{position:relative;flex:0 0 auto}
+.auth-sign-in{min-width:82px;justify-content:center}
+.account-trigger{width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;padding:2px;background:var(--panel);display:grid;place-items:center;overflow:hidden;transition:transform 140ms var(--ease-out),border-color 160ms ease,background-color 160ms ease}
+.account-trigger:hover{border-color:var(--accent);background:var(--panel2)}
+.account-trigger:active{transform:scale(.96)}
+.account-trigger img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
+.avatar-fallback{width:100%;height:100%;display:grid;place-items:center;border-radius:inherit;background:color-mix(in srgb,var(--accent) 22%,var(--panel2));color:var(--fg);font-size:13px;font-weight:800;letter-spacing:.02em}
+.avatar-stack{position:relative;width:100%;height:100%;display:block;border-radius:inherit;overflow:hidden}.avatar-stack img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+.account-menu{position:absolute;z-index:125;inset-inline-end:0;top:calc(100% + 9px);width:min(280px,calc(100vw - 32px));padding:7px;border:1px solid var(--line2);border-radius:14px;background:var(--panel);box-shadow:0 22px 54px -22px rgba(0,0,0,.72)}
+.account-menu[hidden]{display:none}
+.account-summary{display:flex;align-items:center;gap:10px;padding:9px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:5px;min-width:0}
+.account-summary>.avatar-fallback{width:34px;height:34px;flex:0 0 auto;border-radius:50%}
+.account-summary>span:last-child{display:grid;min-width:0}
+.account-summary b,.account-summary small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-summary b{font-size:13px}.account-summary small{color:var(--fg3);font-size:11px}
+.account-menu button,.nav-drawer button,.nav-drawer a[data-nav-action]{width:100%;min-height:44px;display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:9px;color:var(--fg2);font-weight:650;text-align:start;text-decoration:none;transition:transform 140ms var(--ease-out),background-color 160ms ease,color 160ms ease}
+.account-menu button:hover,.nav-drawer button:hover,.nav-drawer a[data-nav-action]:hover{background:var(--panel2);color:var(--fg)}
+.account-menu button:active,.nav-drawer button:active{transform:scale(.985)}
+.account-menu .account-signout{color:var(--waiting)}
+
+.nav-overlay{position:fixed;z-index:119;inset:0;background:rgba(3,5,10,.58);backdrop-filter:blur(2px);opacity:0;transition:opacity 220ms ease}
+.nav-overlay[hidden]{display:none}
+.nav-overlay.on{opacity:1}
+.nav-drawer{position:fixed;z-index:120;inset-block:0;left:0;width:min(370px,86vw);display:flex;flex-direction:column;padding:max(18px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom));background:var(--bg2);border-right:1px solid var(--line2);box-shadow:24px 0 64px -32px rgba(0,0,0,.86);transform:translateX(-103%);visibility:hidden;transition:transform 240ms cubic-bezier(.32,.72,0,1),visibility 0s linear 240ms;overscroll-behavior:contain;overflow-y:auto}
+.nav-drawer.on{transform:none;visibility:visible;transition:transform 240ms cubic-bezier(.32,.72,0,1),visibility 0s}
+.nav-drawer-head{display:flex;align-items:center;gap:12px;padding:0 3px 18px;border-bottom:1px solid var(--line)}
+.nav-drawer-head .brand{flex:1}.nav-drawer-head .brand span{font-size:27px}
+.nav-drawer-list{display:flex!important;flex-direction:column!important;gap:4px;padding:16px 0}
+.nav-drawer #btnAdd{width:100%;padding:10px 11px;justify-content:flex-start;font-size:inherit}
+.nav-drawer-list button[aria-current="page"]{background:color-mix(in srgb,var(--accent) 15%,var(--panel));color:var(--fg);box-shadow:inset 3px 0 0 var(--accent)}
+.nav-drawer-list button[aria-current="page"] .lucide{color:var(--accent)}
+.nav-drawer-tools{display:grid;gap:2px;padding-top:12px;border-top:1px solid var(--line)}
+.nav-account{margin-top:auto;padding-top:16px}
+.nav-account-card{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.nav-account-card>.avatar-fallback,.nav-account-card>.avatar-stack{width:40px;height:40px;border-radius:50%}
+.nav-account-copy{display:grid;min-width:0}.nav-account-copy b,.nav-account-copy small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nav-account-copy small{color:var(--fg3);font-size:11px}
+.nav-auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nav-auth-actions .btn{justify-content:center;width:100%}
+
+.auth-modal{width:min(470px,calc(100% - 32px))}
+.auth-intro{padding:24px 24px 4px}.auth-intro h2{margin:0;font-family:"Reel Display",sans-serif;font-size:34px;line-height:1}.auth-intro p{margin:9px 0 0;color:var(--fg2)}
+.auth-form{padding:18px 24px 24px}
+.auth-form .field{margin-bottom:13px}.auth-form .field label{font-size:12px;text-transform:none;letter-spacing:0;color:var(--fg2)}
+.password-field{position:relative}.password-field input{padding-inline-end:48px}.password-toggle{position:absolute;right:5px;bottom:5px;width:36px;height:36px;display:grid;place-items:center;border-radius:8px;color:var(--fg2)}
+.password-toggle:hover{background:var(--panel2);color:var(--fg)}
+.auth-message{min-height:22px;margin:2px 0 10px;color:var(--fg3);font-size:12px;line-height:1.45}
+.auth-message.is-error{color:color-mix(in srgb,var(--waiting) 76%,white)}.auth-message.is-success{color:color-mix(in srgb,var(--done) 78%,white)}
+.auth-submit{width:100%;justify-content:center;min-height:44px}.auth-submit .auth-spinner{width:14px;height:14px;border:2px solid color-mix(in srgb,var(--accent-ink) 32%,transparent);border-top-color:var(--accent-ink);border-radius:50%;animation:authSpin 700ms linear infinite}
+.auth-switch{margin:16px 0 0;text-align:center;color:var(--fg3);font-size:12.5px}.auth-switch button{color:var(--accent);font-weight:750;padding:3px}.auth-switch button:hover{text-decoration:underline}
+@keyframes authSpin{to{transform:rotate(1turn)}}
+
+/* Keep the gradient clipped to the button itself: a transparent border can anti-alias into colored edge pixels on hover. */
+.pick-button{position:relative;isolation:isolate;overflow:hidden;background-clip:border-box}
+.pick-button:focus-visible{outline-color:color-mix(in srgb,var(--accent) 72%,white);box-shadow:none}
+
+@media (max-width:900px){
+  .top .row{display:flex;grid-template-columns:none;padding:10px 16px;gap:8px}
+  .search{grid-column:auto;grid-row:auto;margin-inline:0;min-width:70px}
+  #btnPick{grid-column:auto}.auth-nav{margin-inline-start:auto}
+  .brand span{font-size:23px}.brand img{width:28px;height:28px}
+}
+@media (max-width:640px){
+  .top .row{padding-inline:12px;gap:7px}
+  .search input{padding-inline:10px 34px}
+  #btnPick{width:42px;padding-inline:0;justify-content:center}
+  #btnPick span{display:none}
+  .auth-sign-in{min-width:68px;padding-inline:9px}
+}
+@media (max-width:430px){
+  #btnPick{display:none}
+  .brand{gap:6px}.brand span{font-size:21px}
+  .search{min-width:56px}
+  .search input{padding-inline-start:9px}
+  .search input::placeholder{font-size:12px}
+}
+@media (max-width:360px){.brand span{display:none}.auth-sign-in{min-width:64px}}
+@media (min-width:900px){.nav-drawer{width:370px}}
+html[dir="rtl"] .nav-drawer{left:auto;right:0;border-right:0;border-left:1px solid var(--line2);transform:translateX(103%)}
+html[dir="rtl"] .nav-drawer.on{transform:none}
+html[dir="rtl"] .nav-drawer-list button[aria-current="page"]{box-shadow:inset -3px 0 0 var(--accent)}
+html[dir="rtl"] .password-toggle{right:auto;left:5px}
+html[dir="rtl"] .password-field input{padding-inline-end:11px;padding-inline-start:48px}
+@media (prefers-reduced-motion:reduce){
+  .nav-drawer,.nav-overlay,.account-trigger{transition-duration:.01ms!important}
+}
 /* Compact, full-width control groups keep clear-filter changes in their own row. */
 .filters{grid-template-columns:minmax(0,1fr);grid-template-areas:"tabs" "chips" "actions";gap:10px}
 .filters>.chips{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));overflow:visible;padding:0}
@@ -1105,30 +1196,50 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 -->
 <header class="top">
   <div class="row">
+    <button class="icon-btn nav-menu-trigger" id="btnMobileMenu" type="button" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded="false" aria-controls="navDrawer"><i data-lucide="menu" aria-hidden="true"></i></button>
     <a class="brand" href="#" aria-label="Reel home"><img src="assets/reel-mark.svg" alt=""><span>reel</span><small>your media index</small></a>
     <div class="search">
       <input id="q" type="search" aria-label="Search" placeholder="Search your library" autocomplete="off">
       <kbd>/</kbd>
       <button class="search-clear" id="clearSearch" type="button" aria-label="Clear search" title="Clear search" hidden><i data-lucide="x" aria-hidden="true"></i></button>
     </div>
-    <button class="btn pick-button" id="btnPick" title="Decide for me"><i data-lucide="sparkles" aria-hidden="true"></i><span>Pick for me</span></button>
-    <button class="btn" id="btnAdd" aria-label="Add title" title="Add title"><i data-lucide="plus" aria-hidden="true"></i><span>Add title</span></button>
-    <button class="btn ghost mobile-menu-trigger" id="btnMobileMenu" aria-haspopup="menu" aria-expanded="false" aria-controls="mobileMenu"><i data-lucide="menu" aria-hidden="true"></i><span>Menu</span></button>
-    <button class="btn ghost secondary-action" id="btnPaste" title="Paste a list of titles"><i data-lucide="list-plus" aria-hidden="true"></i><span>Import</span></button>
-    <button class="btn ghost secondary-action" id="btnCovers" title="Fetch missing posters, genres and runtimes"><i data-lucide="wand-sparkles" aria-hidden="true"></i><span>Enrich</span></button>
-    <button class="btn ghost utility-action" id="btnTheme" title="Toggle light and dark theme"><i data-lucide="sun-moon" aria-hidden="true"></i><span>Theme</span></button>
-    <button class="btn ghost utility-action" id="btnMore" title="Backup and settings"><i data-lucide="settings-2" aria-hidden="true"></i><span>Settings</span></button>
-    <div class="mobile-menu" id="mobileMenu" role="menu" aria-label="Reel utilities" hidden>
-      <button role="menuitem" data-mobile-action="pick"><i data-lucide="sparkles" aria-hidden="true"></i><span>Pick for me</span></button>
-      <button role="menuitem" data-mobile-action="import"><i data-lucide="list-plus" aria-hidden="true"></i><span>Import titles</span></button>
-      <button role="menuitem" data-mobile-action="enrich"><i data-lucide="wand-sparkles" aria-hidden="true"></i><span>Enrich missing info</span></button>
-      <button role="menuitem" data-mobile-action="theme" id="mobileTheme"><i data-lucide="sun-moon" aria-hidden="true"></i><span>Switch to light</span></button>
-      <button role="menuitem" data-mobile-action="settings"><i data-lucide="settings-2" aria-hidden="true"></i><span>Settings and cloud</span></button>
-      <button role="menuitem" data-mobile-action="export"><i data-lucide="download" aria-hidden="true"></i><span>Export backup</span></button>
+    <button class="btn pick-button" id="btnPick" title="Decide for me"><i data-lucide="sparkles" aria-hidden="true"></i><span>Pick 4 me</span></button>
+    <div class="auth-nav" id="authNav">
+      <button class="btn ghost auth-sign-in" id="btnAuth" type="button"><i data-lucide="user-round" aria-hidden="true"></i><span>Sign in</span></button>
+      <button class="account-trigger" id="btnAccount" type="button" aria-label="Open account menu" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenu" hidden><span class="avatar-fallback" aria-hidden="true">R</span></button>
+      <div class="account-menu" id="accountMenu" role="menu" aria-label="Account" hidden>
+        <div class="account-summary"><span class="avatar-fallback" aria-hidden="true">R</span><span><b id="accountName">Reel account</b><small id="accountEmail"></small></span></div>
+        <button type="button" role="menuitem" data-account-action="list"><i data-lucide="library" aria-hidden="true"></i><span>My List</span></button>
+        <button type="button" role="menuitem" data-account-action="settings"><i data-lucide="settings-2" aria-hidden="true"></i><span>Settings</span></button>
+        <button type="button" role="menuitem" data-account-action="signout" class="account-signout"><i data-lucide="log-out" aria-hidden="true"></i><span>Sign out</span></button>
+      </div>
     </div>
   </div>
   <div id="fetchbar"><i></i></div>
 </header>
+
+<div class="nav-overlay" id="navOverlay" hidden></div>
+<aside class="nav-drawer" id="navDrawer" role="dialog" aria-modal="true" aria-label="Reel navigation" aria-hidden="true" inert>
+  <div class="nav-drawer-head">
+    <a class="brand" href="#" data-nav-action="home" aria-label="Reel home"><img src="assets/reel-mark.svg" alt=""><span>reel</span></a>
+    <button class="icon-btn" id="navClose" type="button" aria-label="Close navigation"><i data-lucide="x" aria-hidden="true"></i></button>
+  </div>
+  <nav class="nav-drawer-list" aria-label="Main navigation">
+    <button type="button" data-nav-action="home"><i data-lucide="house" aria-hidden="true"></i><span>Home</span></button>
+    <button type="button" data-nav-action="list" aria-current="page"><i data-lucide="library" aria-hidden="true"></i><span>My List</span></button>
+    <button type="button" data-nav-action="catalog"><i data-lucide="globe-2" aria-hidden="true"></i><span>All titles</span></button>
+    <button type="button" data-nav-action="pick"><i data-lucide="sparkles" aria-hidden="true"></i><span>Pick 4 me</span></button>
+    <button type="button" id="btnAdd" data-nav-action="add"><i data-lucide="plus" aria-hidden="true"></i><span>Add title</span></button>
+  </nav>
+  <div class="nav-drawer-tools">
+    <button type="button" id="btnPaste" data-nav-action="import"><i data-lucide="list-plus" aria-hidden="true"></i><span>Import titles</span></button>
+    <button type="button" id="btnCovers" data-nav-action="enrich"><i data-lucide="wand-sparkles" aria-hidden="true"></i><span>Enrich missing info</span></button>
+    <button type="button" id="btnTheme" data-nav-action="theme"><i data-lucide="sun-moon" aria-hidden="true"></i><span>Switch theme</span></button>
+    <button type="button" id="btnMore" data-nav-action="settings"><i data-lucide="settings-2" aria-hidden="true"></i><span>Settings</span></button>
+    <button type="button" data-nav-action="export"><i data-lucide="download" aria-hidden="true"></i><span>Export backup</span></button>
+  </div>
+  <div class="nav-account" id="navAccount"></div>
+</aside>
 
 <main class="wrap">
   <h1 class="sr-only">Reel media library</h1>
@@ -1222,7 +1333,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 <div class="media-viewer" id="mediaViewer" role="dialog" aria-modal="true" aria-label="Expanded artwork" hidden>
   <button class="media-viewer-close icon-btn" id="mediaViewerClose" type="button" aria-label="Close expanded artwork"><i data-lucide="x" aria-hidden="true"></i></button>
-  <img id="mediaViewerImage" alt="">
+  <img id="mediaViewerImage" src="assets/reel-mark.svg" alt="">
   <p id="mediaViewerCaption"></p>
 </div>
 
@@ -1934,7 +2045,7 @@ const UI_COPY = {
   en:{
     'type.movie.one':'Movie','type.movie.label':'Movies','type.series.one':'Series','type.series.label':'Series','type.anime.one':'Anime','type.anime.label':'Anime','type.manga.one':'Manga','type.manga.label':'Manga','type.manhwa.one':'Manhwa','type.manhwa.label':'Manhwa','type.book.one':'Book','type.book.label':'Books',
     'status.want':'Want','status.suggested':'Suggested','status.going':'In progress','status.done':'Finished','status.paused':'Paused','status.dropped':'Dropped',
-    'nav.pick':'Pick for me','nav.add':'Add title','nav.menu':'Menu','nav.import':'Import','nav.enrich':'Enrich','nav.theme':'Theme','nav.settings':'Settings',
+    'nav.pick':'Pick 4 me','nav.add':'Add title','nav.menu':'Menu','nav.import':'Import','nav.enrich':'Enrich','nav.theme':'Theme','nav.settings':'Settings',
     'search.library':'Search your library','search.catalog':'Search all titles','search.clear':'Clear search','search.online':'Search online',
     'tab.library':'My library','tab.catalog':'All titles','tab.online':'Online','continue':'Continue','filters.clear':'Clear filters','view.list':'List view','view.grid':'Grid view',
     'list.creator':'Creator','list.length':'Length','list.progress':'Progress','list.rating':'Rating','list.notSet':'Not set','list.notRated':'Not rated',
@@ -1977,6 +2088,24 @@ const UI_COPY = {
     'language.en':'الإنجليزية','language.fr':'الفرنسية','language.ar':'العربية'
   }
 };
+const SHELL_COPY={
+  en:{
+    'nav.home':'Home','nav.list':'My List','nav.catalog':'All titles','nav.importTitles':'Import titles','nav.enrichMissing':'Enrich missing info','nav.export':'Export backup','nav.open':'Open navigation','nav.close':'Close navigation','account.open':'Open account menu','account.title':'Reel account','auth.signIn':'Sign in','auth.create':'Create account','auth.welcome':'Welcome back','auth.signInIntro':'Sign in to sync your Reel library across devices.','auth.createTitle':'Create your Reel account','auth.createIntro':'Keep one private media library across your devices.','auth.name':'Name','auth.email':'Email','auth.password':'Password','auth.passwordHelp':'Use at least 8 characters.','auth.namePlaceholder':'Your name','auth.new':'New to Reel?','auth.existing':'Already have an account?','auth.invalidName':'Enter the name you want to use in Reel.','auth.invalidEmail':'Enter a valid email address.','auth.shortPassword':'Use a password with at least 8 characters.','auth.starting':'The account service is still starting. Try again in a moment.','auth.confirm':'Check your email to confirm your account, then sign in.','auth.confirmSent':'Confirmation email sent.','auth.created':'Account created. Your library is syncing.','auth.signedIn':'Signed in. Your library is syncing.','auth.incorrect':'Incorrect email or password.','auth.confirmEmail':'Confirm your email before signing in.','auth.exists':'An account already exists with this email.','auth.attempts':'Too many attempts. Wait a moment, then try again.','auth.offline':'Reel cannot reach the account service. Check your connection and try again.','auth.signupFail':'Something went wrong while creating your account. Try again.','auth.signinFail':'Something went wrong while signing in. Try again.','auth.signoutFail':'Something went wrong while signing out. Try again.','auth.sessionExpired':'Your session expired. Please sign in again.','auth.signedOut':'Signed out. Your local library stays on this device.','cloud.localOnly':'Sync is off. This library is stored only in this browser.','cloud.signedIn':'Signed in as {email}','cloud.open':'Open sign in','cloud.openHelp':'Account access lives in the main navigation so it is always easy to find.','cloud.manageHelp':'Use your avatar in the navigation bar to manage your account or sign out.','cloud.sync':'Sync now','cloud.complete':'Cloud sync complete.','cloud.unavailable':'Cloud sync is unavailable. Your local library is safe.'
+  },
+  fr:{
+    'nav.home':'Accueil','nav.list':'Ma liste','nav.catalog':'Tous les titres','nav.importTitles':'Importer des titres','nav.enrichMissing':'Compléter les informations','nav.export':'Exporter la sauvegarde','nav.open':'Ouvrir la navigation','nav.close':'Fermer la navigation','account.open':'Ouvrir le menu du compte','account.title':'Compte Reel','auth.signIn':'Se connecter','auth.create':'Créer un compte','auth.welcome':'Bon retour','auth.signInIntro':'Connectez-vous pour synchroniser votre bibliothèque Reel sur vos appareils.','auth.createTitle':'Créez votre compte Reel','auth.createIntro':'Conservez une bibliothèque privée sur tous vos appareils.','auth.name':'Nom','auth.email':'E-mail','auth.password':'Mot de passe','auth.passwordHelp':'Utilisez au moins 8 caractères.','auth.namePlaceholder':'Votre nom','auth.new':'Nouveau sur Reel ?','auth.existing':'Vous avez déjà un compte ?','auth.invalidName':'Saisissez le nom à utiliser dans Reel.','auth.invalidEmail':'Saisissez une adresse e-mail valide.','auth.shortPassword':'Utilisez un mot de passe de 8 caractères minimum.','auth.starting':'Le service de compte démarre. Réessayez dans un instant.','auth.confirm':'Consultez votre e-mail pour confirmer le compte, puis connectez-vous.','auth.confirmSent':'E-mail de confirmation envoyé.','auth.created':'Compte créé. Synchronisation en cours.','auth.signedIn':'Connexion réussie. Synchronisation en cours.','auth.incorrect':'E-mail ou mot de passe incorrect.','auth.confirmEmail':'Confirmez votre e-mail avant de vous connecter.','auth.exists':'Un compte existe déjà avec cet e-mail.','auth.attempts':'Trop de tentatives. Patientez puis réessayez.','auth.offline':'Reel ne peut pas joindre le service de compte. Vérifiez votre connexion.','auth.signupFail':'Impossible de créer le compte. Réessayez.','auth.signinFail':'Impossible de vous connecter. Réessayez.','auth.signoutFail':'Impossible de vous déconnecter. Réessayez.','auth.sessionExpired':'Votre session a expiré. Reconnectez-vous.','auth.signedOut':'Vous êtes déconnecté. La bibliothèque locale reste sur cet appareil.','cloud.localOnly':'La synchronisation est désactivée. Cette bibliothèque reste dans ce navigateur.','cloud.signedIn':'Connecté en tant que {email}','cloud.open':'Ouvrir la connexion','cloud.openHelp':'L’accès au compte se trouve dans la navigation principale.','cloud.manageHelp':'Utilisez votre avatar dans la barre de navigation pour gérer le compte.','cloud.sync':'Synchroniser','cloud.complete':'Synchronisation terminée.','cloud.unavailable':'Synchronisation indisponible. Votre bibliothèque locale est en sécurité.'
+  },
+  ar:{
+    'nav.home':'الرئيسية','nav.list':'قائمتي','nav.catalog':'كل العناوين','nav.importTitles':'استيراد العناوين','nav.enrichMissing':'إكمال المعلومات الناقصة','nav.export':'تصدير النسخة الاحتياطية','nav.open':'فتح قائمة التنقل','nav.close':'إغلاق قائمة التنقل','account.open':'فتح قائمة الحساب','account.title':'حساب Reel','auth.signIn':'تسجيل الدخول','auth.create':'إنشاء حساب','auth.welcome':'مرحباً بعودتك','auth.signInIntro':'سجّل الدخول لمزامنة مكتبة Reel بين أجهزتك.','auth.createTitle':'أنشئ حساب Reel','auth.createIntro':'احتفظ بمكتبة خاصة واحدة على جميع أجهزتك.','auth.name':'الاسم','auth.email':'البريد الإلكتروني','auth.password':'كلمة المرور','auth.passwordHelp':'استخدم 8 أحرف على الأقل.','auth.namePlaceholder':'اسمك','auth.new':'جديد في Reel؟','auth.existing':'لديك حساب بالفعل؟','auth.invalidName':'أدخل الاسم الذي تريد استخدامه في Reel.','auth.invalidEmail':'أدخل بريداً إلكترونياً صالحاً.','auth.shortPassword':'استخدم كلمة مرور من 8 أحرف على الأقل.','auth.starting':'خدمة الحساب قيد التشغيل. حاول بعد لحظة.','auth.confirm':'تحقق من بريدك لتأكيد الحساب ثم سجّل الدخول.','auth.confirmSent':'تم إرسال رسالة التأكيد.','auth.created':'تم إنشاء الحساب. جارٍ مزامنة مكتبتك.','auth.signedIn':'تم تسجيل الدخول. جارٍ مزامنة مكتبتك.','auth.incorrect':'البريد الإلكتروني أو كلمة المرور غير صحيحة.','auth.confirmEmail':'أكد بريدك الإلكتروني قبل تسجيل الدخول.','auth.exists':'يوجد حساب بهذا البريد الإلكتروني.','auth.attempts':'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.','auth.offline':'تعذر على Reel الوصول إلى خدمة الحساب. تحقق من اتصالك.','auth.signupFail':'حدث خطأ أثناء إنشاء الحساب. حاول مجدداً.','auth.signinFail':'حدث خطأ أثناء تسجيل الدخول. حاول مجدداً.','auth.signoutFail':'حدث خطأ أثناء تسجيل الخروج. حاول مجدداً.','auth.sessionExpired':'انتهت جلستك. سجّل الدخول مجدداً.','auth.signedOut':'تم تسجيل الخروج. تبقى مكتبتك المحلية على هذا الجهاز.','cloud.localOnly':'المزامنة متوقفة. هذه المكتبة محفوظة في هذا المتصفح فقط.','cloud.signedIn':'تم تسجيل الدخول باسم {email}','cloud.open':'فتح تسجيل الدخول','cloud.openHelp':'يمكن الوصول إلى الحساب دائماً من شريط التنقل الرئيسي.','cloud.manageHelp':'استخدم صورتك في شريط التنقل لإدارة الحساب أو تسجيل الخروج.','cloud.sync':'مزامنة الآن','cloud.complete':'اكتملت المزامنة.','cloud.unavailable':'المزامنة غير متاحة. مكتبتك المحلية آمنة.'
+  }
+};
+for(const [lang,copy] of Object.entries(SHELL_COPY))Object.assign(UI_COPY[lang],copy);
+const AUTH_EXTRA={
+  en:{show:'Show password',hide:'Hide password',creating:'Creating account…',signing:'Signing in…',signOut:'Sign out'},
+  fr:{show:'Afficher le mot de passe',hide:'Masquer le mot de passe',creating:'Création du compte…',signing:'Connexion…',signOut:'Se déconnecter'},
+  ar:{show:'إظهار كلمة المرور',hide:'إخفاء كلمة المرور',creating:'جارٍ إنشاء الحساب…',signing:'جارٍ تسجيل الدخول…',signOut:'تسجيل الخروج'}
+};
+for(const [lang,copy] of Object.entries(AUTH_EXTRA))for(const [key,value] of Object.entries(copy))UI_COPY[lang]['auth.'+key]=value;
 const DETAIL_COPY = {
   en:{waiting:'Awaiting next season',caughtUp:'Caught up',season:'Season',episode:'Episode',available:'of {n} available',seasonEpisodes:'of {n} in season {s}',unknown:'Not available',loading:'Checking available seasons and episodes…',unavailable:'Season details are unavailable. Refresh details to enable verified tracking.',refresh:'Refresh details',progress:'Your progress',progressHelp:'Track your last watched episode. Only released episodes are counted.',finishedHelp:'Finished marks all available episodes as watched. Awaiting next season keeps a running series separate from finished titles.',limit:'Progress adjusted to an available season and episode.',noEpisodes:'No released episodes are available to mark as watched.',facts:'About this title',showStatus:'Series status',running:'Running',ended:'Ended',upcoming:'Not yet released',seasons:'Seasons available',episodes:'Episodes available',rating:'Community rating',ratedBy:'Rated by {source} users',unattributed:'Rating source not recorded',yourRating:'Your rating',country:'Country',language:'Original language',age:'Age classification',runtime:'Runtime',release:'Release year',top:'Back to top',verified:'Episode guide: {source}',waitingHelp:'Caught up with the episodes currently available. This does not mean a new season is confirmed.'},
   fr:{waiting:'En attente de la suite',caughtUp:'À jour',season:'Saison',episode:'Épisode',available:'sur {n} disponibles',seasonEpisodes:'sur {n} dans la saison {s}',unknown:'Indisponible',loading:'Vérification des saisons et épisodes…',unavailable:'Détails des saisons indisponibles. Actualisez pour activer le suivi vérifié.',refresh:'Actualiser les détails',progress:'Votre progression',progressHelp:'Indiquez le dernier épisode vu. Seuls les épisodes diffusés sont comptés.',finishedHelp:'Terminé marque tous les épisodes disponibles comme vus. En attente de la suite reste distinct des titres terminés.',limit:'Progression ajustée aux saisons et épisodes disponibles.',noEpisodes:'Aucun épisode diffusé à marquer comme vu.',facts:'À propos de ce titre',showStatus:'Statut de la série',running:'En cours de diffusion',ended:'Terminée',upcoming:'À venir',seasons:'Saisons disponibles',episodes:'Épisodes disponibles',rating:'Note du public',ratedBy:'Noté par les utilisateurs de {source}',unattributed:'Source de la note non enregistrée',yourRating:'Votre note',country:'Pays',language:'Langue originale',age:'Classification par âge',runtime:'Durée',release:'Année de sortie',top:'Retour en haut',verified:'Guide des épisodes : {source}',waitingHelp:'Tous les épisodes disponibles ont été vus. Cela ne confirme pas une nouvelle saison.'},
@@ -2094,10 +2223,10 @@ let state = load();
 /* ---------- optional cloud sync ---------- */
 const CLOUD_URL = 'https://zwedeotmsmtfkshxeezn.supabase.co';
 const CLOUD_PUBLISHABLE_KEY = 'sb_publishable_Vr6DqmUCRgtlB8j10JAvYg_EelZsKgh';
-const cloud = {client:null, user:null, loaded:false, timer:null};
+const cloud = {client:null, user:null, loaded:false, timer:null, subscription:null, intentionalSignOutUntil:0};
 
 function cloudStatus(){
-  return cloud.user ? `Signed in as ${esc(cloud.user.email || 'your account')}` : 'Sync is off. This library is stored only in this browser.';
+  return cloud.user ? tr('cloud.signedIn',{email:cloud.user.email||tr('account.title')}) : tr('cloud.localOnly');
 }
 function normalizeState(raw){
   const s = {...blank(), ...(raw||{})};
@@ -2111,24 +2240,25 @@ async function pullCloud(){
   cloud.loaded = true;
   const {data, error} = await cloud.client
     .from('user_libraries').select('state').eq('user_id', cloud.user.id).maybeSingle();
-  if(error){ console.warn('cloud load failed', error); toast('Cloud sync is unavailable. Your local library is safe.'); return; }
+  if(error){ cloud.loaded=false;console.warn('cloud load failed', error); toast('Cloud sync is unavailable. Your local library is safe.'); return; }
   if(data?.state){
     state = normalizeState(data.state);
     try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ console.warn('local cloud cache failed',e); }
     render();
     toast('Cloud library loaded.');
   }else{
-    await pushCloud();
+    if(!await pushCloud()) cloud.loaded=false;
   }
 }
 async function pushCloud(){
-  if(!cloud.client || !cloud.user) return;
+  if(!cloud.client || !cloud.user) return false;
   const {error} = await cloud.client.from('user_libraries').upsert({
     user_id: cloud.user.id,
     state,
     updated_at: new Date().toISOString()
   }, {onConflict:'user_id'});
-  if(error) console.warn('cloud save failed', error);
+  if(error){console.warn('cloud save failed', error);return false;}
+  return true;
 }
 function scheduleCloudSync(){
   if(!cloud.client || !cloud.user) return;
@@ -2136,35 +2266,69 @@ function scheduleCloudSync(){
   cloud.timer = setTimeout(pushCloud, 900);
 }
 async function setCloudUser(user){
-  if(cloud.user?.id === user?.id && cloud.loaded) return;
+  const changed = cloud.user?.id !== user?.id;
   cloud.user = user || null;
-  cloud.loaded = false;
-  if(user) await pullCloud();
+  if(changed) cloud.loaded = false;
+  updateAuthChrome();
+  if(user && !cloud.loaded) await pullCloud();
 }
 function initCloud(){
+  updateAuthChrome();
   if(!window.supabase){ console.warn('Supabase client did not load'); return; }
-  cloud.client = window.supabase.createClient(CLOUD_URL, CLOUD_PUBLISHABLE_KEY);
-  cloud.client.auth.getSession().then(({data})=>setCloudUser(data.session?.user));
-  cloud.client.auth.onAuthStateChange((_event, session)=>setTimeout(()=>setCloudUser(session?.user),0));
+  cloud.client = window.supabase.createClient(CLOUD_URL, CLOUD_PUBLISHABLE_KEY,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+  cloud.client.auth.getSession().then(({data,error})=>{
+    if(error){ console.warn('session restore failed',error); return; }
+    setCloudUser(data.session?.user);
+  });
+  const {data} = cloud.client.auth.onAuthStateChange((event,session)=>{
+    const wasSignedIn=!!cloud.user;
+    setTimeout(()=>{
+    if(event==='SIGNED_OUT' && wasSignedIn && Date.now()>cloud.intentionalSignOutUntil) toast(tr('auth.sessionExpired'));
+    setCloudUser(session?.user);
+  },0)});
+  cloud.subscription = data?.subscription || null;
 }
-async function cloudSignIn(email, password){
-  const {error} = await cloud.client.auth.signInWithPassword({email,password});
-  if(error) return toast(error.message);
-  toast('Signed in. Syncing your library.');
-  modalSettings();
+function friendlyAuthError(error,mode='signin'){
+  console.warn(`cloud ${mode} failed`,error);
+  const code=String(error?.code||'').toLowerCase();
+  const message=String(error?.message||'').toLowerCase();
+  if(code.includes('invalid_credentials')||message.includes('invalid login')) return tr('auth.incorrect');
+  if(code.includes('email_not_confirmed')||message.includes('email not confirmed')) return tr('auth.confirmEmail');
+  if(code.includes('user_already_exists')||code.includes('email_exists')||message.includes('already registered')) return tr('auth.exists');
+  if(code.includes('weak_password')||message.includes('password')) return tr('auth.shortPassword');
+  if(code.includes('over_email_send_rate_limit')||message.includes('rate limit')) return tr('auth.attempts');
+  if(message.includes('fetch')||message.includes('network')) return tr('auth.offline');
+  if(mode==='signout') return tr('auth.signoutFail');
+  return tr(mode==='signup'?'auth.signupFail':'auth.signinFail');
 }
-async function cloudSignUp(email, password){
-  const {data, error} = await cloud.client.auth.signUp({email,password});
-  if(error) return toast(error.message);
-  if(!data.session) toast('Check your email to confirm your account, then sign in.');
-  else { toast('Account created. Syncing your library.'); modalSettings(); }
+async function cloudSignIn(email,password){
+  if(!cloud.client) return {error:{message:'Account service unavailable'}};
+  const result=await cloud.client.auth.signInWithPassword({email,password});
+  if(!result.error && result.data?.user) await setCloudUser(result.data.user);
+  return result;
+}
+async function cloudSignUp(name,email,password){
+  if(!cloud.client) return {error:{message:'Account service unavailable'}};
+  const options={data:{display_name:name}};
+  if(/^https?:$/.test(location.protocol)) options.emailRedirectTo=location.origin+location.pathname;
+  const result=await cloud.client.auth.signUp({email,password,options});
+  if(!result.error && result.data?.user && Array.isArray(result.data.user.identities) && !result.data.user.identities.length){
+    return {...result,error:{code:'email_exists',message:'Account already exists'}};
+  }
+  if(!result.error && result.data?.session?.user) await setCloudUser(result.data.session.user);
+  return result;
 }
 async function cloudSignOut(){
-  const {error} = await cloud.client.auth.signOut();
-  if(error) return toast(error.message);
-  cloud.user = null; cloud.loaded = false;
-  toast('Signed out. Your local library stays on this device.');
-  modalSettings();
+  closeAccountMenu();
+  cloud.intentionalSignOutUntil=Date.now()+2000;
+  const {error} = cloud.client ? await cloud.client.auth.signOut() : {error:null};
+  if(error){ toast(friendlyAuthError(error,'signout')); return false; }
+  await setCloudUser(null);
+  toast(tr('auth.signedOut'));
+  closeSheets();
+  return true;
 }
 
 function blank(){
@@ -2546,11 +2710,17 @@ function applyLanguage(){
   document.documentElement.lang = lang;
   document.documentElement.dir = lang==='ar' ? 'rtl' : 'ltr';
   const labels = {
-    '#btnPick':'nav.pick','#btnAdd':'nav.add','#btnMobileMenu':'nav.menu','#btnPaste':'nav.import',
+    '#btnPick':'nav.pick','#btnAdd':'nav.add','#btnPaste':'nav.import',
     '#btnCovers':'nav.enrich','#btnMore':'nav.settings','#btnClearFilters':'filters.clear','#btnCatalogClear':'filters.clear'
   };
   for(const [selector,key] of Object.entries(labels)) setButtonLabel(selector,tr(key));
-  $('#btnMobileMenu').setAttribute('aria-label',tr('nav.menu'));
+  const shellLabels={
+    '#navDrawer [data-nav-action="home"]':'nav.home','#navDrawer [data-nav-action="list"]':'nav.list','#navDrawer [data-nav-action="catalog"]':'nav.catalog','#navDrawer [data-nav-action="pick"]':'nav.pick','#navDrawer [data-nav-action="import"]':'nav.importTitles','#navDrawer [data-nav-action="enrich"]':'nav.enrichMissing','#navDrawer [data-nav-action="settings"]':'nav.settings','#navDrawer [data-nav-action="export"]':'nav.export','#accountMenu [data-account-action="list"]':'nav.list','#accountMenu [data-account-action="settings"]':'nav.settings','#accountMenu [data-account-action="signout"]':'auth.signOut','#btnAuth':'auth.signIn'
+  };
+  for(const [selector,key] of Object.entries(shellLabels))setButtonLabel(selector,tr(key));
+  setButtonLabel('#btnTheme',state.ui.theme==='dark'?localeMeta().switchLight:localeMeta().switchDark);
+  $('#btnMobileMenu').setAttribute('aria-label',tr('nav.open'));$('#navClose').setAttribute('aria-label',tr('nav.close'));$('#navDrawer').setAttribute('aria-label',tr('nav.menu'));$('#accountMenu').setAttribute('aria-label',tr('account.title'));
+  updateAuthChrome();
   $('#backToTop').setAttribute('aria-label',tr('tracking.top'));$('#backToTop').title=tr('tracking.top');
   const mobile = {pick:'nav.pick',import:'nav.import',enrich:'nav.enrich',settings:'nav.settings'};
   for(const [action,key] of Object.entries(mobile)) setButtonLabel(`#mobileMenu [data-mobile-action="${action}"]`,tr(key));
@@ -3180,6 +3350,19 @@ function renderCatalogGrid(){
    drawer — one item, editable
    ============================================================ */
 let openId = null;
+let pickerDetailOrigin = false;
+let returningToPicker = false;
+function markPickerDetailOrigin(){
+  pickerDetailOrigin = true;
+  try{ history.pushState({reelOverlay:'picker-detail'},'', '#pick-details'); }catch(e){ /* explicit Back button still works */ }
+}
+function returnToPicker(){
+  const hasHistory = history.state?.reelOverlay === 'picker-detail';
+  returningToPicker = true;
+  closeSheets();
+  if(hasHistory) history.back();
+  else{ returningToPicker=false;pickerDetailOrigin=false;window.ReelRecommendationUI?.resume(); }
+}
 function castGridMarkup(cast){
   activePeople = (cast||[]).map(normalizePerson).slice(0,16);
   if(!activePeople.length) return '';
@@ -3287,6 +3470,7 @@ function openItem(id){
   host.innerHTML = `
     <div class="sheet-head">
       <h3>${esc(tr('detail.title'))}</h3>
+      ${pickerDetailOrigin?`<button class="btn sm ghost" data-picker-back>${icon('arrow-left',14)}<span>Back to Pick 4 me</span></button>`:''}
       <button class="btn sm ghost ${it.fav?'is-favourite':''}" id="favBtn">${icon('heart',14)}<span>${esc(it.fav?tr('detail.favourite.remove'):tr('detail.favourite.add'))}</span></button>
       <button class="btn sm ghost" data-close>${icon('x',14)}<span>${esc(tr('detail.close'))}</span></button>
     </div>
@@ -3379,6 +3563,7 @@ function openItem(id){
   $('#drawer').classList.add('on'); $('#overlay').classList.add('on');
   $('#drawer').setAttribute('aria-hidden','false');
   wireDrawer(it, host);
+  const pickerBack=host.querySelector('[data-picker-back]');if(pickerBack)pickerBack.onclick=returnToPicker;
   if(isEpisodic(it)) refreshTracker(it,host);
   enhanceSelects(host);
   refreshIcons();
@@ -3402,8 +3587,15 @@ function closeSheets(){
   $('#drawer').classList.remove('on'); $('#modal').classList.remove('on');
   $('#overlay').classList.remove('on'); $('#drawer').setAttribute('aria-hidden','true');
   $('#drawer').setAttribute('inert',''); $('#modal').setAttribute('aria-hidden','true'); $('#modal').setAttribute('inert',''); document.body.classList.remove('sheet-open');
+  $('#modal').classList.remove('auth-modal');$('#modal').setAttribute('aria-label','Reel dialog');
   catalog.detailRequest++;
   openId = null;
+  if(pickerDetailOrigin && !returningToPicker){
+    pickerDetailOrigin=false;
+    if(history.state?.reelOverlay==='picker-detail'){
+      try{history.replaceState(null,'',location.pathname+location.search);}catch(e){/* local-file history can be restricted */}
+    }
+  }
   if(returnFocus?.isConnected) returnFocus.focus();
   returnFocus = null;
 }
@@ -4235,7 +4427,8 @@ function shrink(file, maxW=360, maxH=540){
    modals: add · bulk · settings
    ============================================================ */
 function showModal(html, wire){
-  returnFocus = document.activeElement;
+  if(!$('#modal').classList.contains('on')&&!$('#drawer').classList.contains('on')) returnFocus = document.activeElement;
+  $('#modal').classList.remove('auth-modal');
   $('#modalContent').innerHTML = html;
   labelControls($('#modalContent'));
   document.body.classList.add('sheet-open');
@@ -4246,6 +4439,62 @@ function showModal(html, wire){
   enhanceSelects($('#modalContent'));
   refreshIcons();
   setTimeout(()=>$('#modalContent').querySelector('input[autofocus],[data-close],button,input,select,textarea')?.focus(),0);
+}
+
+function validEmail(value){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+function modalAuth(mode='signin',preset={}){
+  const creating=mode==='signup';
+  const title=tr(creating?'auth.createTitle':'auth.welcome');
+  const intro=tr(creating?'auth.createIntro':'auth.signInIntro');
+  showModal(`
+    <div class="sheet-head"><h3>${esc(tr(creating?'auth.create':'auth.signIn'))}</h3><button class="btn sm ghost" type="button" data-close>${icon('x',14)}<span>${esc(tr('detail.close'))}</span></button></div>
+    <div class="auth-intro"><h2>${esc(title)}</h2><p>${esc(intro)}</p></div>
+    <form class="auth-form" id="authForm" novalidate>
+      ${creating?`<div class="field"><label for="authName">${esc(tr('auth.name'))}</label><input id="authName" name="name" autocomplete="name" maxlength="80" placeholder="${esc(tr('auth.namePlaceholder'))}" value="${esc(preset.name||'')}" autofocus></div>`:''}
+      <div class="field"><label for="authEmail">${esc(tr('auth.email'))}</label><input id="authEmail" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(preset.email||'')}" ${creating?'':'autofocus'}></div>
+      <div class="field password-field"><label for="authPassword">${esc(tr('auth.password'))}</label><input id="authPassword" name="password" type="password" autocomplete="${creating?'new-password':'current-password'}" minlength="8" aria-describedby="authPasswordHelp" placeholder="${esc(tr('auth.passwordHelp'))}"><button class="password-toggle" id="authPasswordToggle" type="button" aria-label="${esc(tr('auth.show'))}" aria-pressed="false">${icon('eye',16)}</button></div>
+      <p class="hint" id="authPasswordHelp">${esc(tr('auth.passwordHelp'))}</p>
+      <div class="auth-message" id="authMessage" role="status" aria-live="polite"></div>
+      <button class="btn primary auth-submit" id="authSubmit" type="submit"><span>${esc(tr(creating?'auth.create':'auth.signIn'))}</span></button>
+      <p class="auth-switch">${esc(tr(creating?'auth.existing':'auth.new'))} <button type="button" id="authSwitch">${esc(tr(creating?'auth.signIn':'auth.create'))}</button></p>
+    </form>`,root=>{
+      $('#modal').classList.add('auth-modal');
+      $('#modal').setAttribute('aria-label',title);
+      const form=$('#authForm',root), email=$('#authEmail',root), password=$('#authPassword',root), name=$('#authName',root);
+      const message=$('#authMessage',root), submit=$('#authSubmit',root), toggle=$('#authPasswordToggle',root);
+      const clearInvalid=()=>[name,email,password].filter(Boolean).forEach(field=>{field.removeAttribute('aria-invalid');field.setAttribute('aria-describedby',field===password?'authPasswordHelp':'');if(!field.getAttribute('aria-describedby'))field.removeAttribute('aria-describedby');});
+      const setMessage=(copy,type='',field=null)=>{message.textContent=copy;message.className=`auth-message${type?' is-'+type:''}`;message.setAttribute('role',type==='error'?'alert':'status');if(field){field.setAttribute('aria-invalid','true');field.setAttribute('aria-describedby',[field===password?'authPasswordHelp':'','authMessage'].filter(Boolean).join(' '));}};
+      const setLoading=loading=>{
+        [...form.elements].forEach(control=>control.disabled=loading);
+        submit.innerHTML=loading?`<span class="auth-spinner" aria-hidden="true"></span><span>${esc(tr(creating?'auth.creating':'auth.signing'))}</span>`:`<span>${esc(tr(creating?'auth.create':'auth.signIn'))}</span>`;
+        if(!loading) refreshIcons(submit);
+      };
+      toggle.onclick=()=>{
+        const showing=password.type==='text';password.type=showing?'password':'text';
+        toggle.setAttribute('aria-pressed',String(!showing));toggle.setAttribute('aria-label',tr(showing?'auth.show':'auth.hide'));
+        toggle.innerHTML=icon(showing?'eye':'eye-off',16);refreshIcons(toggle);password.focus();
+      };
+      [name,email,password].filter(Boolean).forEach(field=>field.addEventListener('input',()=>{field.removeAttribute('aria-invalid');if(message.classList.contains('is-error'))setMessage('');}));
+      $('#authSwitch',root).onclick=()=>modalAuth(creating?'signin':'signup',{email:email.value.trim(),name:name?.value.trim()||''});
+      form.onsubmit=async event=>{
+        event.preventDefault();clearInvalid();setMessage('');
+        const emailValue=email.value.trim(), passwordValue=password.value, nameValue=name?.value.trim()||'';
+        if(creating && nameValue.length<2){setMessage(tr('auth.invalidName'),'error',name);name.focus();return;}
+        if(!validEmail(emailValue)){setMessage(tr('auth.invalidEmail'),'error',email);email.focus();return;}
+        if(passwordValue.length<8){setMessage(tr('auth.shortPassword'),'error',password);password.focus();return;}
+        if(!cloud.client){setMessage(tr('auth.starting'),'error');return;}
+        setLoading(true);
+        try{
+          const result=creating?await cloudSignUp(nameValue,emailValue,passwordValue):await cloudSignIn(emailValue,passwordValue);
+          if(result.error){const code=String(result.error.code||'');setMessage(friendlyAuthError(result.error,creating?'signup':'signin'),'error',code.includes('email')?email:null);return;}
+          if(creating && !result.data?.session){setMessage(tr('auth.confirm'),'success');toast(tr('auth.confirmSent'));return;}
+          closeSheets();toast(tr(creating?'auth.created':'auth.signedIn'));
+        }catch(error){setMessage(friendlyAuthError(error,creating?'signup':'signin'),'error');}
+        finally{if(form.isConnected)setLoading(false);}
+      };
+    });
 }
 
 function modalAdd(){
@@ -4468,21 +4717,14 @@ function modalSettings(){
       </div>
       <div class="field">
         <label>${esc(tr('settings.cloud'))}</label>
-        <p class="hint" id="cloudStatus">${cloudStatus()}</p>
+        <p class="hint" id="cloudStatus">${esc(cloudStatus())}</p>
         ${cloud.user ? `
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn" id="sCloudSync">Sync now</button>
-            <button class="btn ghost" id="sCloudSignOut">Sign out</button>
-          </div>` : `
-          <div class="two">
-            <div class="field"><label>Email</label><input id="sCloudEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
-            <div class="field"><label>Password</label><input id="sCloudPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+            <button class="btn" id="sCloudSync">${esc(tr('cloud.sync'))}</button>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn primary" id="sCloudSignIn">Sign in</button>
-            <button class="btn ghost" id="sCloudSignUp">Create account</button>
-          </div>
-          <p class="hint" style="margin-top:8px">Sign in to keep one private library across your devices.</p>`}
+          <p class="hint" style="margin-top:8px">${esc(tr('cloud.manageHelp'))}</p>` : `
+          <button class="btn" id="sOpenAuth">${icon('user-round',15)}<span>${esc(tr('cloud.open'))}</span></button>
+          <p class="hint" style="margin-top:8px">${esc(tr('cloud.openHelp'))}</p>`}
       </div>
       <div class="field">
         <label>${esc(tr('settings.danger'))}</label>
@@ -4513,13 +4755,8 @@ function modalSettings(){
       $('#sImportBtn',root).onclick = ()=>$('#sImport',root).click();
       $('#sImport',root).onchange = e=>importJSON(e.target.files[0]);
       if(cloud.user){
-        $('#sCloudSync',root).onclick = async ()=>{ await pushCloud(); toast('Cloud sync complete.'); };
-        $('#sCloudSignOut',root).onclick = cloudSignOut;
-      }else if(cloud.client){
-        const credentials = ()=>({email:$('#sCloudEmail',root).value.trim(), password:$('#sCloudPassword',root).value});
-        $('#sCloudSignIn',root).onclick = ()=>{ const {email,password}=credentials(); if(email&&password) cloudSignIn(email,password); };
-        $('#sCloudSignUp',root).onclick = ()=>{ const {email,password}=credentials(); if(email&&password) cloudSignUp(email,password); };
-      }
+        $('#sCloudSync',root).onclick = async ()=>{ const ok=await pushCloud();toast(tr(ok?'cloud.complete':'cloud.unavailable')); };
+      }else $('#sOpenAuth',root).onclick = ()=>modalAuth('signin');
       $('#sReset',root).onclick = ()=>{
         if(!confirm('Erase your whole library and start again from the original lists?')) return;
         state = blank(); seedIfEmpty(); closeSheets(); render();
@@ -4571,27 +4808,85 @@ function toast(msg, actionLabel, onAction){
 }
 const hideToast = ()=>$('#toast').classList.remove('on');
 
-function closeMobileMenu(restoreFocus=false){
-  const menu = $('#mobileMenu');
-  if(menu.hidden) return;
-  menu.hidden = true;
-  $('#btnMobileMenu').setAttribute('aria-expanded','false');
-  if(restoreFocus) $('#btnMobileMenu').focus();
+const authDisplayName=user=>String(user?.user_metadata?.display_name||user?.user_metadata?.full_name||user?.email?.split('@')[0]||'Reel account').trim();
+function authInitials(user){
+  const words=authDisplayName(user).split(/\s+/).filter(Boolean);
+  return (words.length>1?words[0][0]+words.at(-1)[0]:words[0]?.slice(0,2)||'R').toLocaleUpperCase();
 }
-
-function toggleMobileMenu(){
-  const menu = $('#mobileMenu');
-  const opening = menu.hidden;
-  menu.hidden = !opening;
-  $('#btnMobileMenu').setAttribute('aria-expanded',String(opening));
-  if(opening) setTimeout(()=>menu.querySelector('[role="menuitem"]')?.focus(),0);
+function safeAvatarUrl(user){
+  const value=String(user?.user_metadata?.avatar_url||user?.user_metadata?.picture||'');
+  try{const url=new URL(value);return /^https?:$/.test(url.protocol)?url.href:'';}catch{return '';}
+}
+function avatarMarkup(user){
+  const src=safeAvatarUrl(user),initials=esc(authInitials(user));
+  return `<span class="avatar-stack" aria-hidden="true"><span class="avatar-fallback">${initials}</span>${src?`<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`:''}</span>`;
+}
+function updateAuthChrome(){
+  const signedIn=!!cloud.user, signIn=$('#btnAuth'), account=$('#btnAccount'), menu=$('#accountMenu'), nav=$('#navAccount');
+  if(!signIn||!account||!nav) return;
+  signIn.hidden=signedIn;account.hidden=!signedIn;
+  if(signedIn){
+    account.innerHTML=avatarMarkup(cloud.user);
+    account.setAttribute('aria-label',`${tr('account.open')}: ${authDisplayName(cloud.user)}`);
+    $('.account-summary>.avatar-fallback',menu)?.replaceWith((()=>{const host=document.createElement('span');host.className='avatar-fallback';host.textContent=authInitials(cloud.user);return host;})());
+    $('#accountName').textContent=authDisplayName(cloud.user);$('#accountEmail').textContent=cloud.user.email||'';
+    nav.innerHTML=`<div class="nav-account-card">${avatarMarkup(cloud.user)}<span class="nav-account-copy"><b>${esc(authDisplayName(cloud.user))}</b><small>${esc(cloud.user.email||tr('auth.signedIn'))}</small></span><button type="button" class="icon-btn" data-nav-auth="signout" aria-label="${esc(tr('auth.signOut'))}" title="${esc(tr('auth.signOut'))}">${icon('log-out',16)}</button></div>`;
+  }else{
+    closeAccountMenu();
+    nav.innerHTML=`<div class="nav-auth-actions"><button type="button" class="btn" data-nav-auth="signin">${esc(tr('auth.signIn'))}</button><button type="button" class="btn primary" data-nav-auth="signup">${esc(tr('auth.create'))}</button></div>`;
+  }
+  refreshIcons(nav);refreshIcons(account);
+}
+function closeAccountMenu(restoreFocus=false){
+  const menu=$('#accountMenu');if(!menu||menu.hidden)return;
+  menu.hidden=true;$('#btnAccount').setAttribute('aria-expanded','false');
+  if(restoreFocus)$('#btnAccount').focus();
+}
+function toggleAccountMenu(){
+  const menu=$('#accountMenu'),opening=menu.hidden;
+  if(!opening){closeAccountMenu(true);return;}
+  menu.hidden=false;$('#btnAccount').setAttribute('aria-expanded','true');
+  setTimeout(()=>menu.querySelector('[role="menuitem"]')?.focus(),0);
+}
+function updateNavCurrent(){
+  $$('#navDrawer [data-nav-action="list"],#navDrawer [data-nav-action="catalog"]').forEach(button=>{
+    const active=button.dataset.navAction==='catalog'?filterType==='catalog':filterType!=='catalog';
+    if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+  });
+}
+function openNavDrawer(){
+  closeAccountMenu();closeSheets();
+  const drawer=$('#navDrawer'),overlay=$('#navOverlay');
+  updateNavCurrent();overlay.hidden=false;drawer.removeAttribute('inert');drawer.setAttribute('aria-hidden','false');
+  document.body.classList.add('nav-open');$('#btnMobileMenu').setAttribute('aria-expanded','true');
+  requestAnimationFrame(()=>{overlay.classList.add('on');drawer.classList.add('on');});
+  setTimeout(()=>$('#navClose').focus(),40);
+}
+function closeNavDrawer(restoreFocus=false){
+  const drawer=$('#navDrawer'),overlay=$('#navOverlay');if(!drawer.classList.contains('on'))return;
+  drawer.classList.remove('on');overlay.classList.remove('on');drawer.setAttribute('aria-hidden','true');drawer.setAttribute('inert','');
+  document.body.classList.remove('nav-open');$('#btnMobileMenu').setAttribute('aria-expanded','false');
+  setTimeout(()=>{if(!drawer.classList.contains('on'))overlay.hidden=true;},matchMedia('(prefers-reduced-motion: reduce)').matches?0:250);
+  if(restoreFocus)$('#btnMobileMenu').focus();
+}
+function goToList(){
+  activateType('all',-1);setTimeout(()=>$('#typeTabs').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'}),0);
+}
+function runNavAction(action){
+  const opensSheet=['pick','add','import','settings'].includes(action);
+  closeNavDrawer(!opensSheet);
+  if(action==='home'){window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return;}
+  if(action==='list'){goToList();return;}
+  if(action==='catalog'){activateType('catalog',1);return;}
+  ({pick:modalPick,add:modalAdd,import:modalBulk,enrich:fetchMissingCovers,theme:toggleTheme,settings:modalSettings,export:exportJSON}[action])?.();
+  if(opensSheet) returnFocus=$('#btnMobileMenu');
 }
 
 function toggleTheme(){
   state.ui.theme = state.ui.theme==='dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme=state.ui.theme;
   setButtonLabel('#btnTheme',state.ui.theme==='dark'?localeMeta().light:localeMeta().dark);
-  setButtonLabel('#mobileTheme',state.ui.theme==='dark'?localeMeta().switchLight:localeMeta().switchDark);
+  setButtonLabel('#btnTheme',state.ui.theme==='dark'?localeMeta().switchLight:localeMeta().switchDark);
   save();
 }
 function activateType(type,direction=1){
@@ -4600,6 +4895,7 @@ function activateType(type,direction=1){
   const keepTabPosition=before.bottom>0 && before.top<window.innerHeight;
   const scrollBefore=window.scrollY;
   filterType=type;libraryPage=1;
+  updateNavCurrent();
   renderGenres();
   updateModeChrome();
   renderGrid();
@@ -4649,20 +4945,31 @@ $('#libraryPagination').addEventListener('click',e=>{
   window.scrollTo({top:Math.max(0,top),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   requestAnimationFrame(()=>$('#grid .card')?.focus({preventScroll:true}));
 });
-$('#btnTheme').addEventListener('click', toggleTheme);
 $('#btnPick').addEventListener('click', modalPick);
-$('#btnAdd').addEventListener('click', modalAdd);
-$('#btnPaste').addEventListener('click', modalBulk);
-$('#btnMore').addEventListener('click', modalSettings);
-$('#btnCovers').addEventListener('click', fetchMissingCovers);
 $('#btnExport2').addEventListener('click', exportJSON);
-$('#btnMobileMenu').addEventListener('click', e=>{ e.stopPropagation(); toggleMobileMenu(); });
-$('#mobileMenu').addEventListener('click', e=>{
-  const button = e.target.closest('[data-mobile-action]'); if(!button) return;
-  const action = button.dataset.mobileAction;
-  closeMobileMenu();
-  $('#btnMobileMenu').focus();
-  ({pick:modalPick,import:modalBulk,enrich:fetchMissingCovers,theme:toggleTheme,settings:modalSettings,export:exportJSON}[action])?.();
+$('#btnMobileMenu').addEventListener('click', openNavDrawer);
+$('#navClose').addEventListener('click',()=>closeNavDrawer(true));
+$('#navOverlay').addEventListener('click',()=>closeNavDrawer(true));
+$('#navDrawer').addEventListener('click',e=>{
+  const auth=e.target.closest('[data-nav-auth]');
+  if(auth){const mode=auth.dataset.navAuth;closeNavDrawer();if(mode==='signout')cloudSignOut();else modalAuth(mode);return;}
+  const action=e.target.closest('[data-nav-action]')?.dataset.navAction;if(action){e.preventDefault();runNavAction(action);}
+});
+$('#btnAuth').addEventListener('click',()=>modalAuth('signin'));
+$('#btnAccount').addEventListener('click',e=>{e.stopPropagation();toggleAccountMenu();});
+$('#accountMenu').addEventListener('click',e=>{
+  const action=e.target.closest('[data-account-action]')?.dataset.accountAction;if(!action)return;
+  closeAccountMenu();
+  if(action==='list'){goToList();$('#btnAccount').focus();}
+  else if(action==='settings'){modalSettings();returnFocus=$('#btnAccount');}
+  else if(action==='signout')cloudSignOut();
+});
+$('#accountMenu').addEventListener('keydown',e=>{
+  const items=$$('#accountMenu [role="menuitem"]').filter(item=>!item.disabled);if(!items.length)return;
+  const index=items.indexOf(document.activeElement);
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();items[(index+(e.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();}
+  else if(e.key==='Home'){e.preventDefault();items[0].focus();}
+  else if(e.key==='End'){e.preventDefault();items.at(-1).focus();}
 });
 $('#overlay').addEventListener('click', closeSheets);
 $('#catalogTypeFilters').addEventListener('click', e=>{
@@ -4680,7 +4987,7 @@ $('#personViewer').addEventListener('click',e=>{ if(e.target===$('#personViewer'
 
 document.addEventListener('click', async e=>{
   if(openSmart && !e.target.closest('.smart-select') && !e.target.closest('.smart-select-menu')) closeSmartSelect();
-  if(!e.target.closest('#mobileMenu')) closeMobileMenu();
+  if(!e.target.closest('.auth-nav')) closeAccountMenu();
   if(e.target.closest('[data-close]')) { closeSheets(); return; }
 
   const zoom = e.target.closest('[data-zoom-src]');
@@ -4738,10 +5045,11 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape' && !$('#personViewer').hidden){ closePerson(); return; }
   if(e.key==='Escape' && !$('#mediaViewer').hidden){ closeMedia(); return; }
   if(e.key==='Escape' && openSmart){ closeSmartSelect(true); return; }
-  if(e.key==='Escape' && !$('#mobileMenu').hidden){ closeMobileMenu(true); return; }
+  if(e.key==='Escape' && !$('#accountMenu').hidden){ closeAccountMenu(true); return; }
+  if(e.key==='Escape' && $('#navDrawer').classList.contains('on')){ closeNavDrawer(true); return; }
   if(e.key==='Escape'){ closeSheets(); return; }
   if(e.key==='Tab'){
-    const panel = $('#modal').classList.contains('on') ? $('#modal') : ($('#drawer').classList.contains('on') ? $('#drawer') : null);
+    const panel = $('#modal').classList.contains('on') ? $('#modal') : ($('#drawer').classList.contains('on') ? $('#drawer') : ($('#navDrawer').classList.contains('on') ? $('#navDrawer') : null));
     if(panel){
       const focusable = $$('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',panel)
         .filter(el=>el.getClientRects().length);
@@ -4780,11 +5088,17 @@ window.reelRecommendationBridge = {
   token:async()=>{const session=await cloud.client?.auth.getSession();return session?.data?.session?.access_token||null;},
   find:recommendationLibraryItem,add:addRecommendation,settings:()=>{closeSheets();modalSettings();},
   seen:async candidate=>{const item=addRecommendation(candidate);await changeItemStatus(item,'done');refreshLibrarySurfaces({counts:true});},
-  details:candidate=>{
+  details:(candidate,options={})=>{
     const saved=recommendationLibraryItem(candidate);
-    if(saved){closeSheets();openItem(saved.id);return;}
+    if(saved){closeSheets();if(options.origin==='picker')markPickerDetailOrigin();openItem(saved.id);return;}
     closeSheets();
+    if(options.origin==='picker')markPickerDetailOrigin();
     showModal(catalogDetailMarkup(candidate,-1),root=>{
+      if(pickerDetailOrigin){
+        const head=root.querySelector('.sheet-head');
+        head?.insertAdjacentHTML('beforeend',`<button class="btn sm ghost" data-picker-back>${icon('arrow-left',14)}<span>Back to Pick 4 me</span></button>`);
+        root.querySelector('[data-picker-back]').onclick=returnToPicker;
+      }
       const add=root.querySelector('[data-catalog-add]');
       if(add){add.removeAttribute('data-catalog-add');add.onclick=()=>{const item=addRecommendation(candidate);closeSheets();openItem(item.id);};}
     });
@@ -4809,6 +5123,10 @@ window.reelRecommendationBridge = {
     return candidate;
   }
 };
+window.addEventListener('popstate',()=>{
+  if(!pickerDetailOrigin && !returningToPicker)return;
+  pickerDetailOrigin=false;returningToPicker=false;closeSheets();window.ReelRecommendationUI?.resume();
+});
 seedIfEmpty();
 render();
 initCloud();

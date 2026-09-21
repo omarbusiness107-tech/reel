@@ -241,7 +241,7 @@ Spacing follows a tight working rhythm of `4px`, `8px`, `12px`, `18px`, `24px`, 
 
 ### Recommendation dialog
 
-The recommendation dialog has a scrollable conversation body and a separate, always-visible reply composer within the dynamic viewport. It reaches a maximum width of `1040px`; compact mode, source, and exact-format controls keep the result in the first view. The result places a contained portrait up to `178px` wide beside title facts and explanation. Guide me uses a persistent Reel-and-user transcript beside the current question or result on desktop, then stacks into a short scrollable transcript on mobile. At `600px` and below, the portrait is `96px` wide and the explanation and actions span the full row below the title. Answer, source/media, and removable preference controls have a `44px` mobile minimum height; the mobile reply field uses `16px` text.
+The recommendation dialog is a viewport-locked decision room at up to `1240px` wide and `94dvh` high. A 44/56 desktop split gives the left recommendation workspace and right conversation workspace independent visual weight. The left uses `minmax(0, 1fr) / 104px` rows for the active result and compact session history. The right uses explicit header, context, flexible chat, suggestions, and composer rows, so the composer is structural rather than overlaid. Only chat, long explanations, list strips, and history may scroll internally. At `900px` and below, accessible Chat/Pick tabs show one full workspace at a time without changing DOM order. The mobile reply field uses `16px` text and safe-area bottom padding.
 
 ## Elevation & Depth
 
@@ -311,11 +311,11 @@ The loading mark is a `42px` framed aperture with a cobalt inner exposure sweepi
 
 ### Recommendation Conversation
 
-A precise extension of Pick for me, using the existing carbon/paper surfaces, condensed headings, and Manrope controls. Ask Reel accepts a direct request, Guide me keeps a visible conversation with contextual answer chips, and Surprise me makes one varied choice. Retain the free-text composer, and show the active source, exact format, and removable preferences above the conversation. Selected mode buttons reverse theme foreground and background; selected source/media buttons and primary actions use the recommendation cobalt variants.
+A precise extension of Pick 4 me, using the existing carbon/paper surfaces, condensed headings, and Manrope controls. Direct requests and up to three useful follow-up questions share one Pick 4 me transcript; Surprise me remains a separate mode without a composer. Compact controls keep source, exact format, One/List output, optional list count, and privacy preferences in the right header. Removable semantic chips summarize the active context without exposing internal data. Selected mode buttons reverse theme foreground and background; selected controls and primary actions use the recommendation cobalt variants.
 
-Results pair real cover artwork with labeled catalog facts, a grounded explanation, and visible Another, View details, and library actions. Show an explicit cover-unavailable state when artwork is absent. Loading, empty, and failure states retain the composer and preferences; input is temporarily disabled during matching. After an asynchronous update, keyboard focus returns to a surviving action or the new heading. Questions and results arrive over `180ms` with a `5px` upward settle; reduced motion removes all recommendation animation and transitions.
+Results pair full-height cover artwork with labeled facts, a grounded explanation, and visible Details, Save, regenerate, rejection, and seen actions. List mode retains one readable main result and places other distinct picks in a compact selectable strip. A secondary history strip restores any recommendation from the current session, while linked transcript controls restore the request's complete result group. Show explicit cover-unavailable, loading, empty, and recoverable failure states; input is temporarily disabled during matching. Questions, messages, and results arrive over `180–240ms` with a small upward settle; reduced motion removes visible movement.
 
-Source: `assets/recommendations.css` and `assets/recommendations.js`. Surface direction: design variance `3`, motion intensity `3`, visual density `4`; these values describe this conversation rather than changing the library's density.
+Source: `assets/recommendations.css` and `assets/recommendations.js`. Surface direction: design variance `6`, motion intensity `4`, visual density `7`; these values describe this focused mini-app rather than changing the library's density.
 
 ## Do's and Don'ts
 
