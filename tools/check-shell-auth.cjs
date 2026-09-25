@@ -10,8 +10,11 @@ const supabaseStub = `
 window.supabase={createClient(){
   const listeners=[];
   const read=()=>{try{return JSON.parse(localStorage.getItem('reel.mock.session')||'null')}catch{return null}};
+  const readDb=()=>{try{return JSON.parse(localStorage.getItem('reel.mock.db')||'{"titles":{},"users":{},"preferences":{}}')}catch{return {titles:{},users:{},preferences:{}}}};
+  const writeDb=db=>localStorage.setItem('reel.mock.db',JSON.stringify(db));
   const write=session=>{if(session)localStorage.setItem('reel.mock.session',JSON.stringify(session));else localStorage.removeItem('reel.mock.session');listeners.forEach(fn=>fn(session?'SIGNED_IN':'SIGNED_OUT',session));};
-  const user=email=>({id:'user-1',email,user_metadata:{display_name:'Omar Guest'}});
+  const user=email=>({id:email.startsWith('sara')?'account-b':'account-a',email,user_metadata:{display_name:email.startsWith('sara')?'Sara Account':'Omar Guest'}});
+  const currentId=()=>read()?.user?.id;
   return {
     auth:{
       getSession:async()=>({data:{session:read()},error:null}),
@@ -26,10 +29,23 @@ window.supabase={createClient(){
       },
       signOut:async()=>{write(null);return {error:null}}
     },
-    from(){return {
-      select(){return {eq(){return {maybeSingle:async()=>({data:null,error:null})}}}},
-      upsert:async()=>({error:null})
-    }}
+    from(name){return {
+      select(){
+        if(name==='user_titles')return {order:async()=>{await new Promise(resolve=>setTimeout(resolve,20));return {data:readDb().users[currentId()]||[],error:null}}};
+        if(name==='user_preferences')return {maybeSingle:async()=>({data:readDb().preferences[currentId()]?{settings:readDb().preferences[currentId()]}:null,error:null})};
+        return {maybeSingle:async()=>({data:null,error:null})};
+      }
+    }},
+    rpc:async(name,args)=>{
+      if(name!=='sync_my_library'||!currentId())return {data:null,error:{message:'unauthorized'}};
+      const db=readDb(),uid=currentId(),rows=[];
+      for(const entry of args.p_entries||[]){
+        const key=entry.provider+'|'+entry.providerId;
+        db.titles[key] ||= {id:'title-'+Object.keys(db.titles).length,provider:entry.provider,provider_id:entry.providerId,media_type:entry.mediaType,title:entry.title,release_year:entry.year,poster_url:entry.posterUrl,backdrop_url:entry.backdropUrl,description:entry.description,creator:entry.creator,genres:entry.genres,runtime_minutes:entry.runtimeMinutes,page_count:entry.pageCount,public_rating:entry.publicRating,metadata:entry.metadata};
+        rows.push({id:'entry-'+uid+'-'+key,title_id:db.titles[key].id,status:entry.status,rating:entry.rating,favorite:entry.favorite,current_season:entry.currentSeason,current_episode:entry.currentEpisode,current_page:entry.currentPage,current_chapter:entry.currentChapter,stopped_at_sec:entry.stoppedAtSec,notes:entry.notes,tags:entry.tags,started_at:entry.startedAt,completed_at:entry.completedAt,last_interaction_at:entry.lastInteractionAt,created_at:entry.createdAt,updated_at:entry.lastInteractionAt,title:db.titles[key]});
+      }
+      db.users[uid]=rows;db.preferences[uid]=args.p_preferences||{};writeDb(db);return {data:rows.length,error:null};
+    }
   };
 }};`;
 
@@ -53,6 +69,8 @@ async function checkResponsive(browser,width,height){
   await page.click('#btnMobileMenu');
   await page.waitForSelector('#navDrawer.on');
   const drawerRatio=await page.locator('#navDrawer').evaluate(el=>el.getBoundingClientRect().width/innerWidth);
+  const closeControl=await page.locator('#navClose').evaluate(el=>{const rect=el.getBoundingClientRect();return {width:rect.width,height:rect.height}});
+  assert.deepEqual(closeControl,{width:40,height:40},`${width}: drawer Close must remain a compact icon control`);
   const navLayout=await page.locator('.nav-drawer-list').evaluate(el=>({display:getComputedStyle(el).display,columns:getComputedStyle(el).gridTemplateColumns,children:[...el.children].map(child=>({width:child.getBoundingClientRect().width,top:child.getBoundingClientRect().top}))}));
   assert.equal(new Set(navLayout.children.map(child=>child.top)).size,navLayout.children.length,`${width}: drawer navigation must be one vertical list (${JSON.stringify(navLayout)})`);
   assert.match(await page.locator('#btnAdd').textContent(),/Add title/i,`${width}: Add Title label must stay visible in the drawer`);
@@ -122,9 +140,49 @@ async function checkResponsive(browser,width,height){
     await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForSelector('#btnAccount:not([hidden])');
     assert.equal(await page.locator('#btnAuth').isHidden(),true,'session must survive refresh');
+    await page.evaluate(async()=>{
+      state.items=[];
+      const add=(title,type,status,catalogId,rating=0)=>{const item=makeItem(title,type,status);item.catalogId=catalogId;item.rating=rating;state.items.push(item);};
+      add('Interstellar 2014','movie','done','wikidata:Q13417189',9);
+      add('Breaking Bad 2008','series','going','tvmaze:169');
+      add('Dune 2021','movie','want','wikidata:Q61446713');
+      render();await pushCloud();
+    });
+    const switchCheck=await page.evaluate(async()=>{
+      const titleBefore=state.items[0]?.title;
+      const loading=cloudSignIn('sara@example.com','password123');
+      await new Promise(resolve=>setTimeout(resolve,0));
+      const immediate={loading:cloud.loading,count:state.items.length};
+      await loading;
+      const accountB={count:state.items.length,titles:state.items.map(item=>item.title)};
+      await cloudSignIn('omar@example.com','password123');
+      return {titleBefore,immediate,accountB,accountA:{titles:state.items.map(item=>item.title).sort(),status:state.items.find(item=>item.title==='Interstellar')?.status,rating:state.items.find(item=>item.title==='Interstellar')?.rating}};
+    });
+    assert.equal(switchCheck.titleBefore,'Interstellar');
+    assert.deepEqual(switchCheck.immediate,{loading:true,count:0},'account changes clear the old private state before loading');
+    assert.deepEqual(switchCheck.accountB,{count:0,titles:[]},'new account must not inherit account A');
+    assert.deepEqual(switchCheck.accountA,{titles:['Breaking Bad','Dune','Interstellar'],status:'done',rating:9},'account A state survives independently');
+    const sharedTitleCheck=await page.evaluate(async()=>{
+      await cloudSignIn('sara@example.com','password123');
+      const add=(title,type,status,catalogId)=>{const item=makeItem(title,type,status);item.catalogId=catalogId;state.items.push(item);};
+      add('The Batman 2022','movie','done','wikidata:Q25188');
+      add('Naruto 2002','anime','going','kitsu-anime:11');
+      add('Interstellar 2014','movie','want','wikidata:Q13417189');
+      render();await pushCloud();
+      const db=JSON.parse(localStorage.getItem('reel.mock.db'));
+      await cloudSignIn('omar@example.com','password123');
+      return {globalTitles:Object.keys(db.titles).length,interstellarTitles:Object.values(db.titles).filter(title=>title.title==='Interstellar').length,accountARows:db.users['account-a'].length,accountBRows:db.users['account-b'].length,bTitles:db.users['account-b'].map(row=>row.title.title).sort(),a:db.users['account-a'].find(row=>row.title.title==='Interstellar'),b:db.users['account-b'].find(row=>row.title.title==='Interstellar')};
+    });
+    assert.equal(sharedTitleCheck.globalTitles,5);
+    assert.equal(sharedTitleCheck.interstellarTitles,1,'same provider title is stored globally once');
+    assert.deepEqual([sharedTitleCheck.accountARows,sharedTitleCheck.accountBRows],[3,3]);
+    assert.deepEqual(sharedTitleCheck.bTitles,['Interstellar','Naruto','The Batman']);
+    assert.deepEqual([sharedTitleCheck.a.status,sharedTitleCheck.a.rating,sharedTitleCheck.b.status,sharedTitleCheck.b.rating],['done',9,'want',0]);
+    await page.waitForFunction(()=>!cloud.loading&&cloud.user?.id==='account-a');
     await page.click('#btnAccount');
     assert.equal(await page.locator('#accountMenu').isVisible(),true);
     assert.match(await page.locator('#accountMenu').textContent(),/omar@example.com/);
+    await page.waitForFunction(()=>document.activeElement?.dataset.accountAction==='list');
     await page.keyboard.press('End');
     assert.equal(await page.evaluate(()=>document.activeElement?.dataset.accountAction),'signout');
     await page.keyboard.press('Escape');
@@ -143,6 +201,15 @@ async function checkResponsive(browser,width,height){
       assert.equal(pickStyle.overflow,'hidden');assert.equal(pickStyle.clip,'border-box');assert.equal(pickStyle.border,'0px');
       assert.equal(pickStyle.surface,restingSurface);
     }
+    await page.locator('#sort').evaluate(select=>select._smart.trigger.click());
+    await page.waitForFunction(()=>document.querySelector('#sort')._smart.menu.dataset.open==='true');
+    const selectGeometry=await page.locator('#sort').evaluate(select=>{
+      const {trigger,menu}=select._smart;
+      const measure=node=>{const rect=node.getBoundingClientRect();return {left:rect.left,right:rect.right,width:rect.width}};
+      return {trigger:measure(trigger),menu:measure(menu)};
+    });
+    assert.ok(Math.abs(selectGeometry.trigger.left-selectGeometry.menu.left)<.1&&Math.abs(selectGeometry.trigger.right-selectGeometry.menu.right)<.1&&Math.abs(selectGeometry.trigger.width-selectGeometry.menu.width)<.1,`dropdown must match its trigger exactly (${JSON.stringify(selectGeometry)})`);
+    await page.keyboard.press('Escape');
     await page.evaluate(()=>{state.ui.language='ar';render()});
     assert.equal(await page.locator('html').getAttribute('dir'),'rtl');
     await page.click('#btnMobileMenu');

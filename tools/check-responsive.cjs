@@ -4,7 +4,7 @@ const { pathToFileURL } = require('node:url');
 const path = require('node:path');
 const fs = require('node:fs');
 const output = process.env.REEL_QA_OUTPUT || path.join(require('node:os').tmpdir(), 'reel-responsive-qa');
-const widths = [320, 390, 520, 640, 768, 1024, 1120, 1280, 1440, 1920, 2560];
+const widths = [320, 375, 390, 430, 520, 640, 768, 1024, 1120, 1280, 1440, 1920, 2560];
 
 (async () => {
   fs.mkdirSync(output, { recursive: true });
@@ -102,7 +102,8 @@ const widths = [320, 390, 520, 640, 768, 1024, 1120, 1280, 1440, 1920, 2560];
       await page.keyboard.press('Escape');
       if (width < 1281) {
         await page.locator('#btnMobileMenu').click();
-        if (!(await page.locator('#mobileMenu').isVisible())) errors.push(`Menu inaccessible at ${width}`);
+        await page.waitForTimeout(80);
+        if (!(await page.locator('#navDrawer').isVisible())) errors.push(`Menu inaccessible at ${width}`);
         await page.keyboard.press('Escape');
       }
       await page.evaluate(() => modalPick());
@@ -133,6 +134,37 @@ const widths = [320, 390, 520, 640, 768, 1024, 1120, 1280, 1440, 1920, 2560];
     errors.push(`Tab manager failed: ${JSON.stringify(tabManager)}`);
   }
   await page.evaluate(() => closeSheets());
+
+  // People search cards and the profile hero keep fixed portrait geometry at acceptance widths.
+  for (const width of [375, 430, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const peopleLayout = await page.evaluate(width => {
+      const svg=(w,h,color)=>`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="${color}"/></svg>`)}`;
+      const people=[
+        {name:'Profile Alpha',role:'Actor',image:svg(160,200,'navy')},
+        {name:'Profile Beta',role:'Director',image:svg(80,400,'purple')},
+        {name:'Profile Gamma',role:'Writer',image:svg(400,80,'teal')},
+        {name:'Profile Delta',role:'Actor',image:''},
+        {name:'Profile Epsilon With A Long Name',role:'Producer',image:'https://images.invalid/missing-person.jpg'}
+      ];
+      const work=Object.assign(makeItem('People Geometry Film','movie'),{cast:people,year:2024,popularity:80});
+      state.items=[work];state.ui.language='en';state.ui.theme='dark';document.documentElement.dataset.theme='dark';filterType='all';filterStatus.clear();filterGenre='';query='profile';catalog.results=[];catalog.people=[];hideToast();render();
+      const cards=[...document.querySelectorAll('.person-result-card')].map(card=>{const rect=card.getBoundingClientRect(),portrait=card.querySelector('.person-portrait').getBoundingClientRect();return {width:rect.width,height:rect.height,ratio:portrait.width/portrait.height};});
+      activePersonProfile={...people[0],summary:'A documented biography. '.repeat(40),birthday:'1974-11-11',birthplace:'Test City',occupations:['actor'],yearsActive:[1992,2025],works:Array.from({length:18},(_,index)=>Object.assign(makeItem(`Profile Work ${index+1}`,index%3?'movie':'series'),{year:2025-index,popularity:100-index,creditRole:'Acting'}))};
+      document.querySelector('#personCard').innerHTML=personProfileMarkup(activePersonProfile);document.querySelector('#personViewer').hidden=false;document.body.classList.add('person-open');refreshIcons();
+      const card=document.querySelector('#personCard').getBoundingClientRect(),media=document.querySelector('.person-card-media .person-portrait').getBoundingClientRect(),copy=document.querySelector('.person-card-copy').getBoundingClientRect();
+      return {cards,overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,profileOverflow:card.right>innerWidth+1||card.left<-1,portraitWidth:media.width,stacked:Math.abs(media.top-copy.top)>40,width};
+    }, width);
+    await page.waitForTimeout(260);
+    const cardWidths=peopleLayout.cards.map(card=>card.width),cardRatios=peopleLayout.cards.map(card=>card.ratio);
+    if (!peopleLayout.cards.length || Math.max(...cardWidths)-Math.min(...cardWidths)>1 || cardRatios.some(ratio=>Math.abs(ratio-.8)>.02)) errors.push(`People cards lost stable 4:5 geometry at ${width}: ${JSON.stringify(peopleLayout.cards)}`);
+    if (peopleLayout.overflow || peopleLayout.profileOverflow) errors.push(`People surface overflow at ${width}`);
+    if (width<=430 && !peopleLayout.stacked) errors.push(`Person profile did not stack at ${width}`);
+    if (width>=768 && (peopleLayout.portraitWidth<275 || peopleLayout.portraitWidth>365)) errors.push(`Desktop profile portrait width ${peopleLayout.portraitWidth} at ${width}`);
+    if ([375,1440].includes(width)) await page.screenshot({ path:path.join(output,`person-profile-${width}.png`),fullPage:false });
+    await page.evaluate(()=>closePerson());
+    if ([375,1440].includes(width)) await page.screenshot({ path:path.join(output,`people-search-${width}.png`),fullPage:false });
+  }
 
   // The menu must remain present while it reverses, then finish fully closed.
   await page.evaluate(() => { filterType = 'all'; render(); window.scrollTo(0, 0); });
