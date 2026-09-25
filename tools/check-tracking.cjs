@@ -16,6 +16,7 @@ const output=path.join(require('node:os').tmpdir(),'reel-tracking-qa');
     await page.route('**/*',route=>{
       const url=route.request().url();
       if(url==='https://api.tvmaze.com/shows/999/episodes')return route.fulfill({json:episodes});
+      if(url==='https://api.tvmaze.com/shows/999/seasons')return route.fulfill({json:[{number:1},{number:2},{number:3}]});
       if(url==='https://api.tvmaze.com/shows/999')return route.fulfill({json:{id:999,status:'Running',rating:{average:8.2}}});
       if(url.includes('api.tvmaze.com/search/shows'))return route.fulfill({json:[]});
       if(url.startsWith('file:')||url.includes('cdn.jsdelivr.net'))return route.continue();
@@ -34,7 +35,8 @@ const output=path.join(require('node:os').tmpdir(),'reel-tracking-qa');
       const body=document.querySelector('#drawer .sheet-body'),nodes=[body.querySelector('#statusSeg'),body.querySelector('.progress-tracker'),body.querySelector('#stars'),body.querySelector('.title-facts')];
       return nodes.map(node=>[...body.children].findIndex(child=>child===node||child.contains(node)));
     });
-    assert.deepEqual(topOrder,[0,1,3,4]);
+    assert.deepEqual(topOrder,[0,2,4,5]);
+    assert.match(await page.locator('.auto-progress').innerText(),/Watching/);
     const statusColors=await page.evaluate(()=>{
       const read=status=>{
         const button=document.querySelector(`#statusSeg [data-status="${status}"]`);
@@ -73,6 +75,17 @@ const output=path.join(require('node:os').tmpdir(),'reel-tracking-qa');
     assert.equal(await page.locator('#nextSeason').isDisabled(),true);
     const facts=await page.locator('.labeled-facts').innerText();
     assert.match(facts,/Series status/);assert.match(facts,/Running/);assert.match(facts,/Rated by TVMaze users/);
+    const automaticCases=await page.evaluate(()=>{
+      const fixture=(status,nextSeasonConfirmed)=>({type:'series',season:2,episode:2,showStatus:status,nextSeasonConfirmed,futureEpisodeConfirmed:false,seasonGuide:[{number:1,episodes:[1,2,3]},{number:2,episodes:[1,2]}]});
+      return {
+        ended:automaticProgressStatus(fixture('Ended',false)).label,
+        confirmed:automaticProgressStatus(fixture('Running',true)).label,
+        airing:automaticProgressStatus(fixture('Running',false)).label,
+        unknown:automaticProgressStatus(fixture('To Be Determined',false)).label,
+        remaining:automaticProgressStatus({...fixture('Running',false),episode:1}).label
+      };
+    });
+    assert.deepEqual(automaticCases,{ended:'Completed',confirmed:'Awaiting Next Season',airing:'Awaiting New Episode',unknown:'Caught Up',remaining:'Watching'});
     // All finish entry points share the same last-season completion rule.
     await page.evaluate(()=>{closeSheets();state.items[0].status='going';state.items[0].season=1;state.items[0].episode=1;render();});
     await page.locator('.resume[data-id="tracking-test"] [data-act="done"]').click();

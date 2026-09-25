@@ -58,8 +58,10 @@ Screenshots are saved under the system temporary directory (`reel-tracking-qa`).
 
 ## Where your data lives
 
-In your browser's `localStorage`, under the key `reel.v1`, tied to this machine and this
-browser. Two consequences worth knowing:
+Signed-out guest data is stored in your browser's `localStorage` under `reel.guest.v1`,
+tied to this machine and browser. Older `reel.v1` data is treated only as guest data.
+Signed-in account libraries are loaded from Supabase and are not written into the guest key.
+Two consequences worth knowing for guest data:
 
 - Clearing your browser data wipes the library.
 - Opening `reel.html` in a *different* browser gives you an empty library.
@@ -70,12 +72,13 @@ So: use **Settings > Export JSON** now and then, and keep the backup file somewh
 ## Optional cloud sync
 
 Use **Sign in** in the main navigation, or open the side drawer and choose **Sign in** or
-**Create account**. Your library is then saved privately to your account and restores on
-your other devices after you sign in. The first sign-in for a new account uploads the library in that browser;
-an existing cloud library is treated as the source of truth when you sign in elsewhere.
+**Create account**. Your private library restores on your other devices after you sign in.
+A new account starts empty; Reel never uploads guest or another account's browser data automatically.
 
-Cloud sync uses Supabase Auth and a per-user database row protected by Row Level Security.
-The app still keeps a local browser copy, so exporting a JSON backup remains a good habit.
+Cloud sync uses Supabase Auth, one shared `titles` catalog, and private `user_titles`
+relationships protected by Row Level Security. Statuses, ratings, favorites, progress, and
+notes belong to the relationship, while public provider metadata remains shared. Exporting
+a JSON backup remains a good habit.
 
 ## First run
 
