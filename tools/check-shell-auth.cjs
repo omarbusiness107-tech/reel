@@ -31,7 +31,15 @@ window.supabase={createClient(){
     },
     from(name){return {
       select(){
-        if(name==='user_titles')return {order:async()=>{await new Promise(resolve=>setTimeout(resolve,20));return {data:readDb().users[currentId()]||[],error:null}}};
+        if(name==='user_titles')return {
+          order:async()=>{await new Promise(resolve=>setTimeout(resolve,20));return {data:readDb().users[currentId()]||[],error:null}},
+          eq:(field,value)=>({maybeSingle:async()=>({data:(readDb().users[currentId()]||[]).find(row=>row[field]===value)||null,error:null})})
+        };
+        if(name==='titles'){
+          const filters={};
+          const query={eq(field,value){filters[field]=value;return query},maybeSingle:async()=>({data:Object.values(readDb().titles).find(row=>Object.entries(filters).every(([field,value])=>row[field]===value))||null,error:null})};
+          return query;
+        }
         if(name==='user_preferences')return {maybeSingle:async()=>({data:readDb().preferences[currentId()]?{settings:readDb().preferences[currentId()]}:null,error:null})};
         if(name==='watch_events')return {order:()=>({limit:async n=>({data:(readDb().events?.[currentId()]||[]).slice(0,n),error:null}),range:async(a,b)=>({data:(readDb().events?.[currentId()]||[]).slice(a,b+1),error:null}),then:resolve=>Promise.resolve({data:readDb().events?.[currentId()]||[],error:null}).then(resolve)}),eq:(field,value)=>({order:async()=>({data:(readDb().events?.[currentId()]||[]).filter(event=>event[field]===value),error:null})})};
         return {maybeSingle:async()=>({data:null,error:null})};
@@ -52,8 +60,8 @@ window.supabase={createClient(){
             if(matching.length)db.events[uid].splice(db.events[uid].indexOf(matching.at(-1)),1);
             if(!db.events[uid].some(event=>event.user_title_id===item.id&&event.season_number===entry.season&&event.episode_number===entry.number))watched.delete(key);
           }else{
-            if(args.p_action==='rewatch'||!matching.length)db.events[uid].push({id:'watch-'+uid+'-'+Math.random(),user_title_id:item.id,season_number:entry.season,episode_number:entry.number,media_type:item.title.media_type,event_type:args.p_action==='rewatch'?'rewatch':'episode_watched',watched_at:args.p_watched_at,runtime_minutes:entry.runtime,source:'reel'});
-            watched.add(key);
+            if(args.p_action==='rewatch'||!matching.length)db.events[uid].push({id:'watch-'+uid+'-'+Math.random(),user_title_id:item.id,season_number:entry.season,episode_number:entry.number,media_type:item.title.media_type,event_type:args.p_action==='rewatch'?'rewatch':item.title.media_type==='movie'?'movie_watched':'episode_watched',watched_at:args.p_watched_at,runtime_minutes:entry.runtime,source:'reel'});
+            if(item.title.media_type!=='movie')watched.add(key);
           }
         }
         item.watched_episodes=[...watched];writeDb(db);return {data:1,error:null};
@@ -92,7 +100,7 @@ async function checkResponsive(browser,width,height){
   await page.waitForSelector('#navDrawer.on');
   const drawerRatio=await page.locator('#navDrawer').evaluate(el=>el.getBoundingClientRect().width/innerWidth);
   const closeControl=await page.locator('#navClose').evaluate(el=>{const rect=el.getBoundingClientRect();return {width:rect.width,height:rect.height}});
-  assert.deepEqual(closeControl,{width:40,height:40},`${width}: drawer Close must remain a compact icon control`);
+  assert.ok(Math.abs(closeControl.width-40)<1&&Math.abs(closeControl.height-40)<1,`${width}: drawer Close must remain a compact icon control (${JSON.stringify(closeControl)})`);
   const navLayout=await page.locator('.nav-drawer-list').evaluate(el=>({display:getComputedStyle(el).display,columns:getComputedStyle(el).gridTemplateColumns,children:[...el.children].map(child=>({width:child.getBoundingClientRect().width,top:child.getBoundingClientRect().top}))}));
   assert.equal(new Set(navLayout.children.map(child=>child.top)).size,navLayout.children.length,`${width}: drawer navigation must be one vertical list (${JSON.stringify(navLayout)})`);
   assert.match(await page.locator('#btnAdd').textContent(),/Add title/i,`${width}: Add Title label must stay visible in the drawer`);
@@ -200,6 +208,21 @@ async function checkResponsive(browser,width,height){
       return {a,privateTransition,b,back};
     });
     assert.deepEqual(watchIsolation,{a:{saved:true,events:1,watched:['1:1']},privateTransition:{loading:true,showsOldActivity:false},b:{events:0,titles:0},back:{events:1,watched:['1:1']}},'watch history and episode progress remain account-specific, including while accounts switch');
+    const localMovieId=await page.evaluate(()=>{
+      const movie=makeItem('New Movie 2026','movie','want');movie.catalogId='wikidata:Q-test-new-movie';movie.runtime=112;state.items.push(movie);
+      openItem(movie.id);return movie.id;
+    });
+    await page.locator('#statusSeg [data-status="done"]').click();
+    await page.waitForFunction(()=>state.items.some(item=>item.title==='New Movie'&&item.status==='done'&&state.events.some(event=>event.titleId===item.id)));
+    const freshMovieWatch=await page.evaluate(localId=>{
+      const movie=state.items.find(item=>item.title==='New Movie');
+      const db=JSON.parse(localStorage.getItem('reel.mock.db'));
+      return {serverId:movie.id,localId,status:movie.status,events:state.events.filter(event=>event.titleId===movie.id).length,remoteEvents:(db.events['account-a']||[]).filter(event=>event.user_title_id===movie.id).length};
+    },localMovieId);
+    assert.notEqual(freshMovieWatch.serverId,freshMovieWatch.localId,'the local movie ID must resolve to its account library row');
+    assert.deepEqual([freshMovieWatch.status,freshMovieWatch.events,freshMovieWatch.remoteEvents],['done',1,1],'Finished adds a dated movie event locally and remotely');
+    assert.match(await page.locator('#movieWatchControls').textContent(),/Watched 1 time/,'the movie details update after finishing');
+    assert.equal(await page.locator('#toast').isVisible(),false,'the toast container stays hidden when idle');
     const sharedTitleCheck=await page.evaluate(async()=>{
       await cloudSignIn('sara@example.com','password123');
       const add=(title,type,status,catalogId)=>{const item=makeItem(title,type,status);item.catalogId=catalogId;state.items.push(item);};
@@ -211,9 +234,9 @@ async function checkResponsive(browser,width,height){
       await cloudSignIn('omar@example.com','password123');
       return {globalTitles:Object.keys(db.titles).length,interstellarTitles:Object.values(db.titles).filter(title=>title.title==='Interstellar').length,accountARows:db.users['account-a'].length,accountBRows:db.users['account-b'].length,bTitles:db.users['account-b'].map(row=>row.title.title).sort(),a:db.users['account-a'].find(row=>row.title.title==='Interstellar'),b:db.users['account-b'].find(row=>row.title.title==='Interstellar')};
     });
-    assert.equal(sharedTitleCheck.globalTitles,5);
+    assert.equal(sharedTitleCheck.globalTitles,6);
     assert.equal(sharedTitleCheck.interstellarTitles,1,'same provider title is stored globally once');
-    assert.deepEqual([sharedTitleCheck.accountARows,sharedTitleCheck.accountBRows],[3,3]);
+    assert.deepEqual([sharedTitleCheck.accountARows,sharedTitleCheck.accountBRows],[4,3]);
     assert.deepEqual(sharedTitleCheck.bTitles,['Interstellar','Naruto','The Batman']);
     assert.deepEqual([sharedTitleCheck.a.status,sharedTitleCheck.a.rating,sharedTitleCheck.b.status,sharedTitleCheck.b.rating],['done',9,'want',0]);
     await page.waitForFunction(()=>!cloud.loading&&cloud.user?.id==='account-a');

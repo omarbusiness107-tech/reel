@@ -1,6 +1,6 @@
 # Reel known issues and limits
 
-Last verified: 2026-09-25
+Last verified: 2026-09-26
 Repository/branch: Reel / main
 Verified against: current working tree
 Purpose: Evidence-based unresolved risks, limitations, and regression hotspots.
@@ -16,6 +16,10 @@ The shared state, auth, search, details, and provider adapters still live in the
 ## Issue: Watch-event operational validation is incomplete
 
 The live Supabase watch-event and retry-ledger migrations are applied; owner RLS policies and security advisors were inspected. Browser tests use a two-account mock, not two production credentials. Real authenticated end-to-end watch/undo/backdate and high-volume history behavior still need acceptance testing. Supabase continues to report existing warnings for `sync_my_library` (intentional SECURITY DEFINER design) and disabled leaked-password protection.
+
+## Resolved: newly added movies could not save watch history
+
+Resolved 2026-09-26. The browser initially held a temporary local ID while `sync_my_library` created a different `user_titles.id`. A watch RPC using the temporary or stale ID failed, and setting a movie to Finished did not create a dated event. Watch actions now resolve the owner-scoped library row first, retry a stale sync when needed, and Finished logs the first movie watch. The idle toast is fully hidden instead of leaving a visible edge at the bottom. A signed-in browser mock covers the new-title flow; a live authenticated RPC was checked inside a rolled-back transaction.
 
 ## Resolved: unscoped browser state could initialize an account library
 

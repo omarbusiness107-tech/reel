@@ -346,12 +346,14 @@ html[data-theme="light"] .seg button[aria-pressed="true"]{color:#fff}
 .meter i{display:block;height:100%;background:linear-gradient(90deg,var(--done),var(--accent),#ff5252)}
 
 #toast{
-  position:fixed;left:50%;bottom:24px;transform:translate(-50%,120%);z-index:90;
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,calc(100% + 40px));z-index:90;
   background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;
   box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;font-size:13.5px;
-  transition:transform .22s cubic-bezier(.4,0,.2,1);max-width:calc(100% - 32px);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s ease,visibility .22s;
+  max-width:calc(100% - 32px);
 }
-#toast.on{transform:translate(-50%,0)}
+#toast.on{transform:translate(-50%,0);opacity:1;visibility:visible;pointer-events:auto}
 
 footer.foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--fg3);font-size:12px;
   display:flex;gap:14px;align-items:center;flex-wrap:wrap}
@@ -1419,7 +1421,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div id="modalContent"></div>
 </div>
 
-<div id="toast"><span id="toastMsg"></span><button class="btn sm" id="toastAct" aria-label="Toast action" hidden></button></div>
+<div id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button class="btn sm" id="toastAct" aria-label="Toast action" hidden></button></div>
 
 <div class="media-viewer" id="mediaViewer" role="dialog" aria-modal="true" aria-label="Expanded artwork" hidden>
   <button class="media-viewer-close icon-btn" id="mediaViewerClose" type="button" aria-label="Close expanded artwork"><i data-lucide="x" aria-hidden="true"></i></button>
@@ -2320,7 +2322,7 @@ let state = loadGuest();
 /* ---------- optional cloud sync ---------- */
 const CLOUD_URL = 'https://zwedeotmsmtfkshxeezn.supabase.co';
 const CLOUD_PUBLISHABLE_KEY = 'sb_publishable_Vr6DqmUCRgtlB8j10JAvYg_EelZsKgh';
-const cloud = {client:null, user:null, loaded:false, loading:true, resolved:false, timer:null, subscription:null, intentionalSignOutUntil:0, generation:0, loadPromise:null, lastPayload:''};
+const cloud = {client:null, user:null, loaded:false, loading:true, resolved:false, timer:null, subscription:null, intentionalSignOutUntil:0, generation:0, loadPromise:null, syncPromise:null, lastPayload:''};
 let historyLoaded=false,historyPromise=null;
 const mapWatchEvent=event=>({id:event.id,titleId:event.user_title_id,season:event.season_number,episode:event.episode_number,mediaType:event.media_type,eventType:event.event_type,watchedAt:event.watched_at,runtimeMinutes:event.runtime_minutes,source:event.source});
 async function loadWatchHistory(){
@@ -2384,17 +2386,22 @@ async function pullCloud(){
   cloud.loadPromise=task;
   return task;
 }
-async function pushCloud(){
+async function pushCloud(force=false){
+  if(!cloud.client || !cloud.user || cloud.loading) return false;
+  if(cloud.syncPromise) await cloud.syncPromise;
   if(!cloud.client || !cloud.user || cloud.loading) return false;
   const generation=cloud.generation;
   const entries=window.ReelAccountLibrary.toSyncEntries(state.items);
   const payload=JSON.stringify({entries,preferences:state.ui});
-  if(payload===cloud.lastPayload)return true;
-  const {error} = await cloud.client.rpc('sync_my_library',{p_entries:entries,p_preferences:state.ui});
-  if(generation!==cloud.generation)return false;
-  if(error){console.warn('cloud save failed', error);return false;}
-  cloud.lastPayload=payload;
-  return true;
+  if(!force && payload===cloud.lastPayload)return true;
+  const task=cloud.client.rpc('sync_my_library',{p_entries:entries,p_preferences:state.ui}).then(({error})=>{
+    if(generation!==cloud.generation)return false;
+    if(error){console.warn('cloud save failed', error);return false;}
+    cloud.lastPayload=payload;
+    return true;
+  });
+  cloud.syncPromise=task;
+  try{return await task;}finally{if(cloud.syncPromise===task)cloud.syncPromise=null;}
 }
 function scheduleCloudSync(){
   if(!cloud.client || !cloud.user) return;
@@ -2404,7 +2411,7 @@ function scheduleCloudSync(){
 async function setCloudUser(user){
   const next=user||null,changed=cloud.user?.id!==next?.id||!cloud.resolved;
   if(!changed){cloud.user=next;updateAuthChrome();if(cloud.loadPromise)await cloud.loadPromise;return;}
-  clearTimeout(cloud.timer);cloud.generation++;cloud.loaded=false;cloud.loadPromise=null;cloud.lastPayload='';historyLoaded=false;historyPromise=null;
+  clearTimeout(cloud.timer);cloud.generation++;cloud.loaded=false;cloud.loadPromise=null;cloud.syncPromise=null;cloud.lastPayload='';historyLoaded=false;historyPromise=null;
   cloud.user=next;
   closeSheets();window.ReelRecommendationUI?.close();
   if(next){
@@ -2708,6 +2715,9 @@ function completeProgress(it){
 }
 async function changeItemStatus(it,status){
   if(!STATUS[status]) return false;
+  if(status==='done' && it.type==='movie'){
+    return applyTrackingAction(it,[{runtime:Number.isFinite(Number(it.runtime))?Number(it.runtime):null}]);
+  }
   if(['done','waiting'].includes(status) && isEpisodic(it)){
     if(!seasonGuide(it)) toast(tr('tracking.loading'));
     if(!await ensureProgressMeta(it)){ toast(tr('tracking.unavailable')); return false; }
@@ -2782,9 +2792,43 @@ async function bump(it, n){
 }
 
 const trackingPending=new Set();
+async function ensureCloudWatchTarget(it){
+  if(!cloud.user)return true;
+  clearTimeout(cloud.timer);
+  if(!await pushCloud())return false;
+  const isUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(it.id);
+  if(isUuid){
+    const existing=await cloud.client.from('user_titles').select('id,title_id').eq('id',it.id).maybeSingle();
+    if(existing.error)throw existing.error;
+    if(existing.data){it.titleId=existing.data.title_id;return true;}
+  }
+  if(!await pushCloud(true))return false;
+  const identity=window.ReelAccountLibrary.providerIdentity(it);
+  const title=await cloud.client.from('titles').select('id').eq('provider',identity.provider).eq('provider_id',identity.providerId).maybeSingle();
+  if(title.error)throw title.error;
+  if(!title.data)return false;
+  const membership=await cloud.client.from('user_titles').select('id').eq('title_id',title.data.id).maybeSingle();
+  if(membership.error)throw membership.error;
+  if(!membership.data)return false;
+  const previousId=it.id;
+  it.id=membership.data.id;it.titleId=title.data.id;
+  for(const event of state.events)if(event.titleId===previousId)event.titleId=it.id;
+  if(openId===previousId){
+    openId=it.id;
+    if(history.state?.reelDetail?.id===previousId){
+      try{history.replaceState({reelDetail:{kind:'library',id:it.id}},'',`#title=${encodeURIComponent(it.id)}`);}catch(e){/* local-file history can be restricted */}
+    }
+  }
+  return true;
+}
 async function applyTrackingAction(it,entries,action='watch',watchedAt=new Date().toISOString()){
   if(!personalActionsReady()||trackingPending.has(it.id))return false;
   if(!['watch','unwatch','rewatch'].includes(action)||!['movie','series','anime'].includes(it.type))return false;
+  if(cloud.user){
+    try{
+      if(!await ensureCloudWatchTarget(it)){toast('Your library is still syncing. Try again shortly.');return false;}
+    }catch(error){console.warn('watch target lookup failed',error);toast('Could not find this title in your account library. Try again.');return false;}
+  }
   if(isEpisodic(it)&&!await ensureProgressMeta(it)){toast(tr('tracking.unavailable'));return false;}
   const core=window.ReelTrackingCore;
   const released=isEpisodic(it)?new Set(core.episodeList(it).map(ep=>core.key(ep.season,ep.number))):null;
@@ -4131,6 +4175,10 @@ function wireDrawer(it, d){
     $$('#statusSeg [data-status]',d).forEach(button=>button.setAttribute('aria-pressed',String(button===b)));
     for(const field of ['page','chapter','season','episode']){
       const input=d.querySelector(`[data-f="${field}"]`); if(input) input.value=it[field]||0;
+    }
+    if(it.type==='movie'){
+      const movieControls=d.querySelector('#movieWatchControls');
+      if(movieControls){movieControls.outerHTML=movieWatchMarkup(it);refreshIcons(d);}
     }
     if(isEpisodic(it)){syncTracker(it,d);syncAutomaticProgress(it,d);}
     const waitingHelp=d.querySelector('.waiting-help');if(waitingHelp)waitingHelp.hidden=it.status!=='waiting';
