@@ -10,7 +10,7 @@ const supabaseStub = `
 window.supabase={createClient(){
   const listeners=[];
   const read=()=>{try{return JSON.parse(localStorage.getItem('reel.mock.session')||'null')}catch{return null}};
-  const readDb=()=>{try{return JSON.parse(localStorage.getItem('reel.mock.db')||'{"titles":{},"users":{},"preferences":{}}')}catch{return {titles:{},users:{},preferences:{}}}};
+  const readDb=()=>{try{return JSON.parse(localStorage.getItem('reel.mock.db')||'{"titles":{},"users":{},"preferences":{},"events":{}}')}catch{return {titles:{},users:{},preferences:{},events:{}}}};
   const writeDb=db=>localStorage.setItem('reel.mock.db',JSON.stringify(db));
   const write=session=>{if(session)localStorage.setItem('reel.mock.session',JSON.stringify(session));else localStorage.removeItem('reel.mock.session');listeners.forEach(fn=>fn(session?'SIGNED_IN':'SIGNED_OUT',session));};
   const user=email=>({id:email.startsWith('sara')?'account-b':'account-a',email,user_metadata:{display_name:email.startsWith('sara')?'Sara Account':'Omar Guest'}});
@@ -33,16 +33,38 @@ window.supabase={createClient(){
       select(){
         if(name==='user_titles')return {order:async()=>{await new Promise(resolve=>setTimeout(resolve,20));return {data:readDb().users[currentId()]||[],error:null}}};
         if(name==='user_preferences')return {maybeSingle:async()=>({data:readDb().preferences[currentId()]?{settings:readDb().preferences[currentId()]}:null,error:null})};
+        if(name==='watch_events')return {order:()=>({limit:async n=>({data:(readDb().events?.[currentId()]||[]).slice(0,n),error:null}),range:async(a,b)=>({data:(readDb().events?.[currentId()]||[]).slice(a,b+1),error:null}),then:resolve=>Promise.resolve({data:readDb().events?.[currentId()]||[],error:null}).then(resolve)}),eq:(field,value)=>({order:async()=>({data:(readDb().events?.[currentId()]||[]).filter(event=>event[field]===value),error:null})})};
         return {maybeSingle:async()=>({data:null,error:null})};
-      }
+      },
+      update(values){return {eq:async(field,value)=>{const db=readDb();for(const event of db.events?.[currentId()]||[])if(event[field]===value)Object.assign(event,values);writeDb(db);return {error:null}}};}
     }},
     rpc:async(name,args)=>{
-      if(name!=='sync_my_library'||!currentId())return {data:null,error:{message:'unauthorized'}};
+      if(!currentId())return {data:null,error:{message:'unauthorized'}};
+      if(name==='apply_watch_action'){
+        const db=readDb(),uid=currentId(),item=(db.users[uid]||[]).find(row=>row.id===args.p_user_title_id);
+        if(!item)return {data:null,error:{message:'not owned'}};
+        db.events ||= {};db.events[uid] ||= [];
+        const watched=new Set(item.watched_episodes||args.p_baseline||[]);
+        for(const entry of args.p_entries||[]){
+          const key=entry.season+':'+entry.number;
+          const matching=db.events[uid].filter(event=>event.user_title_id===item.id&&event.season_number===entry.season&&event.episode_number===entry.number);
+          if(args.p_action==='unwatch'){
+            if(matching.length)db.events[uid].splice(db.events[uid].indexOf(matching.at(-1)),1);
+            if(!db.events[uid].some(event=>event.user_title_id===item.id&&event.season_number===entry.season&&event.episode_number===entry.number))watched.delete(key);
+          }else{
+            if(args.p_action==='rewatch'||!matching.length)db.events[uid].push({id:'watch-'+uid+'-'+Math.random(),user_title_id:item.id,season_number:entry.season,episode_number:entry.number,media_type:item.title.media_type,event_type:args.p_action==='rewatch'?'rewatch':'episode_watched',watched_at:args.p_watched_at,runtime_minutes:entry.runtime,source:'reel'});
+            watched.add(key);
+          }
+        }
+        item.watched_episodes=[...watched];writeDb(db);return {data:1,error:null};
+      }
+      if(name!=='sync_my_library')return {data:null,error:{message:'unknown rpc'}};
       const db=readDb(),uid=currentId(),rows=[];
       for(const entry of args.p_entries||[]){
         const key=entry.provider+'|'+entry.providerId;
         db.titles[key] ||= {id:'title-'+Object.keys(db.titles).length,provider:entry.provider,provider_id:entry.providerId,media_type:entry.mediaType,title:entry.title,release_year:entry.year,poster_url:entry.posterUrl,backdrop_url:entry.backdropUrl,description:entry.description,creator:entry.creator,genres:entry.genres,runtime_minutes:entry.runtimeMinutes,page_count:entry.pageCount,public_rating:entry.publicRating,metadata:entry.metadata};
-        rows.push({id:'entry-'+uid+'-'+key,title_id:db.titles[key].id,status:entry.status,rating:entry.rating,favorite:entry.favorite,current_season:entry.currentSeason,current_episode:entry.currentEpisode,current_page:entry.currentPage,current_chapter:entry.currentChapter,stopped_at_sec:entry.stoppedAtSec,notes:entry.notes,tags:entry.tags,started_at:entry.startedAt,completed_at:entry.completedAt,last_interaction_at:entry.lastInteractionAt,created_at:entry.createdAt,updated_at:entry.lastInteractionAt,title:db.titles[key]});
+        const id='entry-'+uid+'-'+key,old=(db.users[uid]||[]).find(row=>row.id===id);
+        rows.push({id,title_id:db.titles[key].id,status:entry.status,rating:entry.rating,favorite:entry.favorite,current_season:entry.currentSeason,current_episode:entry.currentEpisode,current_page:entry.currentPage,current_chapter:entry.currentChapter,stopped_at_sec:entry.stoppedAtSec,watched_episodes:old?.watched_episodes||null,notes:entry.notes,tags:entry.tags,started_at:entry.startedAt,completed_at:entry.completedAt,last_interaction_at:entry.lastInteractionAt,created_at:entry.createdAt,updated_at:entry.lastInteractionAt,title:db.titles[key]});
       }
       db.users[uid]=rows;db.preferences[uid]=args.p_preferences||{};writeDb(db);return {data:rows.length,error:null};
     }
@@ -162,6 +184,22 @@ async function checkResponsive(browser,width,height){
     assert.deepEqual(switchCheck.immediate,{loading:true,count:0},'account changes clear the old private state before loading');
     assert.deepEqual(switchCheck.accountB,{count:0,titles:[]},'new account must not inherit account A');
     assert.deepEqual(switchCheck.accountA,{titles:['Breaking Bad','Dune','Interstellar'],status:'done',rating:9},'account A state survives independently');
+    const watchIsolation=await page.evaluate(async()=>{
+      const item=state.items.find(row=>row.title==='Breaking Bad');
+      item.seasonGuide=[{number:1,episodes:[1,2]}];item.episodeCatalog=[{season:1,number:1,title:'Pilot',airdate:'2008-01-01',runtime:45},{season:1,number:2,title:'Next',airdate:'2008-01-08',runtime:45}];item.progressCheckedAt=Date.now();
+      const saved=await applyTrackingAction(item,[{season:1,number:1,runtime:45}],'watch');
+      await pushCloud();const a={saved,events:state.events.length,watched:item.watchedEpisodes};
+      window.ReelTrackingUI.navigate('activity',{historyMode:'none'});
+      const switching=cloudSignIn('sara@example.com','password123');
+      await new Promise(resolve=>setTimeout(resolve,0));
+      const privateTransition={loading:cloud.loading,showsOldActivity:document.querySelector('#trackingView').textContent.includes('Breaking Bad')};
+      await switching;
+      const b={events:state.events.length,titles:state.items.length};
+      await cloudSignIn('omar@example.com','password123');
+      const back={events:state.events.length,watched:state.items.find(row=>row.title==='Breaking Bad')?.watchedEpisodes};
+      return {a,privateTransition,b,back};
+    });
+    assert.deepEqual(watchIsolation,{a:{saved:true,events:1,watched:['1:1']},privateTransition:{loading:true,showsOldActivity:false},b:{events:0,titles:0},back:{events:1,watched:['1:1']}},'watch history and episode progress remain account-specific, including while accounts switch');
     const sharedTitleCheck=await page.evaluate(async()=>{
       await cloudSignIn('sara@example.com','password123');
       const add=(title,type,status,catalogId)=>{const item=makeItem(title,type,status);item.catalogId=catalogId;state.items.push(item);};
@@ -221,6 +259,6 @@ async function checkResponsive(browser,width,height){
     await page.click('#btnAuth');assert.match(await page.locator('#modal').textContent(),/تسجيل الدخول/);await page.keyboard.press('Escape');
     assert.equal(errors.length,0,errors.join('; '));
     await page.close();
-    console.log('PASS: authentication, session persistence, navbar, drawer, Add Title, P4M edges, and five responsive widths');
+    console.log('PASS: authentication, account-specific libraries/watch history, navbar, drawer, Add Title, P4M edges, and five responsive widths');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});

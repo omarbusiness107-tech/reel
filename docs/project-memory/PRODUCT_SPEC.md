@@ -1,13 +1,21 @@
 # Reel product specification
 
-Last verified: 2026-09-23
+Last verified: 2026-09-25
 Repository/branch: Reel / main
-Verified against commit: 1bcffb4 plus current working-tree search/profile changes
+Verified against: current working tree
 Purpose: Intended product behavior, with emphasis on the recommendation experience.
 
 ## Product behavior
 
 Reel is one personal queue across media types, preserving medium-specific progress and making the next useful action quick. A user can work entirely locally, optionally sign in to sync a private library, search public catalogs, inspect details, and decide what to watch or read.
+
+## Personal tracking destinations
+
+Home summarizes the library, active shows, precise next unwatched episodes, recent dated activity, and provider-dated upcoming episodes. The season explorer in series/anime details supports individual watched/undo/rewatch actions and a confirmed, idempotent whole-season action. For provider-dated guides, only released episodes can be marked watched; count-only anime without verified dates remain individually trackable but do not expose whole-season actions. Optional backdating is available when logging a watch, and Activity allows date corrections. Calendar presents a desktop month and mobile agenda from followed-title episode dates plus watched days. Stats shows event-based watch time, movie/episode counts, trends, active days, top titles, genres, actor/director rankings linked to existing person details, and a yearly activity map. Unknown runtimes are excluded from watch-time totals and disclosed.
+
+New destinations share the existing shell and use hash routes so the local file still works. Library/Explore remain the existing personal/catalog surfaces, and Pick 4 Me remains its existing decision workspace. A newly empty library gets discovery and Pick 4 Me entry points rather than zero-filled dashboard cards.
+
+Legacy title status and scalar progress are preserved as an undated baseline; they do not create fabricated WatchEvents or historical Stats. Authenticated watch events and explicit episode progress are owner-scoped in Supabase. Guest activity remains in the guest browser key.
 
 For authenticated users, My List and every status, rating, favorite, progress marker, note, history-derived preference, and My List recommendation source belong only to the active Supabase account. Catalog facts remain shared. Account changes clear the prior private state before loading the next account, so a new account sees a loading state followed by its own library or a deliberate empty state—never another account's titles. Guest browser data remains separate and is not automatically imported after sign-in.
 
