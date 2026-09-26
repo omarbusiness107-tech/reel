@@ -8,8 +8,10 @@
   const personalKeys = new Set([
     'id', 'titleId', 'userId', 'status', 'rating', 'fav', 'favorite',
     'season', 'episode', 'page', 'chapter', 'stoppedAtSec', 'notes', 'tags',
-    'added', 'updated', 'finished', 'startedAt', 'completedAt', 'lastInteractionAt'
+    'added', 'updated', 'finished', 'startedAt', 'completedAt', 'lastInteractionAt',
+    'watchedEpisodes'
   ]);
+  const transientKeys = new Set(['episodeCatalog']);
 
   const clean = value => String(value == null ? '' : value).trim();
   const normalize = value => clean(value).toLocaleLowerCase().normalize('NFD')
@@ -44,7 +46,7 @@
   function metadataFor(item) {
     const metadata = {};
     for (const [key, value] of Object.entries(item || {})) {
-      if (personalKeys.has(key) || key.startsWith('_') || value === undefined) continue;
+      if (personalKeys.has(key) || transientKeys.has(key) || key.startsWith('_') || value === undefined) continue;
       metadata[key] = value;
     }
     return metadata;
@@ -123,6 +125,7 @@
       page: Number(row.current_page) || 0,
       chapter: Number(row.current_chapter) || 0,
       stoppedAtSec: Number(row.stopped_at_sec) || 0,
+      watchedEpisodes: Array.isArray(row.watched_episodes) ? row.watched_episodes : null,
       notes: row.notes || '',
       tags: Array.isArray(row.tags) ? row.tags : [],
       startedAt: millis(row.started_at),

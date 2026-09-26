@@ -1,9 +1,21 @@
 # Reel known issues and limits
 
-Last verified: 2026-09-23
+Last verified: 2026-09-25
 Repository/branch: Reel / main
-Verified against commit: 1bcffb4 plus current working-tree search/profile changes
+Verified against: current working tree
 Purpose: Evidence-based unresolved risks, limitations, and regression hotspots.
+
+## Issue: Tracking release coverage depends on available provider episode dates
+
+Home and Calendar use lazily fetched TVMaze episode metadata for tracked shows. Anime with a known episode count can be tracked individually without TVMaze, but the count can include future episodes; without dates Reel cannot verify their release or offer a safe whole-season action. Unknown episode air dates, season premieres, movie digital releases, and titles absent from the provider cannot be scheduled accurately. The app does not invent dates. The calendar currently emphasizes known episodes and personal watch dates; a broader release-provider integration remains future work.
+
+## Issue: New tracking pages are an incremental extraction, not a full app refactor
+
+The shared state, auth, search, details, and provider adapters still live in the large `reel.html`. `tracking-core.js` and `tracking-pages.js` establish a feature boundary, but a dedicated repository/API layer and normalized global season/episode cache are not yet present. Initial Home episode enrichment is capped to eight relevant shows to avoid a request burst; large libraries may need incremental loading for complete upcoming coverage.
+
+## Issue: Watch-event operational validation is incomplete
+
+The live Supabase watch-event and retry-ledger migrations are applied; owner RLS policies and security advisors were inspected. Browser tests use a two-account mock, not two production credentials. Real authenticated end-to-end watch/undo/backdate and high-volume history behavior still need acceptance testing. Supabase continues to report existing warnings for `sync_my_library` (intentional SECURITY DEFINER design) and disabled leaked-password protection.
 
 ## Resolved: unscoped browser state could initialize an account library
 

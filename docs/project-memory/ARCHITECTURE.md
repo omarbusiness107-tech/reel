@@ -1,13 +1,13 @@
 # Reel architecture
 
-Last verified: 2026-09-23
+Last verified: 2026-09-25
 Repository/branch: Reel / main
-Verified against commit: 1bcffb4 plus current working-tree search/profile changes
+Verified against: current working tree and Supabase migrations through watch_action_retry_guard
 Purpose: Technical map of stable application boundaries and important data flows.
 
 ## Application shape
 
-Reel is a static, dependency-light SPA. `reel.html` contains the app shell, inline application logic, seeded library data, the Supabase client integration, catalog adapters, storage, details UI, navigation, and the adapter used by recommendations. It loads recommendation modules from `assets/`.
+Reel is a static, dependency-light SPA. `reel.html` still contains the app shell, inline application logic, seeded library data, Supabase client integration, catalog adapters, storage, details UI, navigation, and bridges to feature modules. Recommendation and personal-tracking logic are incrementally extracted into `assets/`; this is not a framework rewrite.
 
 `vercel.json` rewrites `/` to `reel.html`, applies security headers, and configures the only server function, `api/recommend.js`, for a 60-second duration.
 
@@ -15,9 +15,12 @@ Reel is a static, dependency-light SPA. `reel.html` contains the app shell, inli
 
 - **Core shell and state:** `reel.html` owns library state, persistence, catalog browsing, details overlays, navigation, theming, translations, and auth/sync wiring.
 - **Guest storage:** Signed-out state uses `localStorage` key `reel.guest.v1`; `reel.v1` is read only as a legacy guest fallback. Authenticated libraries are never cached into that shared browser key and guest data is never automatically merged into an account.
-- **Account storage:** Supabase Auth supplies the owner identity. `public.titles` stores one shared provider/catalog record, `public.user_titles` stores private status/rating/progress/favorite/notes/timestamps with unique `(user_id,title_id)`, and `public.user_preferences` stores account settings. RLS applies `auth.uid() = user_id` independently to SELECT/INSERT/UPDATE/DELETE.
+- **Account storage:** Supabase Auth supplies the owner identity. `public.titles` stores shared provider/catalog facts, `public.user_titles` stores private status/rating/progress/favorite/notes/timestamps with unique `(user_id,title_id)`, `public.watch_events` stores dated personal viewing instances, and `public.user_preferences` stores account settings. Owner-scoped RLS applies to personal tables.
 - **Persistence boundary:** `assets/account-library.js` splits merged UI items into catalog and personal payloads and reconstructs joined rows for the existing UI. `sync_my_library(entries,preferences)` derives its owner from `auth.uid()` and does not accept a user ID.
 - **Legacy migration:** The versioned Supabase migration backfills each `user_libraries` JSON blob only to its existing owner, retains the legacy table as a rollback archive, and replaces its policies with owner-only policies.
+- **Tracking migration:** Legacy scalar season/episode progress remains an undated baseline (`watched_episodes IS NULL`), not invented watch events. Explicit watched episode keys and watch events are updated transactionally by `apply_watch_action`. A private request ledger prevents retried watch/unwatch/rewatch requests from double-applying. Event dates drive Activity and Stats; title status remains a separate current-state concept.
+- **Tracking pages:** `assets/tracking-core.js` holds pure progress, upcoming, activity, and analytics calculations. `assets/tracking-pages.js` renders Home, Calendar, Activity, Stats, and the title-detail season explorer through a narrow bridge in `reel.html`; `assets/tracking.css` supplies their responsive visual layer. A compact icon rail appears at desktop widths and the existing slide-out drawer remains on mobile. Hash destinations (`#page=home`, etc.) preserve direct `reel.html` use and existing title/person history flows.
+- **History loading:** Home initially reads the latest 100 account events. Activity, Calendar, and Stats request the full owner-scoped history in 500-row pages only when visited; Activity renders 50 rows at a time. TVMaze episode details are fetched lazily; the full transient episode catalog is not pushed into shared title metadata on every account sync.
 - **Recommendation state:** Pick 4 me session, transcript, seen/rejected IDs, result groups, active result, and history are in-memory only. They are not written to local storage or Supabase. Closing it starts a fresh session, except an origin-aware Details return restores that open session.
 
 ## Recommendation flow

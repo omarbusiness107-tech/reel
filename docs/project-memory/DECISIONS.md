@@ -1,8 +1,8 @@
 # Reel decisions
 
-Last verified: 2026-09-23
+Last verified: 2026-09-25
 Repository/branch: Reel / main
-Verified against commit: 1bcffb4 plus current working-tree search/profile changes
+Verified against: current working tree
 Purpose: Preserve confirmed product and engineering choices without inventing rationale.
 
 ## Decision
@@ -11,11 +11,23 @@ Keep Reel as a dependency-light static SPA centered on `reel.html`, with a small
 
 ### Reason
 
-Documented product constraints describe the app as usable directly from a local browser copy and explicitly say no framework conversion or database migration is required.
+The app must remain usable directly from a local browser copy. The new personal-tracking brief explicitly authorizes an incremental account database migration but does not call for a framework conversion.
 
 ### Consequences
 
-Preserve the local-first path. Framework migrations or broad data-model changes need an explicit product/engineering decision. Treat the large `reel.html` as a targeted-edit surface, not a reason to redesign the entire app.
+Preserve the local-first path. Extract focused modules and add hash destinations without breaking `reel.html`, existing overlays, search, or Pick 4 Me. Avoid an unsafe wholesale rewrite.
+
+## Decision
+
+Keep library status/progress distinct from dated viewing activity, with legacy progress as an undated baseline.
+
+### Reason
+
+Old season and episode numbers do not contain actual watch dates. Deriving a history or watch-time trend from them would fabricate activity. Rewatches also need multiple dated instances per title.
+
+### Consequences
+
+`user_titles.watched_episodes = NULL` means legacy cursor-based progress; an explicit array means episode-by-episode progress. `watch_events` stores only real user actions. Activity and Stats use events, so existing completed titles do not suddenly appear as watches on the migration date. The local-only guest path stores the same shape in its own browser state.
 
 ## Decision
 

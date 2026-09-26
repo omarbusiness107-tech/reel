@@ -35,7 +35,7 @@ const output=path.join(require('node:os').tmpdir(),'reel-tracking-qa');
       const body=document.querySelector('#drawer .sheet-body'),nodes=[body.querySelector('#statusSeg'),body.querySelector('.progress-tracker'),body.querySelector('#stars'),body.querySelector('.title-facts')];
       return nodes.map(node=>[...body.children].findIndex(child=>child===node||child.contains(node)));
     });
-    assert.deepEqual(topOrder,[0,2,4,5]);
+    assert.deepEqual(topOrder,[0,2,5,6]);
     assert.match(await page.locator('.auto-progress').innerText(),/Watching/);
     const statusColors=await page.evaluate(()=>{
       const read=status=>{
@@ -68,7 +68,10 @@ const output=path.join(require('node:os').tmpdir(),'reel-tracking-qa');
     await page.locator('#statusSeg [data-status="waiting"]').click();
     assert.equal(await page.evaluate(()=>state.items[0].finished),null);
     assert.equal(await page.evaluate(async()=>{await bump(state.items[0],1);return state.items[0].status;}),'waiting');
-    await page.locator('#trackedSeason').fill('1');await page.locator('#trackedEpisode').fill('3');
+    // Once individual episode tracking is active, the old cursor fields are
+    // read-only; the checked episode set is the source of truth.
+    assert.equal(await page.locator('#trackedSeason').isDisabled(),true);
+    await page.evaluate(()=>{const it=state.items[0];it.watchedEpisodes=['1:1','1:2','1:3'];it.season=1;it.episode=3;syncTracker(it,document.querySelector('#drawerContent'));});
     await page.locator('#quickBump').click();
     await page.waitForFunction(()=>state.items[0].season===2);
     assert.equal(await page.locator('#trackedEpisode').inputValue(),'1');

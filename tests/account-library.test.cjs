@@ -7,21 +7,39 @@ const AccountLibrary = require('../assets/account-library.js');
 const migrationPath = path.resolve(__dirname,'../supabase/migrations/20260923232252_account_library_ownership.sql');
 const migration = fs.readFileSync(migrationPath,'utf8');
 const identityMigration = fs.readFileSync(path.resolve(__dirname,'../supabase/migrations/20260923233255_normalize_manual_title_identity.sql'),'utf8');
+const watchMigration = fs.readFileSync(path.resolve(__dirname,'../supabase/migrations/20260925141932_watch_activity.sql'),'utf8');
+const retryMigration = fs.readFileSync(path.resolve(__dirname,'../supabase/migrations/20260925144307_watch_action_retry_guard.sql'),'utf8');
 
 test('global metadata and private state cross the persistence boundary separately', () => {
   const entry = AccountLibrary.toSyncEntry({
     id:'browser-only',title:'Interstellar',type:'movie',year:2014,catalogId:'wikidata:Q13417189',
     cover:'poster.jpg',genres:['Science Fiction'],score:8.7,status:'done',rating:9,fav:true,
-    notes:'Loved it',season:1,episode:0,added:1700000000000,updated:1700000100000,finished:1700000200000
+    notes:'Loved it',watchedEpisodes:['1:1'],season:1,episode:0,added:1700000000000,updated:1700000100000,finished:1700000200000
   });
   assert.deepEqual([entry.provider,entry.providerId],['wikidata','Q13417189']);
   assert.equal(entry.metadata.status,undefined);
   assert.equal(entry.metadata.rating,undefined);
   assert.equal(entry.metadata.notes,undefined);
+  assert.equal(entry.metadata.watchedEpisodes,undefined);
+  assert.equal(AccountLibrary.toSyncEntry({...entry,title:'Show',type:'series',episodeCatalog:[{season:1,number:1}]}).metadata.episodeCatalog,undefined);
   assert.equal(entry.status,'done');
   assert.equal(entry.rating,9);
   assert.equal(entry.favorite,true);
   assert.equal(entry.notes,'Loved it');
+});
+
+test('watch events retain legacy progress and enforce owner-scoped access',()=>{
+  assert.match(watchMigration,/update public\.user_titles set watched_episodes = null where watched_episodes = '\[\]'::jsonb/i);
+  assert.match(watchMigration,/alter table public\.watch_events enable row level security/i);
+  for(const operation of ['read','insert','edit','delete'])assert.match(watchMigration,new RegExp(`Users ${operation} own watch events`,'i'));
+  assert.match(watchMigration,/constraint watch_events_request_key unique \(user_id, request_id, request_index\)/i);
+  assert.match(watchMigration,/security invoker/i);
+  assert.match(watchMigration,/where id=p_user_title_id and user_id=v_owner for update/i);
+  assert.doesNotMatch(watchMigration,/security definer/i);
+  assert.match(retryMigration,/primary key \(user_id, request_id\)/i);
+  assert.match(retryMigration,/on conflict do nothing/i);
+  assert.match(retryMigration,/if not found then[\s\S]*return coalesce\(v_count,0\)/i);
+  assert.match(retryMigration,/alter function public\.apply_watch_action[\s\S]*set schema reel_private/i);
 });
 
 test('same provider title has one catalog identity but independent account relationships', () => {

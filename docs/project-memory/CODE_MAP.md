@@ -1,8 +1,8 @@
 # Reel code map
 
-Last verified: 2026-09-23
+Last verified: 2026-09-25
 Repository/branch: Reel / main
-Verified against commit: 1bcffb4
+Verified against: current working tree
 Purpose: Locate the first files to inspect for substantial changes.
 
 ## Product shell, library, navigation, details, and auth
@@ -16,6 +16,20 @@ Notes: Large, high-value file. Follow targeted functions/imports rather than rea
 `assets/account-library.js`
 Purpose: Testable persistence boundary between merged UI records, shared `titles` metadata, and private `user_titles` fields.
 Important exports: provider identity derivation, sync serialization, joined-row restoration.
+Notes: `watchedEpisodes` is private, while the full episode catalog is transient and excluded from global sync metadata.
+
+`assets/tracking-core.js`
+Purpose: Pure episode progress, legacy baseline, upcoming releases, watch-event stats, genre/people rankings, and activity-day calculations.
+Used by: Tracking pages, title details, and `tests/tracking-core.test.cjs`.
+
+`assets/tracking-pages.js` and `assets/tracking.css`
+Purpose: Hash-navigated Home, Activity, Calendar, Stats, season explorer, responsive layout, and empty/loading states. The page module uses `window.reelTrackingBridge` for current account state, details, and watch actions.
+
+`supabase/migrations/20260925141932_watch_activity.sql` and `20260925144307_watch_action_retry_guard.sql`
+Purpose: Owner-scoped watch-event table, legacy baseline preservation, transactional watch action, and retry-safe private request ledger.
+
+`tools/check-tracking-ui.cjs` and `tests/tracking-core.test.cjs`
+Purpose: Browser flows at five widths and pure tracking/analytics regression coverage. `tools/check-shell-auth.cjs` also exercises two-account watch-history isolation.
 
 `supabase/migrations/20260923232252_account_library_ownership.sql`
 Purpose: Creates shared catalog/private relationship tables, constraints, RLS policies, authenticated sync RPC, preferences, and the owner-preserving legacy backfill.
