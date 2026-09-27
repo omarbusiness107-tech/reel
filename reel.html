@@ -2668,7 +2668,7 @@ function setEpisodeGuide(it,episodes,seasons=[]){
     grouped.get(ep.season).add(ep.number);
   }
   it.seasonGuide=[...grouped].sort((a,b)=>a[0]-b[0]).map(([number,nums])=>({number,episodes:[...nums].sort((a,b)=>a-b)}));
-  it.episodeCatalog=episodes.filter(ep=>ep.season>0&&ep.number>0).map(ep=>({season:Number(ep.season),number:Number(ep.number),title:ep.name||'',airdate:ep.airdate||'',airstamp:ep.airstamp||'',runtime:Number(ep.runtime)||null,summary:String(ep.summary||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,600),image:ep.image?.medium||''}));
+  it.episodeCatalog=episodes.filter(ep=>ep.season>0&&ep.number>0).map(ep=>({season:Number(ep.season),number:Number(ep.number),title:ep.name||'',airdate:ep.airdate||'',airstamp:ep.airstamp||'',runtime:Number(ep.runtime)||null,summary:String(ep.summary||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,600),image:ep.image?.original||ep.image?.medium||''}));
   it.seasons=it.seasonGuide.length;
   it.episodeCount=it.pages=it.seasonGuide.reduce((n,s)=>n+s.episodes.length,0);
   const releasedMax=it.seasonGuide.at(-1)?.number||0;
