@@ -6005,6 +6005,19 @@ window.reelTrackingBridge={
     const candidates=state.items.filter(it=>isEpisodic(it)&&['going','waiting','want'].includes(it.status)&&(!seasonGuide(it)||!it.episodeCatalog)).slice(0,8);
     await Promise.allSettled(candidates.map(it=>ensureProgressMeta(it,{force:!!seasonGuide(it)&&!it.episodeCatalog})));
   },
+  prepareHistory:async()=>{
+    const seen=new Set(),candidates=[];
+    for(const event of [...state.events].sort((a,b)=>Date.parse(b.watchedAt)-Date.parse(a.watchedAt))){
+      if(event.mediaType==='movie'||seen.has(event.titleId))continue;
+      seen.add(event.titleId);
+      const item=state.items.find(it=>it.id===event.titleId);
+      if(item&&isEpisodic(item)&&!item.episodeCatalog)candidates.push(item);
+      if(candidates.length===6)break;
+    }
+    if(!candidates.length)return false;
+    const results=await Promise.allSettled(candidates.map(it=>ensureProgressMeta(it,{force:!!seasonGuide(it)})));
+    return results.some(result=>result.status==='fulfilled'&&result.value);
+  },
   editEventDate:async(id,iso)=>{
     if(!Number.isFinite(Date.parse(iso)))return false;
     const event=state.events.find(row=>row.id===id);if(!event)return false;

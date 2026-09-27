@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const core=root.ReelTrackingCore;
-  let api, page='library', month=new Date(), calFilter='all', statsRange='30', statsType='all', statsMetric='minutes', preparing=false, loadingHistory=false, activityFilter='all', activityVisible=50;
+  let api, page='library', month=new Date(), calFilter='all', statsRange='30', statsType='all', statsMetric='minutes', preparing=false, preparingHistory=false, loadingHistory=false, activityFilter='all', activityVisible=50;
   const $=(selector,scope=document)=>scope.querySelector(selector);
   const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const dateLabel=value=>new Intl.DateTimeFormat(undefined,{dateStyle:'medium'}).format(new Date(value));
@@ -43,15 +43,13 @@
     const label=item?.title||'Title removed from library';
     const title=isMovie?label:episode?.title||`Episode ${event.episode||'unknown'}`;
     const artwork=episode?.image||item?.banner||item?.cover||'';
-    const artSource=episode?.image?'episode':item?.banner?'banner':'cover';
-    const posterOnly=!!artwork&&artSource==='cover';
     const when=new Date(event.watchedAt),inputDate=Number.isNaN(+when)?'':new Date(+when-when.getTimezoneOffset()*60000).toISOString().slice(0,16);
     const kind=isMovie?'Movie':event.mediaType==='anime'?'Anime episode':'Episode';
     const position=isMovie?'Watched':`S${event.season} · E${event.episode}`;
     const aria=`${label}, ${isMovie?'movie watched':`season ${event.season} episode ${event.episode}${episode?.title?`, ${episode.title}`:''}`} on ${dateLabel(event.watchedAt)}`;
-    return `<article class="tracking-history-card${posterOnly?' poster-art':''}${artwork?' has-art':''}">
+    return `<article class="tracking-history-card${artwork?' has-art':''}">
       ${item?`<button type="button" class="tracking-history-open" data-track-detail="${esc(item.id)}" aria-label="Open details for ${esc(aria)}">`:'<div class="tracking-history-open">'}
-        ${artwork?`<img class="tracking-history-image" src="${esc(artwork)}" data-art-source="${artSource}" data-cover="${esc(item?.cover||'')}" alt="" loading="lazy" decoding="async">`:''}
+        ${artwork?`<img class="tracking-history-image" src="${esc(artwork)}" alt="" loading="lazy" decoding="async">`:''}
         <span class="tracking-history-content"><span class="tracking-history-meta"><span>${icon(mediaIcon(event.mediaType))}${kind}</span>${event.eventType==='rewatch'?'<span>Rewatch</span>':''}</span><span class="tracking-history-copy"><small>${esc(isMovie?'Movie watched':label)}</small><strong>${esc(title)}</strong><span>${esc(position)} <i aria-hidden="true"></i> ${esc(timeLabel(event.watchedAt))}</span></span></span>
       ${item?'</button>':'</div>'}
       <button type="button" class="tracking-history-edit" data-track-edit="${esc(event.id)}" aria-label="Edit watch date for ${esc(label)}">${icon('calendar-clock')}</button>
@@ -110,18 +108,10 @@
     if(page==='library')return;
     const view=$('#trackingView');view.innerHTML=api.loading()?'<div class="tracking-panel tracking-loading" role="status"><span class="exposure-loader" aria-hidden="true"></span><p>Loading your private Reel…</p></div>':loadingHistory?'<div class="tracking-panel tracking-loading" role="status"><span class="exposure-loader" aria-hidden="true"></span><p>Loading your watch history…</p></div>':({home,activity,calendar,stats}[page]||home)();api.icons(view);
   }
-  function settleHistoryImage(img){
-    const card=img.closest('.tracking-history-card');
-    if(!card||!img.naturalWidth||!img.naturalHeight)return;
-    // A small banner stretched across a wide history card looks soft. Use its
-    // title's poster instead when available, and display portrait art intact.
-    if(img.dataset.artSource==='banner'&&img.naturalWidth<card.clientWidth&&img.dataset.cover&&img.dataset.cover!==img.src&&!img.dataset.fallbackTried){
-      img.dataset.fallbackTried='true';img.dataset.artSource='cover';img.src=img.dataset.cover;return;
-    }
-    const portrait=img.naturalHeight>img.naturalWidth*1.08;
-    card.classList.toggle('poster-art',portrait);
-    card.classList.toggle('small-art',!portrait&&img.naturalWidth<card.clientWidth*.8);
-    card.style.setProperty('--history-art-width',`${img.naturalWidth}px`);
+  function prepareHistoryArtwork(){
+    if(preparingHistory||page!=='activity')return;
+    preparingHistory=true;
+    api.prepareHistory().then(changed=>{if(changed&&page==='activity')render();}).finally(()=>{preparingHistory=false;});
   }
   function navigate(target,{historyMode='push'}={}){
     if(!['home','library','calendar','activity','stats'].includes(target))return;
@@ -130,8 +120,9 @@
     document.body.dataset.reelPage=target;
     if(target!=='library')render();
     if(!api.loading()&&['activity','calendar','stats'].includes(target)&&!api.historyReady()){
-      loadingHistory=true;render();api.loadHistory().finally(()=>{loadingHistory=false;if(page===target)render();});
+      loadingHistory=true;render();api.loadHistory().finally(()=>{loadingHistory=false;if(page===target){render();prepareHistoryArtwork();}});
     }
+    else if(target==='activity')prepareHistoryArtwork();
     if(!api.loading()&&['home','calendar'].includes(target)&&!preparing){
       preparing=true;api.prepare().finally(()=>{preparing=false;if(page===target)render();});
     }
@@ -151,7 +142,6 @@
   function init(bridge){
     api=bridge;
     const view=$('#trackingView');
-    view.addEventListener('load',event=>{if(event.target.matches?.('.tracking-history-image'))settleHistoryImage(event.target);},true);
     view.addEventListener('click',async event=>{
       const button=event.target.closest('button');if(!button)return;
       if(button.dataset.trackPage){navigate(button.dataset.trackPage);return;}
