@@ -37,12 +37,32 @@
     const when=new Date(event.watchedAt),inputDate=Number.isNaN(+when)?'':new Date(+when-when.getTimezoneOffset()*60000).toISOString().slice(0,16);
     return `<article class="tracking-event"><span class="tracking-event-icon">${icon(mediaIcon(event.mediaType))}</span><div>${item?`<button type="button" class="tracking-title-link" data-track-detail="${esc(item.id)}">${esc(label)}</button>`:`<strong>${esc(label)}</strong>`}<span>${esc(detail)} · ${esc(timeLabel(event.watchedAt))}</span></div>${editable?`<button class="btn sm ghost tracking-edit-date" data-track-edit="${esc(event.id)}" aria-label="Edit watch date for ${esc(label)}">${icon('calendar-clock')}</button><label class="tracking-event-date" hidden><span class="sr-only">Watch date for ${esc(label)}</span><input type="datetime-local" data-track-date="${esc(event.id)}" value="${inputDate}"></label>`:''}</article>`;
   }
+  function historyCard(event){
+    const item=eventTitle(event),isMovie=event.mediaType==='movie';
+    const episode=!isMovie&&item?.episodeCatalog?.find(row=>Number(row.season)===Number(event.season)&&Number(row.number)===Number(event.episode));
+    const label=item?.title||'Title removed from library';
+    const title=isMovie?label:episode?.title||`Episode ${event.episode||'unknown'}`;
+    const artwork=episode?.image||item?.banner||item?.cover||'';
+    const posterOnly=!!artwork&&!episode?.image&&!item?.banner;
+    const when=new Date(event.watchedAt),inputDate=Number.isNaN(+when)?'':new Date(+when-when.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    const kind=isMovie?'Movie':event.mediaType==='anime'?'Anime episode':'Episode';
+    const position=isMovie?'Watched':`S${event.season} · E${event.episode}`;
+    const aria=`${label}, ${isMovie?'movie watched':`season ${event.season} episode ${event.episode}${episode?.title?`, ${episode.title}`:''}`} on ${dateLabel(event.watchedAt)}`;
+    return `<article class="tracking-history-card${posterOnly?' poster-art':''}${artwork?' has-art':''}">
+      ${item?`<button type="button" class="tracking-history-open" data-track-detail="${esc(item.id)}" aria-label="Open details for ${esc(aria)}">`:'<div class="tracking-history-open">'}
+        ${artwork?`<img class="tracking-history-image" src="${esc(artwork)}" alt="" loading="lazy" decoding="async">`:''}
+        <span class="tracking-history-content"><span class="tracking-history-meta"><span>${icon(mediaIcon(event.mediaType))}${kind}</span>${event.eventType==='rewatch'?'<span>Rewatch</span>':''}</span><span class="tracking-history-copy"><small>${esc(isMovie?'Movie watched':label)}</small><strong>${esc(title)}</strong><span>${esc(position)} <i aria-hidden="true"></i> ${esc(timeLabel(event.watchedAt))}</span></span></span>
+      ${item?'</button>':'</div>'}
+      <button type="button" class="tracking-history-edit" data-track-edit="${esc(event.id)}" aria-label="Edit watch date for ${esc(label)}">${icon('calendar-clock')}</button>
+      <label class="tracking-event-date tracking-history-date-input" hidden><span class="sr-only">Watch date for ${esc(label)}</span><input type="datetime-local" data-track-date="${esc(event.id)}" value="${inputDate}"></label>
+    </article>`;
+  }
   function activity(){
     const all=[...api.events()].sort((a,b)=>Date.parse(b.watchedAt)-Date.parse(a.watchedAt));
     const filtered=all.filter(event=>activityFilter==='all'||activityFilter==='movie'&&event.mediaType==='movie'||activityFilter==='episode'&&event.mediaType!=='movie'||activityFilter==='rewatch'&&event.eventType==='rewatch');
     const events=filtered.slice(0,activityVisible);
     const groups=new Map();for(const event of events){const day=core.dayKey(event.watchedAt);if(!groups.has(day))groups.set(day,[]);groups.get(day).push(event);}
-    return `<header class="tracking-page-hero"><p class="tracking-eyebrow">Watch journal</p><h1>Activity</h1><p>A dated record of what you watched. Earlier library progress is kept, but has no invented dates.</p></header><div class="tracking-filter-group tracking-activity-filters" aria-label="Activity type">${[['all','All'],['movie','Movies'],['episode','Episodes'],['rewatch','Rewatches']].map(([key,label])=>`<button data-track-activity="${key}" aria-pressed="${activityFilter===key}">${label}</button>`).join('')}</div><div class="tracking-activity-list">${events.length?[...groups].map(([day,rows])=>`<section class="tracking-panel"><h2>${esc(dateLabel(day+'T12:00:00'))}</h2>${rows.map(event=>activityRow(event)).join('')}</section>`).join(''):`<div class="tracking-panel tracking-empty">No watch activity in this view yet.</div>`}${filtered.length>events.length?`<button class="btn ghost tracking-more" data-track-more>Show more · ${filtered.length-events.length} remaining</button>`:''}</div>`;
+    return `<div class="tracking-history-shell"><header class="tracking-page-hero tracking-history-hero"><h1>Watch history</h1><p>Movies and episodes you have watched, day by day. Earlier progress has no invented dates.</p></header><div class="tracking-filter-group tracking-activity-filters" aria-label="Activity type">${[['all','All'],['movie','Movies'],['episode','Episodes'],['rewatch','Rewatches']].map(([key,label])=>`<button data-track-activity="${key}" aria-pressed="${activityFilter===key}">${label}</button>`).join('')}</div><div class="tracking-activity-list${events.length?' has-history':''}">${events.length?[...groups].map(([day,rows])=>{const date=new Date(day+'T12:00:00');return `<section class="tracking-history-day"><div class="tracking-history-date"><time datetime="${esc(day)}" aria-label="${esc(dateLabel(date))}"><span>${esc(new Intl.DateTimeFormat(undefined,{month:'short'}).format(date))}</span><strong>${date.getDate()}</strong><span>${esc(new Intl.DateTimeFormat(undefined,{weekday:'short'}).format(date))}</span><small>${date.getFullYear()}</small></time></div><div class="tracking-history-entries">${rows.map(historyCard).join('')}</div></section>`;}).join(''):`<div class="tracking-panel tracking-empty">No watch activity in this view yet. Log a movie or episode to start your history.</div>`}${filtered.length>events.length?`<button class="btn ghost tracking-more" data-track-more>Show more · ${filtered.length-events.length} remaining</button>`:''}</div></div>`;
   }
   function calendar(){
     const y=month.getFullYear(),m=month.getMonth(),start=new Date(y,m,1),end=new Date(y,m+1,0),offset=start.getDay(),days=end.getDate();
