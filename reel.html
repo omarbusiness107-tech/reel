@@ -2496,7 +2496,7 @@ function migrate(i){
   const banner = String(i.banner || (verifiedArtwork && previousCover && previousCover!==verifiedArtwork.poster ? previousCover : '') || verifiedArtwork?.banner || '');
   return {
     season:1, episode:0, page:0, pages:null, chapter:0, chapters:null, stoppedAtSec:0,
-    rating:0, fav:false, cover:'', banner:'', notes:'', catalogId:'', castTried:false, castHydrated:false,
+    rating:0, fav:false, cover:'', banner:'', historyBanner:'', notes:'', catalogId:'', castTried:false, castHydrated:false,
     runtime:null, synopsis:'', creator:'', year:null, finished:null,
     noCover:false, metaTried:false,
     score:null, country:'', language:'', showStatus:'', seasons:null, ageRating:'',
@@ -4050,6 +4050,10 @@ function openItem(id,{fromHistory=false}={}){
         <input data-f="cover" value="${esc(it.cover)}" placeholder="Or paste an image URL">
         <div class="covers" id="coverResults"></div>
       </div>
+      <div class="field"><label>History banner</label>
+        <input data-f="historyBanner" value="${esc(it.historyBanner||'')}" placeholder="Direct link to a landscape image">
+        <p class="hint">For a true 4K banner, use an original image at least 3840 × 2160 pixels. Leave empty to use Reel's best available art.</p>
+      </div>
 
       <div class="hint" style="margin:16px 0">
         Added ${new Date(it.added).toLocaleDateString()} · updated ${new Date(it.updated).toLocaleDateString()}
@@ -4162,6 +4166,7 @@ function wireDrawer(it, d){
     it.updated = now(); save();
     if(f==='type') { refreshLibrarySurfaces({genres:true,counts:true}); openItem(it.id); return; }
     if(f==='cover'||f==='page'||f==='pages'||f==='chapter'||f==='chapters'||f==='episode'||f==='season'){ renderGrid(); renderRail(); }
+    if(f==='historyBanner'&&window.ReelTrackingUI?.page==='activity')window.ReelTrackingUI.refresh();
   };
   d.addEventListener('input',updateField);
   d.addEventListener('change',e=>{ if(e.target.matches('select[data-f]')) updateField(e); });

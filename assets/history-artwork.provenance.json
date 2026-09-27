@@ -1,0 +1,23 @@
+{
+  "verifiedAt": "2026-09-28",
+  "purpose": "Title-matched 4K landscape artwork used in Watch History when the default image is smaller.",
+  "images": [
+    {
+      "title": "Guns Akimbo",
+      "year": 2019,
+      "width": 3840,
+      "height": 2160,
+      "sourcePage": "https://www.primevideo.com/detail/Guns-Akimbo/0T85UC5EJ21J0FPGL7YPXBBYBQ",
+      "imageUrl": "https://m.media-amazon.com/images/S/pv-target-images/f74dcd11206e4f41e09f244047c6ac440fc99a7084e3fe79bdc411c424c815f1.jpg"
+    },
+    {
+      "title": "The Mentalist",
+      "season": 2,
+      "episode": 2,
+      "width": 3840,
+      "height": 2160,
+      "sourcePage": "https://www.nowtv.com/watch/the-mentalist/iYEQZ1fR3ZWGjp5WpcxwfU/seasons/2/episodes/the-scarlet-letter-episode-2/A5EK4Ug1u7K11iZtR3PyC",
+      "imageUrl": "https://pixel.disco.nowtv.com/uuid/fc52aec2-dc5a-4199-9971-7c3a751e4978/LAND_16_9?language=en-GB&proposition=NOWOTT&version=a0146973-97fa-384b-9a0d-2a911f3cfdd1"
+    }
+  ]
+}

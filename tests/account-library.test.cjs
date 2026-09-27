@@ -13,7 +13,7 @@ const retryMigration = fs.readFileSync(path.resolve(__dirname,'../supabase/migra
 test('global metadata and private state cross the persistence boundary separately', () => {
   const entry = AccountLibrary.toSyncEntry({
     id:'browser-only',title:'Interstellar',type:'movie',year:2014,catalogId:'wikidata:Q13417189',
-    cover:'poster.jpg',genres:['Science Fiction'],score:8.7,status:'done',rating:9,fav:true,
+    cover:'poster.jpg',historyBanner:'https://example.com/4k.jpg',genres:['Science Fiction'],score:8.7,status:'done',rating:9,fav:true,
     notes:'Loved it',watchedEpisodes:['1:1'],season:1,episode:0,added:1700000000000,updated:1700000100000,finished:1700000200000
   });
   assert.deepEqual([entry.provider,entry.providerId],['wikidata','Q13417189']);
@@ -21,6 +21,7 @@ test('global metadata and private state cross the persistence boundary separatel
   assert.equal(entry.metadata.rating,undefined);
   assert.equal(entry.metadata.notes,undefined);
   assert.equal(entry.metadata.watchedEpisodes,undefined);
+  assert.equal(entry.metadata.historyBanner,'https://example.com/4k.jpg');
   assert.equal(AccountLibrary.toSyncEntry({...entry,title:'Show',type:'series',episodeCatalog:[{season:1,number:1}]}).metadata.episodeCatalog,undefined);
   assert.equal(entry.status,'done');
   assert.equal(entry.rating,9);
