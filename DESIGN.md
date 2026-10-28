@@ -243,6 +243,10 @@ Spacing follows a tight working rhythm of `4px`, `8px`, `12px`, `18px`, `24px`, 
 
 The recommendation dialog is a viewport-locked decision room at up to `1240px` wide and `94dvh` high. A 44/56 desktop split gives the left recommendation workspace and right conversation workspace independent visual weight. The left uses `minmax(0, 1fr) / 104px` rows for the active result and compact session history. The right uses explicit header, context, flexible chat, suggestions, and composer rows, so the composer is structural rather than overlaid. Only chat, long explanations, list strips, and history may scroll internally. At `900px` and below, accessible Chat/Pick tabs show one full workspace at a time without changing DOM order. The mobile reply field uses `16px` text and safe-area bottom padding.
 
+### Continue dialog
+
+Continue keeps its compact horizontal shelf and opens View all in a centered native dialog, up to `1360px` wide and `860px` high within the dynamic viewport. A compact fixed header and inline filter toolbar sit above an independently scrolling two-column list. At `700px` and below, the list becomes one column and the filter/hint stack. Covers keep their `2:3` proportions (`76 × 114px` in desktop dialog cards; `64 × 96px` on mobile). Desktop covers span the content and action rows; mobile cards use a full-width action footer. Mobile drag handles, title actions, quick actions, move buttons, and close controls provide at least `44px` touch targets.
+
 ## Elevation & Depth
 
 Reel is flat by default and layered through surface tone, one-pixel rules, and poster imagery. The standard poster and dialog shadow is structural rather than decorative. Hover lift is reserved for media cards; menus and sheets receive stronger depth because they cross the page plane.
@@ -304,6 +308,14 @@ Poster cards are the system's primary browsing unit. Every frame is vertical (`2
 ### Catalog Shelf
 
 All Titles groups Movies, Series, Anime, and Books into named consecutive rows. Each row uses scroll snapping, fixed card widths, and a visible item count. Sorting and release filtering happen in the console above the shelves, and each result opens a full source-aware record before it is added.
+
+### Continue Shelf and Queue
+
+Continue uses the existing theme surfaces, type, cover treatment, and compact progress actions. Current season/episode or reading position uses `21px` type; completed/all counts sit separately in `11–12px` muted text with a small dividing rule, never a combined line ending in “watched.” Movie resume times display as a compact timestamp. View all includes metadata, a thin cobalt progress track, and a single-line personal notes preview. Titles open full details; there is no separate Details button. Keep the medium-specific bump and Finish actions together, with earlier/later controls on the same footer row, without filler or large vertical gaps. Filtering and reordering never change progress.
+
+Explicit grip handles reorder the shelf and dialog with mouse or touch. A focused handle also supports arrow keys, Home, and End; the dialog provides earlier/later buttons and announces the new position. Keep focus with the moved title and persist the shared order in `ui.continueOrder`. During dragging, a raised copy follows the pointer while the original marks its place; neighboring cards settle over `160ms` with the existing responsive ease-out curve.
+
+The native modal uses a dimmed, `6px` blurred backdrop and a `250ms` opacity/`0.97`-scale transition with the same ease-out curve. Reduced motion removes dialog/handle transitions and sibling movement. Keep the interaction consistent in both themes and all supported languages.
 
 ### Exposure Loader
 

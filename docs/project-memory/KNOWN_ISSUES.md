@@ -1,17 +1,49 @@
 # Reel known issues and limits
 
-Last verified: 2026-09-26
+Last verified: 2026-10-16
 Repository/branch: Reel / main
 Verified against: current working tree
 Purpose: Evidence-based unresolved risks, limitations, and regression hotspots.
 
+## Resolved: Search source ambiguity, anime/film ranking and cross-provider duplicates
+
+Update 2026-10-16: Wikipedia result position/article length and TVMaze query relevance no longer masquerade as popularity. Autocomplete prioritizes exact title/alias matches and then uses audience counts, popularity ranks, provider weights or sitelinks where supplied. The new Library/Online switch makes source scope explicit and blocks provider searches in Library mode; generation checks prevent delayed online responses from changing the local view. Shared deduplication matches provider aliases and compatible title/year/media identities, including Naruto-style long-vowel spelling differences, without title-specific exceptions. Kitsu movie subtypes are classified as movies and excluded from episodic-anime enrichment. Library membership honors merged provider aliases and retains private state. Unknown years or ambiguous identities are intentionally not guessed; providers do not supply a single universal popularity scale, so exact-title relevance remains the first ranking safeguard. No production database mutation or deployment was required.
+
+## Resolved: Anime calendar years shown as seasons and locked episode inputs
+
+Update 2026-10-11: TVMaze One Piece anime (1505) uses calendar-year buckets beginning with eight episodes in 1999. Details now present absolute episodes and source-linked arcs for One Piece, Naruto, and Naruto Shippuden without changing native private episode keys. Explicit watched flags no longer disable numeric inputs; committed edits synchronize the explorer in both directions, including lowering an incorrect endpoint. Finished fills the released guide and numeric controls; account updates remain owner-scoped with zero-row failure detection and rollback. Kitsu-style continuous keys survive provider refresh instead of silently becoming year-bucket keys. Season-based anime retain seasons. Arc coverage is curated, not universal; unsupported calendar-year anime use a generic continuous guide, and unmapped/standalone episodes remain visible. Future provider episodes without a confirmed past release date cannot be completed from freshly fetched guides. No production database mutation or deployment was needed for this fix.
+
+## Upcoming release coverage
+
+Update 2026-10-10: Home now groups dated releases by distinct library title, so Tulsa King's ten episodes cannot monopolize the eight-title preview. Confirmed undated seasons are visible separately: live TVMaze From (54723) data showed season 4 ending 2026-06-28 and season 5 with premiereDate:null. No future episode date was invented. Ongoing manga/manhwa lacking usable dates show an explicit schedule-unavailable disclosure; live Kitsu Berserk (8) returned undated records numbered 5000/4999/4998, which are not used to infer a next chapter. Versioned caches force an upgrade refresh, expired episodic caches require genuinely fresh requests, and progress/results update before the entire library finishes. Wikidata successors traverse past released sequels with cycle bounds; a collection outage no longer discards independently obtained dates. Saved results survive partial and failed lookups. Movie/book continuations still require provider identity and documented relationships; imported books without Wikidata identity are not automatically matched. Kitsu pagination is bounded to ten pages; upcoming collection discovery to 100 members per collection. No background scheduler or push notifications are introduced.
+
+## Resolved: Book pages missing from History and repeated daily reading cards
+
+Follow-up 2026-10-09: lowering a chapter or page now corrects stored History ranges rather than retaining the previous high endpoint. Owner-scoped RPCs trim overlapping ranges and remove unread sessions; guest state uses the same semantics. Reading cards are compact and vertically centered so removing the synopsis does not leave a large empty region.
+
+Resolved 2026-10-09. Books previously updated `current_page` without saving activity. Page increments, committed edits, and finishing now use owner-scoped `record_page_progress` and retain reading ranges. History groups each title's daily chapter/page sessions before pagination, removes reading summaries, and highlights start/end positions. Existing undated progress remains undated. Transactional live tests cover page/chapter saves, retries, limits, finishing, and account isolation.
+
+## Issue: Genuine high-resolution History art is not available for every title
+
+Update 2026-10-10: Library and catalog details again place the cover over the banner's bottom-left edge. Missing or rejected banners now trigger exact-ID TVMaze/Kitsu/Cinemeta discovery rather than silently disappearing. Wide native banners (including 1500×500) are no longer rejected by the former 2.4 aspect-ratio ceiling. From's original 3840×2160 background was verified in the browser; native quality checks still reject portraits and low-resolution art. Some books and other titles have no genuine landscape artwork in these public sources; their unavailable state remains explicit rather than stretching a cover.
+
+Earlier update 2026-10-10: Library/catalog details reject portrait or low-resolution banners and share the verified movie artwork mapping with History. The Landscape banner field supplies both surfaces. This separate-banner version's cover positioning has now been superseded by the restored overlapping layout described above.
+
+Update 2026-10-09: The Machinist and Man of Steel now have title-matched native 1920×1080 Prime Video hero images, verified in the browser. All History summaries are removed. Reading cover columns size from the loaded source ratio and align to the outer edge rather than centering inside a fixed-width slot. Real-image checks cover both reading types and the new movie sources on mobile/desktop and light mode.
+
+History checks native dimensions and prefers HD landscape sources. Its ordinary landscape cards now follow the image ratio and fill the entire card; portrait-only art uses a deliberate larger-cover layout. A text-led fallback appears only when no source loads. The current keyless providers do not guarantee Full HD or 4K artwork for every movie or episode; TVMaze's original image is the original upload, not a guaranteed 4K file. A comprehensive high-resolution artwork provider and rights/attribution review remain future work.
+
+## Resolved: History artwork letterboxing and missing chapter entries
+
+Resolved 2026-10-09. The former 98% aspect-match gate and native-pixel display cap produced empty regions around ordinary landscape stills and tiny posters. Landscape card proportions now follow the image. F1 aliases resolve correctly; 300 and Zodiac have verified replacement art. Real-image browser checks cover desktop/mobile, light mode, and full-image access. Manga/manhwa chapter actions now save dated `chapter_read` events through owner-scoped `record_chapter_progress`; earlier reading progress is shown without inventing dates. The live database was restored from a paused state, the migration applied, and transactional tests passed for save/retry/limits/finish and account isolation with test data rolled back. Browser checks cover guest and signed-in saves, failures, and account switching.
+
 ## Issue: Tracking release coverage depends on available provider episode dates
 
-Home and Calendar use lazily fetched TVMaze episode metadata for tracked shows. Anime with a known episode count can be tracked individually without TVMaze, but the count can include future episodes; without dates Reel cannot verify their release or offer a safe whole-season action. Unknown episode air dates, season premieres, movie digital releases, and titles absent from the provider cannot be scheduled accurately. The app does not invent dates. The calendar currently emphasizes known episodes and personal watch dates; a broader release-provider integration remains future work.
+Home and Calendar use lazily fetched TVMaze, Kitsu, and Wikidata release metadata. Anime with a known episode count can be tracked individually without TVMaze, but the count can include future episodes; without dates Reel cannot verify release or offer a safe whole-season action. Confirmed undated announcements appear on Home, not as invented calendar events. Missing provider coverage and digital-release-specific scheduling remain limitations.
 
 ## Issue: New tracking pages are an incremental extraction, not a full app refactor
 
-The shared state, auth, search, details, and provider adapters still live in the large `reel.html`. `tracking-core.js` and `tracking-pages.js` establish a feature boundary, but a dedicated repository/API layer and normalized global season/episode cache are not yet present. Initial Home episode enrichment is capped to eight relevant shows to avoid a request burst; large libraries may need incremental loading for complete upcoming coverage.
+The shared state, auth, search, details, and provider adapters still live in the large `reel.html`. `tracking-core.js`, `tracking-pages.js`, and `release-data.js` establish feature boundaries, but a dedicated repository/API layer and normalized global season/episode cache are not yet present. Home checks the whole library with three workers and incremental results; very large libraries can still take time and encounter public-provider rate limits.
 
 ## Issue: Watch-event operational validation is incomplete
 

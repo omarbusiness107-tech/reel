@@ -7,9 +7,12 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "check": "node tools/check-syntax.cjs",
-    "test": "node --test tests/recommendations.test.cjs tests/recommend-api.test.cjs tests/account-library.test.cjs tests/tracking-core.test.cjs",
+    "test": "node --test tests/recommendations.test.cjs tests/recommend-api.test.cjs tests/account-library.test.cjs tests/tracking-core.test.cjs tests/detail-artwork.test.cjs tests/search-core.test.cjs tests/continue.test.cjs",
     "test:recommendations-ui": "node tools/check-recommendations.cjs",
     "test:shell-ui": "node tools/check-shell-auth.cjs",
-    "test:tracking-ui": "node tools/check-tracking-ui.cjs"
+    "test:tracking-ui": "node tools/check-tracking-ui.cjs",
+    "test:anime-ui": "node tools/check-anime-tracking.cjs",
+    "test:search-ui": "python tools/check-search-suggestions.py",
+    "test:continue-ui": "python tools/check-continue.py"
   }
 }

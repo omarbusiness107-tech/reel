@@ -1,6 +1,6 @@
 # Reel code map
 
-Last verified: 2026-09-25
+Last verified: 2026-10-28 (Continue module; other entries last verified 2026-10-16)
 Repository/branch: Reel / main
 Verified against: current working tree
 Purpose: Locate the first files to inspect for substantial changes.
@@ -18,9 +18,25 @@ Purpose: Testable persistence boundary between merged UI records, shared `titles
 Important exports: provider identity derivation, sync serialization, joined-row restoration.
 Notes: `watchedEpisodes` is private, while the full episode catalog is transient and excluded from global sync metadata.
 
+`assets/search-core.js`
+Purpose: Pure, shared search normalization, work equivalence, provider-alias deduplication, audience-based popularity and exact-title ranking. Keeps original record object references and private state while merging safe public metadata. Loaded before the main application. `reel.html` uses it in autocomplete, catalog results, library membership resolution and unified search; `searchScope`, `syncSearchScope` and `setSearchScope` coordinate the input switch with request cancellation and local-only search. `tests/search-core.test.cjs` covers identity/ranking guards and `tools/check-search-suggestions.py` uses isolated provider fixtures to verify source isolation, deduplication, saved-item navigation, stale-response cancellation, error recovery, keyboard controls, both themes and responsive/localized layouts.
+
+`assets/continue.js` and `assets/continue.css`
+The pure `progressParts` helper separates the displayed cursor from completed/all released episode counts using the tracking core, respects continuous anime numbering, and preserves reading units. Its tests include gaps, unknown totals and calendar-year guides. Titles open full Details; action footers omit redundant Details buttons.
+Purpose: Continue shelf ordering and its full-list native dialog. The UMD module exports pure `ordered`/`move` helpers and mounts through a narrow adapter in `reel.html`, which supplies existing artwork, progress actions, account scope, and preference saving. Keyed reconciliation preserves unchanged card/image nodes and shelf scroll. Pointer capture, touch-only drag handles, edge auto-scroll, cancellation, keyboard alternatives, live announcements, and a shared saved order are owned here. No independent copy of library state or new persistence schema is introduced. `tests/continue.test.cjs` covers pure ordering; `tools/check-continue.py` covers real pointer/touch gestures, keyboard/focus, reload persistence, popup filtering, existing reading History, account changes, themes and four widths. Optional `REEL_TEST_LUCIDE` supplies an unmodified copy of the app's pinned Lucide script for offline visual tests; `--capture` writes review screenshots.
+
 `assets/tracking-core.js`
-Purpose: Pure episode progress, legacy baseline, upcoming releases, watch-event stats, genre/people rankings, and activity-day calculations.
+Purpose: Pure episode progress, legacy baseline, absolute anime numbering, arc/season groups, synchronized cursor baselines, upcoming releases, watch-event stats, genre/people rankings, and activity-day calculations. Loads `anime-arcs.js` in the browser or through CommonJS in tests. Native episode keys stay unchanged; absolute numbers are presentation values.
 Used by: Tracking pages, title details, and `tests/tracking-core.test.cjs`.
+
+`assets/anime-arcs.js`
+Purpose: Exact anime identity profiles (type, normalized title or provider ID, release year) and source-linked One Piece, Naruto, and Naruto Shippuden arc ranges. Keeps season-based anime and live-action adaptations separate. `reel.html` uses profile IDs to resolve the correct animated show, hides calendar-year season inputs, and saves numeric progress through `applyEpisodeCursor`. `tools/check-anime-tracking.cjs` covers legacy year groups, continuous-key preservation, input/checkbox synchronization, lower corrections, Finished, account save rollback, and responsive themes.
+
+`assets/release-data.js`
+Purpose: Injectable-fetch public release discovery through exact Kitsu IDs and Wikidata successor/collection claims. Bounded P156 traversal (eight hops, forty IDs per hop) crosses already-released sequels and stops cycles; collection failures retain independent results. Precise dates and explicitly undated year/month windows stay separate. Kitsu chapter pagination is bounded and ongoing status is retained without estimating schedules. `prepareLibraryReleases` in `reel.html` handles three-worker progressive refresh, six-hour versioned caching, strict fresh episode lookups, safe identity matching, account generation checks, and partial/failure retention. `tracking-core.upcoming` supplies all calendar dates; `upcomingTitles` groups Home by title; `undatedReleases` separates confirmed announcements from missing chapter schedules. All apply the shared status toggle.
+
+`assets/detail-artwork.js`
+Purpose: Injectable-fetch detail-banner discovery via original TVMaze backgrounds, Kitsu landscape covers, and exact IMDb Cinemeta backgrounds (Wikidata P345 when necessary). Exports `discover` and `isLandscape`; never returns portrait posters as banners or mutates the source item. `detailBannerMarkup`, `recoverDetailBanner`, and load/error handlers in `reel.html` coordinate cached asynchronous fallback, native-dimension validation, account/DOM guards, and the overlapping cover header for library/catalog details. `tests/detail-artwork.test.cjs` covers provider identity and quality gates; `tools/check-detail-artwork.cjs` verifies both themes, five widths, keyboard expansion, and optional live artwork (`--live`).
 
 `assets/tracking-pages.js` and `assets/tracking.css`
 Purpose: Hash-navigated Home, Activity, Calendar, Stats, season explorer, responsive layout, and empty/loading states. The page module uses `window.reelTrackingBridge` for current account state, details, and watch actions.

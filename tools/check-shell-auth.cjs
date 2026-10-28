@@ -48,6 +48,18 @@ window.supabase={createClient(){
     }},
     rpc:async(name,args)=>{
       if(!currentId())return {data:null,error:{message:'unauthorized'}};
+        if(['record_chapter_progress','record_page_progress'].includes(name)){
+        if(window.failChapterSave)return {data:null,error:{message:'test save failure'}};
+        const db=readDb(),uid=currentId(),item=(db.users[uid]||[]).find(row=>row.id===args.p_user_title_id);
+        if(!item)return {data:null,error:{message:'not owned'}};
+        db.events ||= {};db.events[uid] ||= [];
+          const field=name==='record_page_progress'?'page':'chapter',previous=Number(item['current_'+field])||0;
+          const chapter=Math.min(args['p_'+field],(field==='page'?item.title.page_count:item.title.metadata.chapters)||1000000);
+          const event=chapter>previous?{id:args.p_request_id,user_title_id:item.id,[field+'_number']:chapter,reading_start:previous+1,media_type:item.title.media_type,event_type:field==='page'?'pages_read':'chapter_read',watched_at:args.p_read_at,runtime_minutes:null,source:'reel'}:null;
+        if(event)db.events[uid].push(event);
+          item['current_'+field]=chapter;if(args.p_complete)item.status='done';else if(event&&['want','paused','waiting'].includes(item.status))item.status='going';
+          writeDb(db);return {data:{[field]:chapter,status:item.status,event},error:null};
+      }
       if(name==='apply_watch_action'){
         const db=readDb(),uid=currentId(),item=(db.users[uid]||[]).find(row=>row.id===args.p_user_title_id);
         if(!item)return {data:null,error:{message:'not owned'}};
@@ -124,8 +136,7 @@ async function checkResponsive(browser,width,height){
 }
 
 (async()=>{
-  const installedBrowser=['C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe','C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'].find(fs.existsSync);
-  const browser=await chromium.launch({headless:true,...(installedBrowser?{executablePath:installedBrowser}:{})});
+  const browser=await chromium.launch({headless:true});
   try{
     for(const [width,height] of [[375,760],[430,820],[768,900],[1024,800],[1440,900]])await checkResponsive(browser,width,height);
     const {page,errors}=await open(browser,1024,800);
@@ -239,6 +250,36 @@ async function checkResponsive(browser,width,height){
     assert.deepEqual([sharedTitleCheck.accountARows,sharedTitleCheck.accountBRows],[4,3]);
     assert.deepEqual(sharedTitleCheck.bTitles,['Interstellar','Naruto','The Batman']);
     assert.deepEqual([sharedTitleCheck.a.status,sharedTitleCheck.a.rating,sharedTitleCheck.b.status,sharedTitleCheck.b.rating],['done',9,'want',0]);
+    const readingCheck=await page.evaluate(async()=>{
+      closeSheets();const item=makeItem('Berserk','manga','going');item.chapters=400;item.chapter=12;state.items.push(item);
+      const saved=await bump(item,1);await pushCloud();
+      const local={saved,chapter:item.chapter,events:state.events.filter(e=>e.titleId===item.id&&e.eventType==='chapter_read').length};
+      window.failChapterSave=true;const failed=await bump(item,1);window.failChapterSave=false;
+      const rollback={failed,chapter:item.chapter};
+      await cloudSignIn('sara@example.com','password123');const other=state.events.filter(e=>e.eventType==='chapter_read').length;
+      await cloudSignIn('omar@example.com','password123');
+      const restored=state.items.find(i=>i.title==='Berserk');
+      return {local,rollback,other,restored:{chapter:restored.chapter,eventChapter:state.events.find(e=>e.titleId===restored.id&&e.eventType==='chapter_read')?.chapter}};
+    });
+    assert.deepEqual(readingCheck,{local:{saved:true,chapter:13,events:1},rollback:{failed:false,chapter:13},other:0,restored:{chapter:13,eventChapter:13}},'signed-in chapters persist across account changes and failures do not advance progress');
+      const bookCheck=await page.evaluate(async()=>{
+        const item=makeItem('Account Book','book','want');item.pages=100;item.page=0;state.items.push(item);
+        const saved=await bump(item,10);await pushCloud();
+        window.failChapterSave=true;const failed=await bump(item,10);window.failChapterSave=false;
+        const before=item.page;
+        await cloudSignIn('sara@example.com','password123');const other=state.events.filter(e=>e.eventType==='pages_read').length;
+        await cloudSignIn('omar@example.com','password123');
+        const restored=state.items.find(i=>i.title==='Account Book'),event=state.events.find(e=>e.titleId===restored.id&&e.eventType==='pages_read');
+        return {saved,failed,before,other,page:restored.page,start:event?.readingStart,end:event?.page};
+      });
+      assert.deepEqual(bookCheck,{saved:true,failed:false,before:10,other:0,page:10,start:1,end:10},'signed-in book pages persist with ranges, remain private, and roll back on failure');
+      const resetCheck=await page.evaluate(async()=>{
+        const item=state.items.find(i=>i.title==='Account Book');await resetItemProgress(item);
+        await cloudSignIn('sara@example.com','password123');await cloudSignIn('omar@example.com','password123');
+        const restored=state.items.find(i=>i.title==='Account Book');
+        return {status:restored.status,page:restored.page,history:state.events.some(e=>e.titleId===restored.id&&e.page===10)};
+      });
+      assert.deepEqual(resetCheck,{status:'want',page:0,history:true},'reset persists across account changes without deleting History');
     await page.waitForFunction(()=>!cloud.loading&&cloud.user?.id==='account-a');
     await page.click('#btnAccount');
     assert.equal(await page.locator('#accountMenu').isVisible(),true);
