@@ -8,6 +8,7 @@ Updated 2026-11-06. Branch: `feat/reel-native-android`.
 | --- | --- | --- |
 | Existing website | 91 existing tests pass; 13 JavaScript scripts parse | Browser website regression suite not rerun because its source is unchanged |
 | Native TypeScript | `npm run typecheck` passes | Does not prove native rendering |
+| Native dependencies / lint | Expo Doctor 20/20; Expo dependency check current; lint passes without warnings | Static compatibility checks do not replace a device test |
 | Mobile core/data | 11 tests pass, including real PGlite PostgreSQL execution of the existing ownership migration and new insertion RPC | Embedded local database, not a production account write |
 | Account isolation | Local PostgreSQL verifies separate memberships, ownership, no catalog note leakage, anonymous denial, duplicate preservation and non-destructive insertion | Production personal data was not modified to test this |
 | Rendered flows | Python Playwright on exported React Native web components passes 16 scenarios with isolated HTTP fixtures and zero page errors | Fixture traffic is confined to the QA script; not a claim of live account integration |
@@ -16,13 +17,28 @@ Updated 2026-11-06. Branch: `feat/reel-native-android`.
 | Hosted migration | Additive function applied, migration history recorded; read-only ACL query confirms present, anonymous false, authenticated true | Real-account save still needs phone/user smoke test |
 | Hosted auth configuration | Only the redirect URL array changed; original website URL retained; subsequent diff reports zero declared updates | Registration/recovery delivery and native return require a device |
 | Supabase security errors | Hosted security advisors at error level report none | Warning-level pre-existing items and intentional owner-checked definer RPCs are documented below |
-| Android compilation | Initial Metro Android export produced a Hermes bundle successfully | An export is not an installable APK; final CI build/device results must be recorded |
+| Android compilation | Release APK built successfully in GitHub Actions run 42274765083; all preceding checks also passed | Physical installation and execution are not yet verified |
+| APK integrity / manifest | Official Google `apksigner` verifies the v2 signature; ZIP CRC passes; `aapt2` confirms package/version/SDK/ARM64, native scheme and non-debuggable release | Preview/debug signing certificate, not a production signing identity |
+
+## Installable Android artifact
+
+Source: `9a49a378cd16ca80f859ba2da07eb74cbbfb0552`. [Successful build and downloadable artifact](https://github.com/omarbusiness107-tech/reel/actions/runs/42274765083), completed 2026-11-06. Native Gradle compilation took 8m32s; the complete job took 9m17s.
+
+Local delivery: `mobile/artifacts/reel-android-preview.apk` (ignored by Git), 34,717,536 bytes / 33.11 MiB. The GitHub artifact is named `reel-android-preview` and contains `app-release.apk`; retention is seven days. The local copy is independent of that retention period. SHA-256:
+
+```text
+2681153660883158ba07539b3026277ee959d35b640d237183ab6b2080c2dd1f
+```
+
+`app.reel.discovery`, version `1.0.0` / code `1`; ARM64 only; minimum SDK 24 (Android 7), target SDK 36. The APK contains the offline JavaScript/Hermes bundle and native libraries; it does not require Metro. Live catalog, account and AI requests require network access. The manifest is non-debuggable and registers the `reel` scheme. Unused overlay and external-storage permissions are absent. Declared permissions come from networking, haptics, SecureStore biometric support, a private dynamic receiver and the install-referrer library; no camera, microphone, contacts or location permissions are declared.
+
+Signature verified with Google's Build Tools 37 `apksigner`: APK Signature Scheme v2, one RSA-2048 Android Debug signer. Certificate SHA-256: `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`. This is an installable preview, not a Play release. Raw local inspection results are saved beside the APK as `apk-metadata.json`, `signature-verification.txt`, `badging-verification.txt` and `manifest-verification.txt`.
 
 ## Rendered scenarios
 
 Onboarding; Discover; email/password sign-in; account library; episode watch; future-episode guard; search → details; single-title save; private notes/collections; Ask Reel response; history date edit; statistics; calendar; light appearance; sign-out/two-account isolation; no plaintext auth token in web preferences. Captures are under ignored `mobile/artifacts/` with `-fixture` filenames. The live Discover capture is labeled `discover-live.png`.
 
-Visual inspection found and corrected literal newline markers, tab-bar clipping, and an incorrect call signature to the shared episode-label helper. A regression assertion now checks `S1 E2`. Final narrow/landscape checks and APK results are still pending.
+Visual inspection found and corrected literal newline markers, tab-bar clipping, an incorrect call signature to the shared episode-label helper, and duplicated tab stacks after modal sign-in. Regression assertions check `S1 E2` and a single Ask composer after an account switch. Final rendered checks also pass at 320px width and 915×412 landscape; the landscape Ask composer and filters remain usable. Android APK results are recorded separately below.
 
 ## Security and limitations
 

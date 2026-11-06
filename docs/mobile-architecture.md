@@ -24,4 +24,4 @@ Activity/statistics read paged owner history and share `tracking-core.js`; episo
 
 ## Build
 
-Run npm commands inside `mobile/`. EAS internal-distribution preview profile produces an APK. The repo root is included in the cloud archive for shared modules, while dependency folders, local secrets, tests' artifacts and generated exports are excluded. No Google Play upload is configured. See `mobile/README.md` for setup and physical-device validation. Android JS export is a compiler check, not an APK or device test.
+Run npm commands inside `mobile/`. The GitHub Android preview workflow generates the native project and builds an arm64 release-mode APK with a preview/debug signing key on a standard Linux runner. It runs typecheck, lint and mobile tests before Gradle. EAS internal-distribution profiles are an optional alternative. The repo root is included in the EAS cloud archive for shared modules, while dependency folders, local secrets, tests' artifacts and generated exports are excluded. No Google Play upload is configured. See `mobile/README.md` for setup and physical-device validation. Android JS export is a compiler check, not an APK or device test.

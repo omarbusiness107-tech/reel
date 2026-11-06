@@ -16,11 +16,12 @@ Native Expo client in `mobile/`; the website remains independently runnable. Cur
 - [x] Implement episode tracking, activity, calendar, statistics and settings; verify rendered contracts.
 - [x] Typecheck, regression tests, initial Android JS export and rendered UI inspection.
 - [x] Test additive migration in isolated PostgreSQL, including two-account writes; deploy only the new function and record migration history.
-- [ ] Generate APK and validate on Redmi Note 12.
+- [x] Generate release-mode ARM64 preview APK; verify signature, ZIP integrity, package, SDK, native callback and manifest permissions.
+- [ ] Install and validate on the physical Redmi Note 12; the phone is not accessible to this session.
 
 ## Environment / external dependencies
 
-Node 22.23.2, Windows, about 26 GiB free at audit. No Android SDK / adb detected in the standard location or PATH. Android Studio/emulator were not installed. Expo SDK 58.0.23 is current stable according to npm and Expo release notes. EAS is unauthenticated, but GitHub is authenticated and the repository is public with Actions enabled. A standard Linux cloud preview build is configured; no paid runner or plan. User supplied hosted origin: `https://reel-navy.vercel.app`. Native prebuild succeeds. No production account/library data was modified.
+Node 22.23.2, Windows, about 26 GiB free at audit. No Android SDK / adb detected in the standard location or PATH. Android Studio/emulator were not installed. Expo SDK 58.0.23 is current stable according to npm and Expo release notes. The user completed Expo login; EAS authentication is verified, but this preview uses the existing public GitHub repository and a standard Linux Actions runner. No paid runner or plan. User supplied hosted origin: `https://reel-navy.vercel.app`. Native prebuild succeeds. No production account/library data was modified.
 
 ## Audit findings
 
@@ -30,6 +31,8 @@ The website is a static SPA (`reel.html`), not a React app. `assets/account-libr
 
 ## Verification log
 
-91 website tests pass and 13 scripts parse. 11 mobile tests pass, including real PostgreSQL ownership/RPC execution. 16 rendered flow scenarios pass with isolated HTTP fixtures; live Discover renders Cinemeta and TVMaze, with an explicit Kitsu outage warning. Native prebuild and initial Android Hermes export succeed. Lint found state-reset patterns, which were refactored into account-keyed screen lifetimes. Visual review corrected newline markers, tab geometry and episode labels.
+91 website tests pass and 13 scripts parse. 11 mobile tests pass, including real PostgreSQL ownership/RPC execution. 16 rendered flow scenarios pass with isolated HTTP fixtures; live Discover renders Cinemeta and TVMaze, with an explicit Kitsu outage warning. Extra 320px and 915×412 landscape checks pass. Native prebuild, final web export and initial Android Hermes export succeed. Typecheck and lint pass without warnings; Expo Doctor passes 20/20 and the Expo dependency check is current. State-reset patterns were refactored into account-keyed screen lifetimes. Visual review corrected newline markers, tab geometry, episode labels, modal-auth navigation and the landscape Ask layout.
 
-Hosted `add_my_title` is applied, recorded and verified: anonymous execution false, authenticated execution true. Only the native redirect allowlist was added; website URL and other settings remain. Public auth settings confirm email/signup enabled and Google disabled. Error-level hosted security advisors report no issues. See `mobile-verification.md` for exact scope and remaining device checks. Cloud APK compilation is next.
+Hosted `add_my_title` is applied, recorded and verified: anonymous execution false, authenticated execution true. Only the native redirect allowlist was added; website URL and other settings remain. Public auth settings confirm email/signup enabled and Google disabled. Error-level hosted security advisors report no issues.
+
+GitHub Actions run [42274765083](https://github.com/omarbusiness107-tech/reel/actions/runs/42274765083) successfully built source `9a49a37`. The downloaded APK is `mobile/artifacts/reel-android-preview.apk` (33.11 MiB). Official Google tools verify its signature and manifest; archive CRC passes. Package `app.reel.discovery`, version `1.0.0`, ARM64, minimum Android 7, release non-debuggable with preview signing. See `mobile-verification.md` for its checksum, exact evidence and remaining device checks. No Play publication occurred.

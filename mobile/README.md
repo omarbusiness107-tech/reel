@@ -16,6 +16,8 @@ The app already points to `https://reel-navy.vercel.app` and the same public Sup
 
 The Android preview workflow builds an **arm64 release-mode APK signed with a preview/debug key**. It is for device testing, not a Google Play release. No emulator or local Android SDK is needed.
 
+The delivered APK is already available locally at [`artifacts/reel-android-preview.apk`](artifacts/reel-android-preview.apk), 33.11 MiB, version 1.0.0. It was built successfully from `9a49a37` in [run 42274765083](https://github.com/omarbusiness107-tech/reel/actions/runs/42274765083). Signature and archive integrity are verified. Minimum Android version: 7. Its SHA-256 is `2681153660883158ba07539b3026277ee959d35b640d237183ab6b2080c2dd1f`. The local file is not committed to Git; cloud artifacts expire after seven days.
+
 1. Download the `reel-android-preview` artifact from the latest successful [Android workflow](https://github.com/omarbusiness107-tech/reel/actions/workflows/android-preview.yml), then extract `app-release.apk`.
 2. Transfer the APK to your phone by USB or a private file transfer you control.
 3. Open the APK on the phone and allow installation from that source when Android prompts. Install Reel.
@@ -44,6 +46,7 @@ Conversations stay in memory. The existing API does not stream, persist chat his
 
 ```powershell
 npm run typecheck
+npm run lint
 npm test
 npm run export:android
 ```
@@ -75,3 +78,5 @@ Python Playwright is a local QA dependency, not an app dependency. Fixture accou
 - Judge frame pacing in this release-mode build on the Redmi Note 12. Browser rendering is not performance evidence.
 
 See [architecture](../docs/mobile-architecture.md), [research](../docs/mobile-design-research.md), [progress](../docs/mobile-progress.md) and [verification](../docs/mobile-verification.md).
+
+Next validation priority is the physical-device checklist above, including a real-account save followed by a website check and an authenticated Ask response. Later improvements can add localized interface copy, a more reliable server-cached public catalog and a stable private release signing identity. Services absent from the existing backend require their own implementation before enabling their controls.
