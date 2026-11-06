@@ -16,7 +16,7 @@ The app already points to `https://reel-navy.vercel.app` and the same public Sup
 
 The Android preview workflow builds an **arm64 release-mode APK signed with a preview/debug key**. It is for device testing, not a Google Play release. No emulator or local Android SDK is needed.
 
-The delivered APK is already available locally at [`artifacts/reel-android-preview.apk`](artifacts/reel-android-preview.apk), 33.11 MiB, version 1.0.0. It was built successfully from `9a49a37` in [run 42274765083](https://github.com/omarbusiness107-tech/reel/actions/runs/42274765083). Signature and archive integrity are verified. Minimum Android version: 7. Its SHA-256 is `2681153660883158ba07539b3026277ee959d35b640d237183ab6b2080c2dd1f`. The local file is not committed to Git; cloud artifacts expire after seven days.
+The current APK is [`artifacts/reel-android-1.0.1.apk`](artifacts/reel-android-1.0.1.apk), 33.12 MiB, version 1.0.1/code 2. It was built from `e2db1c6` in [successful run 42282413661](https://github.com/omarbusiness107-tech/reel/actions/runs/42282413661). Signature, archive integrity and native manifest are verified. Its signing certificate matches 1.0.0, so install it **over the existing app**, without uninstalling or clearing data. Minimum Android version: 7. SHA-256: `678609a601cb064b5d539ecc20160d00e77c98330610f01114298c42bd0402d5`. The original 1.0.0 APK remains at `artifacts/reel-android-preview.apk` for rollback. Local APKs are not committed to Git; cloud artifacts expire after seven days.
 
 1. Download the `reel-android-preview` artifact from the latest successful [Android workflow](https://github.com/omarbusiness107-tech/reel/actions/workflows/android-preview.yml), then extract `app-release.apk`.
 2. Transfer the APK to your phone by USB or a private file transfer you control.
@@ -36,7 +36,7 @@ Use only the free build allowance; do not purchase a plan. No Play upload is con
 
 ## Implemented boundaries
 
-Version 1.0.1 improves movie search with a second IMDb source and independent result loading, recovers missing/broken posters by exact provider ID, and routes Android system Back through the same action as the visible Back control. Tabs retain navigation history. Predictive-back opt-in is disabled for compatibility. A genuine artwork outage ends with a quiet icon, not duplicate title text. The version-1.0.1 APK and its checksum are recorded below after the preview build completes; hardware Back still needs phone confirmation.
+Version 1.0.1 improves movie search with a second IMDb source and independent result loading, recovers missing/broken posters by exact provider ID, and routes Android system Back through the same action as the visible Back control. Tabs retain navigation history. Predictive-back opt-in is disabled for compatibility. A genuine artwork outage ends with a quiet icon, not duplicate title text. The verified version-1.0.1 APK is linked above; hardware Back still needs phone confirmation.
 
 Discover, local rating-based suggestions when explicitly enabled, Ask Reel with real catalog retrieval and the existing authenticated AI API, unified title/people search, details and people credits, watchlists/saved picks, private ratings/notes/collections, episode progress, movie watches/rewatches, activity and date editing, calendar, statistics, appearance, haptics and sign-out. Lumi is an original scalable vector character with ten expressions and reduced-motion-aware feedback.
 

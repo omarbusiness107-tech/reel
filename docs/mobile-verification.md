@@ -10,7 +10,19 @@ The user reports 1.0.0 running on their phone. The 1.0.1 changes add independent
 
 Read-only live checks find No Hard Feelings (2023), Office Space (1999) and Dune: Part Two (2024) and load actual posters, both through catalog HTTP checks and rendered web components. Screenshot `mobile/artifacts/search-no-hard-feelings-live.png` was visually inspected. Live catalog currently returns No Hard Feelings from the original source as well; the user's missing result was not reproduced as a permanent catalog omission. Kitsu remains unavailable in these live checks and is labeled honestly.
 
-The generated Android manifest is version 1.0.1/code 2 with predictive-back opt-in false. Focused Back subscriptions share the tested back-or-home policy and are removed on blur; tabs use history. Header and browser history checks pass. These checks do not prove a physical Android key/gesture dispatch: that requires retesting the updated APK on the Redmi. APK build/signature evidence follows after cloud completion. Earlier 1.0.0 evidence is retained below as the baseline.
+The compiled APK manifest is version 1.0.1/code 2 with predictive-back opt-in false. Focused Back subscriptions share the tested back-or-home policy and are removed on blur; tabs use history. Header and browser history checks pass. These checks do not prove a physical Android key/gesture dispatch: that requires retesting the updated APK on the Redmi. No Android/ADB device was detected over USB in this session. Earlier 1.0.0 evidence is retained below as the baseline.
+
+The predictive-back compatibility flag disables system predictive animations while preserving AndroidX Back callbacks, as documented by [Android's Back migration guide](https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture#opt-out). The flag is generated through [Expo's versioned app configuration](https://docs.expo.dev/versions/v58.0.0/config/app/#predictivebackgestureenabled); generated native source is not edited manually.
+
+### Verified 1.0.1 APK
+
+[GitHub build 42282413661](https://github.com/omarbusiness107-tech/reel/actions/runs/42282413661) successfully built source `e2db1c6c7303b5c61a67ff9aee3dd574f848fe0c`, including cloud typecheck, lint and all 21 tests. Local delivery: `mobile/artifacts/reel-android-1.0.1.apk`, 34,727,180 bytes / 33.12 MiB. SHA-256:
+
+```text
+678609a601cb064b5d539ecc20160d00e77c98330610f01114298c42bd0402d5
+```
+
+Google Build Tools verify APK Signature Scheme v2, ZIP CRC and the ARM64 release manifest. Package remains `app.reel.discovery`, version 1.0.1/code 2; non-debuggable; native callback scheme retained; unused overlay/storage permissions remain absent. Predictive-back opt-in is confirmed false in the compiled manifest. Signer SHA-256 matches the delivered 1.0.0 certificate: `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, allowing an in-place update without uninstalling. The old APK remains available for rollback. Local evidence is `apk-metadata-1.0.1.json`, the versioned checksum file and `*-1.0.1-verification.txt` beside the APK.
 
 | Boundary | Evidence | Limit |
 | --- | --- | --- |
