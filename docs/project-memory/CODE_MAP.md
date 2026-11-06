@@ -1,11 +1,24 @@
 # Reel code map
 
-Last verified: 2026-10-28 (Continue module; other entries last verified 2026-10-16)
-Repository/branch: Reel / main
+Last verified: 2026-11-06 (native addition; Continue 2026-10-28; other web entries 2026-10-16)
+Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Locate the first files to inspect for substantial changes.
 
 ## Product shell, library, navigation, details, and auth
+
+### Native Android client
+
+- `mobile/app/`: native tab navigation, onboarding, authentication/callback, Discover, Ask, Search, Library, profile, details, people, activity, calendar and statistics.
+- `mobile/src/core/shared.ts`: typed access to the existing root pure modules; `safety.ts`, `secure-storage.ts` and `dates.ts` own native-specific invariants.
+- `mobile/src/services/`: public catalog adapters, existing AI API orchestration, Supabase session, account-pinned writes, paged library/events and query hooks.
+- `mobile/src/providers/AppProvider.tsx`: auth lifecycle, account cache isolation and non-sensitive local settings.
+- `mobile/src/components/`: original Lumi geometry/state feedback and reusable accessible native UI; `mobile/src/theme.ts` owns palette and spacing.
+- `mobile/assets/character/` and `mobile/tools/create_character.py`: ten original reusable SVG expressions and launcher artwork.
+- `mobile/tests/`: core security/data tests and embedded PostgreSQL account isolation tests; `mobile/tools/test_preview.py` is the isolated HTTP-fixture rendered-flow test, never a production data source.
+- `.github/workflows/android-preview.yml`: cloud preview APK; `mobile/eas.json`: optional Expo cloud profiles. Generated `mobile/android/` stays ignored.
+- `supabase/migrations/20261106165224_mobile_add_my_title.sql`: additive owner-derived insertion, restricted execution and schema reload.
+- `docs/mobile-*.md`: architecture, accessible design references, design system, evidence/limits and milestone progress. `mobile/README.md` covers phone installation and validation.
 
 `reel.html`
 Purpose: Main static application; owns the app shell, inline state/data, local storage, library/catalog browsing, public-provider integrations, details screens, navigation, translations, Supabase auth/sync, and the recommendation bridge.

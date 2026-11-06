@@ -1,9 +1,17 @@
 # Reel decisions
 
-Last verified: 2026-09-25
-Repository/branch: Reel / main
+Last verified: 2026-11-06 (native decisions; earlier web decisions last verified 2026-09-25)
+Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Preserve confirmed product and engineering choices without inventing rationale.
+
+## Decision: isolate native mobile while retaining the website
+
+The Android brief authorizes a native Expo/React Native app and future iOS compatibility. Keep it in `mobile/` on `feat/reel-native-android`, share the existing pure engines and backend, and leave `reel.html` and its deploy routing intact. Native UI uses original editorial ink/paper/coral styling and the authored Lumi projection-frame character. Avoid a WebView, unnecessary paid APIs, or a separate account system.
+
+Use additive `add_my_title` for mobile insertion because the existing `sync_my_library` deletes rows absent from its input and is unsuitable for partial/concurrent device writes. Preserve existing personal state on duplicate adds; update only requested private fields; reuse retry-safe watch actions. Validate ownership in isolated PostgreSQL before schema deployment. Native session secrets stay in encrypted chunks; memory-only browser sessions support QA.
+
+Use standard public-repository GitHub Actions for the preview APK when EAS is unauthenticated, without installing a local SDK/emulator or buying a plan. Preview APKs use preview/debug signing; Google Play publication remains outside authorization. EAS configuration is retained for later stable signing. Browser contract tests and Hermes exports are reported separately from native device validation.
 
 ## Decision
 

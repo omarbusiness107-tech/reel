@@ -1,11 +1,17 @@
 # Reel product specification
 
-Last verified: 2026-10-28 (Continue shelf/dialog; other sections last verified 2026-10-16)
-Repository/branch: Reel / main
+Last verified: 2026-11-06 (native addition; Continue 2026-10-28; other web sections 2026-10-16)
+Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Intended product behavior, with emphasis on the recommendation experience.
 
 ## Product behavior
+
+The Android client adds native Discover / Ask Reel / Search / Library / You tabs, onboarding, existing-account sign-in/registration/recovery, poster and person details, watchlists/saved picks, private notes/ratings/collection tags, dated movie/episode actions, activity date editing, calendar, viewing statistics, local dark/light/system appearance and optional haptics. Lumi is an original contextual character. The website and existing user data remain authoritative and compatible.
+
+Ask combines existing guided questions, accumulated intent, real catalog retrieval and the authenticated recommendation API. Clarification is bounded, shown picks are excluded, regeneration is supported, and fallback is labeled catalog matching. Conversation history exists only within the open app session. Rating-based affinity is opt-in and needs at least three ratings of 8–10. Search separates titles and people, preserves saved state during deduplication, and stores account-scoped recent queries locally.
+
+Native statistics use dated viewing events and exclude undated baseline progress/reading. The initial release calendar uses available TVMaze episode dates; missing Kitsu-only guides and unknown dates stay explicit. Reading entries remain visible but native chapter/page actions are outside this movie/TV client. Google provider, push delivery, account deletion, service availability and server chat persistence are not invented. Device verification and APK evidence are tracked in `docs/mobile-verification.md`.
 
 The library's Continue shelf includes every `going` title across media types. Drag handles support mouse and touch reordering; arrow keys, Home/End, and explicit earlier/later buttons in View all provide non-drag alternatives. A manually chosen order is stored in `ui.continueOrder` through the existing guest/account preference persistence, without changing title timestamps, watch/read progress, or History. Unordered new titles remain visible after manually ordered titles; removed/inactive IDs are ignored. The View all button opens a centered native dialog with a blurred backdrop, a searchable full list, cover art, current position, resume time, basic metadata, notes preview, and existing progress/Finish actions. Clickable titles open full Details without a separate Details button. Compact cards distinguish a larger current season/episode from smaller completed/all episode counts, without the trailing word “watched.” Counts derive from the released episode guide and checked/baseline progress, not from the episode cursor alone; continuous anime show absolute episode numbers without calendar-year seasons. Reading positions and totals use page/chapter units. The dialog expands to 1360px by 860px within the viewport, with compact chrome, a shared action/reorder footer, two columns on desktop and one on mobile, and the same saved order as the shelf. Closing restores focus; opening Details closes the popup first. Account changes close the popup and render only the new account's list. Reordering cancels on Escape, pointer cancellation, window blur, or a refresh/account change. Keyboard announcements, pointer handles that do not hijack normal scrolling, light/dark themes, reduced motion, and English/French/Arabic copy are supported. Home's separate next-episode preview is unchanged.
 

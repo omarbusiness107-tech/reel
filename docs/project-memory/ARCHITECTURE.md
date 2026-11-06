@@ -1,11 +1,17 @@
 # Reel architecture
 
-Last verified: 2026-10-10
-Repository/branch: Reel / main
+Last verified: 2026-11-06 (native addition; web sections last verified 2026-10-10)
+Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree and Supabase migrations through reading_progress_corrections
 Purpose: Technical map of stable application boundaries and important data flows.
 
 ## Application shape
+
+The native Android client is isolated in `mobile/`: Expo SDK 58, React Native 0.88, TypeScript, Expo Router, TanStack Query, Reanimated and native StyleSheet primitives. It shares the exact pure account, search, recommendation and tracking modules in root `assets/` through a typed boundary and Metro watch folder. It does not embed or replace the static website. `docs/mobile-architecture.md` describes the client boundaries.
+
+Native auth uses the same Supabase account store, PKCE and encrypted SecureStore chunks. Account changes clear private queries and transient chat. Writes pin the initiating session token. `add_my_title(jsonb)` is an additive, owner-checked catalog/membership insertion RPC; unlike the existing whole-library sync, it never deletes omitted memberships or changes an existing private record. Existing RLS protects private patches and `apply_watch_action` handles dated viewing changes. Migration `20261106165224_mobile_add_my_title.sql` has been applied and recorded. Hosted auth redirects retain the website and add the native callback/recovery URLs; Google provider remains disabled. No account data was changed during deployment verification.
+
+The app uses the existing hosted `/api/recommend`, TVMaze, Cinemeta and Kitsu. Native conversations remain temporary and JSON responses are not presented as streaming. Cloud APK compilation is configured in `.github/workflows/android-preview.yml` on the isolated branch, using a standard public-repository Linux runner and preview signing; EAS remains optional. No Google Play publication is configured.
 
 Reel is a static, dependency-light SPA. `reel.html` still contains the app shell, inline application logic, seeded library data, Supabase client integration, catalog adapters, storage, details UI, navigation, and bridges to feature modules. Recommendation and personal-tracking logic are incrementally extracted into `assets/`; this is not a framework rewrite.
 

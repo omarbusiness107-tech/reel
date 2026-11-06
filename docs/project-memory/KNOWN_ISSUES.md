@@ -1,9 +1,17 @@
 # Reel known issues and limits
 
-Last verified: 2026-10-16
-Repository/branch: Reel / main
+Last verified: 2026-11-06 (native additions; earlier web entries last verified 2026-10-16)
+Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Evidence-based unresolved risks, limitations, and regression hotspots.
+
+## Native Android verification and provider limits
+
+`mobile/` has compiled/typechecked and passed pure/database tests plus 16 rendered contract-flow scenarios using isolated HTTP fixtures. Live Discover returned real Cinemeta/TVMaze data and honestly reported a Kitsu outage. Final cloud APK and physical Redmi Note 12 validation must be read from `docs/mobile-verification.md`; a browser screenshot or Hermes export does not establish Android performance, SecureStore survival, keyboard geometry, TalkBack, haptic timing or email PKCE dispatch. No real user's password or production library was used for smoke tests.
+
+The hosted additive mobile insertion function and native auth callback allowlist have been deployed; website URL and unrelated auth settings were preserved. Google sign-in remains hidden because its provider is disabled. Kitsu-only episode progress/calendar guides, reading-specific native actions, notifications, account deletion, permanent chat history and localized native copy are not supplied by this client. The UI does not fabricate them.
+
+Expo SDK 58's CLI/fingerprint dependency tree currently reports five moderate glob/minimatch advisories and no high/critical finding. A force fix would downgrade the SDK, so it was not applied. Supabase error-level security advisors report no issues; warning-level intentional owner-checked definer RPCs and pre-existing leaked-password protection settings remain documented in the mobile verification report.
 
 ## Resolved: Search source ambiguity, anime/film ranking and cross-provider duplicates
 
