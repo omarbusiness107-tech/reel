@@ -1,13 +1,17 @@
 import React from "react";
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../src/theme";
+import { useAndroidBack } from "../../src/navigation";
 export default function TabLayout() {
+  const pathname = usePathname();
+  useAndroidBack(pathname === "/");
   const c = useTheme();
   const insets = useSafeAreaInsets();
   return (
     <Tabs
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         animation: "none",

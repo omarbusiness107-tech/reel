@@ -19,7 +19,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, { useReducedMotion } from "react-native-reanimated";
 import { useTheme } from "../theme";
 import { Lumi, type LumiState } from "./Lumi";
-import { router } from "expo-router";
+import { goBack, useAndroidBack } from "../navigation";
 export function Copy({
   kind = "body",
   style,
@@ -382,16 +382,10 @@ export function Loading({
   );
 }
 export function BackHeader({ title }: { title: string }) {
+  useAndroidBack();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <Button
-        label="Back"
-        icon="arrow-back"
-        variant="quiet"
-        onPress={() =>
-          router.canGoBack() ? router.back() : router.replace("/(tabs)")
-        }
-      />
+      <Button label="Back" icon="arrow-back" variant="quiet" onPress={goBack} />
       <Copy kind="label" style={{ flex: 1 }}>
         {title.toUpperCase()}
       </Copy>

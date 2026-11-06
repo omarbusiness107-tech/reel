@@ -11,6 +11,8 @@ Purpose: Locate the first files to inspect for substantial changes.
 
 - `mobile/app/`: native tab navigation, onboarding, authentication/callback, Discover, Ask, Search, Library, profile, details, people, activity, calendar and statistics.
 - `mobile/src/core/shared.ts`: typed access to the existing root pure modules; `safety.ts`, `secure-storage.ts` and `dates.ts` own native-specific invariants.
+- `mobile/src/core/artwork.ts`: valid HTTPS poster candidates and exact IMDb identity; `mobile/src/services/catalog.ts` owns independent catalog search, the secondary IMDb movie index and exact-ID artwork recovery.
+- `mobile/src/navigation.ts` and `mobile/src/core/back-navigation.ts`: focused Android system Back subscription and the shared header/system back-or-home policy. Tab history is configured in `mobile/app/(tabs)/_layout.tsx`.
 - `mobile/src/services/`: public catalog adapters, existing AI API orchestration, Supabase session, account-pinned writes, paged library/events and query hooks.
 - `mobile/src/providers/AppProvider.tsx`: auth lifecycle, account cache isolation and non-sensitive local settings.
 - `mobile/src/components/`: original Lumi geometry/state feedback and reusable accessible native UI; `mobile/src/theme.ts` owns palette and spacing.

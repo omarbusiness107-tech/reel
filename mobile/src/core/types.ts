@@ -1,7 +1,18 @@
 export type MediaType =
-  "movie" | "series" | "anime" | "book" | "manga" | "manhwa";
+  | "movie"
+  | "series"
+  | "anime"
+  | "book"
+  | "manga"
+  | "manhwa";
 export type Status =
-  "want" | "suggested" | "going" | "done" | "paused" | "dropped" | "waiting";
+  | "want"
+  | "suggested"
+  | "going"
+  | "done"
+  | "paused"
+  | "dropped"
+  | "waiting";
 export interface Person {
   id: string;
   name: string;
@@ -26,12 +37,14 @@ export interface Title {
   year?: number | null;
   catalogId?: string;
   cover?: string;
+  posterCandidates?: string[];
   banner?: string;
   synopsis?: string;
   genres: string[];
   runtime?: number | null;
   score?: number | null;
   popularity?: number;
+  popularityRank?: number;
   creator?: string;
   country?: string;
   language?: string;

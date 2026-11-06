@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, View, Pressable } from "react-native";
+import { FlatList, View, Pressable, ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueries,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { searchTitles, searchPeople } from "../../src/services/catalog";
+import { titleSearchSources, searchPeople } from "../../src/services/catalog";
 import { useLibrary } from "../../src/services/hooks";
 import { searchCore } from "../../src/core/shared";
 import { useTheme } from "../../src/theme";
@@ -29,6 +33,21 @@ const filters = [
   { value: "library", label: "My library" },
 ] as const;
 type Row = { kind: "title"; value: Title } | { kind: "person"; value: Person };
+function combineSources(results: UseQueryResult<Title[], Error>[]) {
+  return {
+    items: results.flatMap((result) => result.data || []),
+    warnings: results.flatMap((result, index) =>
+      result.isError
+        ? [
+            `${titleSearchSources[index].label} is unavailable. Other sources are still shown.`,
+          ]
+        : [],
+    ),
+    loading: results.some((result) => result.isPending),
+    error: results.every((result) => result.isError) ? results[0].error : null,
+    retry: () => Promise.all(results.map((result) => result.refetch())),
+  };
+}
 export default function Search() {
   const { session } = useApp();
   const params = useLocalSearchParams<{ q?: string }>();
@@ -67,10 +86,15 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
     const timer = setTimeout(() => setQuery(text.trim()), 350);
     return () => clearTimeout(timer);
   }, [text]);
-  const titles = useQuery({
-    queryKey: ["search", query],
-    enabled: query.length >= 2 && filter !== "library" && filter !== "people",
-    queryFn: ({ signal }) => searchTitles(query, signal),
+  const titles = useQueries({
+    queries: titleSearchSources.map((source) => ({
+      queryKey: ["search-source", source.key, query],
+      enabled: query.length >= 2 && filter !== "library" && filter !== "people",
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        source.search(query, signal),
+      retry: 1,
+    })),
+    combine: combineSources,
   });
   const people = useQuery({
     queryKey: ["people-search", query],
@@ -86,7 +110,7 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
     const combined =
       filter === "library"
         ? local
-        : searchCore.dedupe([...local, ...(titles.data?.items || [])], {
+        : searchCore.dedupe([...local, ...titles.items], {
             preferred: new Set(local),
           });
     const rows: Row[] = combined
@@ -100,7 +124,7 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
       (r) => r.kind === "person" && searchCore.normalize(r.value.name) === q,
     );
     return exactPerson ? [...names, ...rows] : [...rows, ...names];
-  }, [query, filter, titles.data, people.data, library.data]);
+  }, [query, filter, titles.items, people.data, library.data]);
   async function remember() {
     const value = text.trim();
     if (value.length < 2) return;
@@ -110,7 +134,7 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
   }
   const loading =
     query.length >= 2 &&
-    ((filter !== "library" && filter !== "people" && titles.isPending) ||
+    ((filter !== "library" && filter !== "people" && titles.loading) ||
       (["all", "people"].includes(filter) && people.isPending));
   return (
     <Page scroll={false}>
@@ -170,20 +194,41 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28 }}
           ListHeaderComponent={
             <>
-              {loading ? <Loading label="Searching the catalogs…" /> : null}
+              {loading ? (
+                results.length ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                      paddingVertical: 12,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color={c.accent} />
+                    <Copy kind="small" style={{ color: c.muted }}>
+                      Searching remaining sources…
+                    </Copy>
+                  </View>
+                ) : (
+                  <Loading label="Searching the catalogs…" />
+                )
+              ) : null}
               <ErrorNote
                 error={
                   filter !== "library" && filter !== "people"
                     ? titles.error
                     : null
                 }
-                retry={() => void titles.refetch()}
+                retry={() => void titles.retry()}
               />
               <ErrorNote
                 error={["all", "people"].includes(filter) ? people.error : null}
                 retry={() => void people.refetch()}
               />
-              {titles.data?.warnings.map((w) => (
+              {(filter !== "library" && filter !== "people"
+                ? titles.warnings
+                : []
+              ).map((w) => (
                 <Copy key={w} kind="small" style={{ color: c.muted }}>
                   {w}
                 </Copy>

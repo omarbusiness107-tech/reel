@@ -1,5 +1,6 @@
 import type { Episode, Person, Title } from "../core/types";
 import { searchCore } from "../core/shared";
+import { imageUrl, imdbId } from "../core/artwork";
 
 const CINEMA = "https://v3-cinemeta.strem.io";
 const TV = "https://api.tvmaze.com";
@@ -22,7 +23,7 @@ const text = (value?: string) =>
     .replace(/&amp;/g, "&")
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"');
-const https = (value?: string) => value?.replace(/^http:/, "https:");
+const https = imageUrl;
 interface TvShow {
   id: number;
   name: string;
@@ -76,6 +77,10 @@ export function tvTitle(show: TvShow): Title {
     ],
     year: Number(show.premiered?.slice(0, 4)) || null,
     cover: https(show.image?.medium || show.image?.original),
+    posterCandidates: [
+      https(show.image?.original),
+      https(show.image?.medium),
+    ].filter((url): url is string => !!url),
     synopsis: text(show.summary),
     score: show.rating?.average,
     runtime: show.averageRuntime || show.runtime,
@@ -114,7 +119,12 @@ interface Kitsu {
     titles?: { en?: string };
     synopsis?: string;
     startDate?: string;
-    posterImage?: { large?: string };
+    posterImage?: {
+      large?: string;
+      medium?: string;
+      original?: string;
+      small?: string;
+    };
     coverImage?: { large?: string };
     averageRating?: string;
     episodeLength?: number;
@@ -132,6 +142,13 @@ function animeTitle(record: Kitsu): Title {
     year: Number(a.startDate?.slice(0, 4)) || null,
     genres: ["Animation"],
     cover: https(a.posterImage?.large),
+    posterCandidates: [
+      a.posterImage?.medium,
+      a.posterImage?.original,
+      a.posterImage?.small,
+    ]
+      .map(https)
+      .filter((url): url is string => !!url),
     banner: https(a.coverImage?.large),
     synopsis: a.synopsis,
     score: Number(a.averageRating) / 10 || null,
@@ -143,6 +160,92 @@ export interface CatalogResult {
   items: Title[];
   warnings: string[];
 }
+interface MovieSuggestion {
+  id: string;
+  l: string;
+  qid?: string;
+  q?: string;
+  y?: number;
+  rank?: number;
+  s?: string;
+  i?: { imageUrl?: string };
+}
+export async function searchMovieIndex(
+  query: string,
+  signal?: AbortSignal,
+): Promise<Title[]> {
+  const value = query.trim().replace(/\s+/g, " ");
+  if (value.length < 2) return [];
+  const initial = /^[a-z0-9]/i.exec(value)?.[0].toLowerCase() || "x";
+  const data = await json<{ d?: MovieSuggestion[] }>(
+    `https://v3.sg.media-imdb.com/suggestion/${initial}/${encodeURIComponent(value)}.json`,
+    signal,
+  );
+  return (data.d || [])
+    .filter(
+      (item) =>
+        /^tt\d+$/.test(item.id) &&
+        typeof item.l === "string" &&
+        (item.qid
+          ? ["movie", "tvMovie", "short", "tvShort", "video"].includes(item.qid)
+          : /^(feature|TV movie|short|video)$/i.test(item.q || "")),
+    )
+    .map((item) => ({
+      id: `imdb:${item.id}`,
+      catalogId: `imdb:${item.id}`,
+      imdb: item.id,
+      title: item.l,
+      type: "movie",
+      year: item.y || null,
+      genres: [],
+      cover: https(item.i?.imageUrl?.replace(/\._V1_\.jpg$/, "._V1_SX400.jpg")),
+      posterCandidates: [https(item.i?.imageUrl)].filter(
+        (url): url is string => !!url,
+      ),
+      popularityRank: item.rank,
+      cast: item.s?.split(", ").filter(Boolean),
+      sourceUrl: `https://www.imdb.com/title/${item.id}/`,
+    }));
+}
+
+// The screen queries sources independently: a slow/outage source must not hide
+// results already returned by another one. The assistant can still collect all.
+export const titleSearchSources = [
+  {
+    key: "movies",
+    label: "Movie catalog",
+    search: async (query: string, signal?: AbortSignal) => {
+      const data = await json<{ metas?: Meta[] }>(
+        `${CINEMA}/catalog/movie/top/search=${encodeURIComponent(query.trim())}.json`,
+        signal,
+      );
+      return (data.metas || []).slice(0, 24).map(movieTitle);
+    },
+  },
+  { key: "movie-index", label: "Movie index", search: searchMovieIndex },
+  {
+    key: "television",
+    label: "Television",
+    search: async (query: string, signal?: AbortSignal) => {
+      const data = await json<{ show: TvShow }[]>(
+        `${TV}/search/shows?q=${encodeURIComponent(query.trim())}`,
+        signal,
+      );
+      return data.slice(0, 20).map((row) => tvTitle(row.show));
+    },
+  },
+  {
+    key: "anime",
+    label: "Anime",
+    search: async (query: string, signal?: AbortSignal) => {
+      const data = await json<{ data: Kitsu[] }>(
+        `https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(query.trim())}&page[limit]=12`,
+        signal,
+      );
+      return data.data.map(animeTitle);
+    },
+  },
+] as const;
 async function collect(
   tasks: Promise<Title[]>[],
   labels: string[],
@@ -186,23 +289,69 @@ export async function searchTitles(
   query: string,
   signal?: AbortSignal,
 ): Promise<CatalogResult> {
-  const q = encodeURIComponent(query.trim());
+  if (query.trim().length < 2) return { items: [], warnings: [] };
   return collect(
-    [
-      json<{ metas: Meta[] }>(
-        `${CINEMA}/catalog/movie/top/search=${q}.json`,
-        signal,
-      ).then((d) => (d.metas || []).slice(0, 24).map(movieTitle)),
-      json<{ show: TvShow }[]>(`${TV}/search/shows?q=${q}`, signal).then((d) =>
-        d.slice(0, 20).map((r) => tvTitle(r.show)),
-      ),
-      json<{ data: Kitsu[] }>(
-        `https://kitsu.io/api/edge/anime?filter[text]=${q}&page[limit]=12`,
-        signal,
-      ).then((d) => d.data.map(animeTitle)),
-    ],
-    ["Movies", "Television", "Anime"],
+    titleSearchSources.map((source) => source.search(query, signal)),
+    titleSearchSources.map((source) => source.label),
   );
+}
+
+// Recover only by an existing provider ID. Name-only poster matching can attach
+// an unrelated remake/adaptation to a user's saved title.
+export async function resolvePosters(
+  title: Title,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const id = imdbId(title);
+  let urls: (string | undefined)[] = [];
+  if (id) {
+    const results = await Promise.allSettled([
+      json<{ meta?: Meta }>(
+        `${CINEMA}/meta/${title.type === "series" ? "series" : "movie"}/${id}.json`,
+        signal,
+      ).then((data) => [https(data.meta?.poster)]),
+      searchMovieIndex(title.title, signal).then((matches) => {
+        const exact = matches.find((item) => item.imdb === id);
+        return exact ? [exact.cover, ...(exact.posterCandidates || [])] : [];
+      }),
+    ]);
+    signal?.throwIfAborted();
+    urls = results.flatMap((result) =>
+      result.status === "fulfilled" ? result.value : [],
+    );
+  } else {
+    const tvId =
+      title.tvmaze || /^tvmaze:(\d+)$/.exec(title.catalogId || title.id)?.[1];
+    const kitsuId =
+      title.kitsu ||
+      /^kitsu-anime:(\d+)$/.exec(title.catalogId || title.id)?.[1];
+    if (tvId) {
+      const images = await json<
+        {
+          type: string;
+          resolutions: { original?: { url: string }; medium?: { url: string } };
+        }[]
+      >(`${TV}/shows/${tvId}/images`, signal);
+      urls = images
+        .filter((item) => item.type === "poster")
+        .flatMap((item) => [
+          https(item.resolutions.medium?.url),
+          https(item.resolutions.original?.url),
+        ]);
+    } else if (kitsuId) {
+      const data = await json<{ data: Kitsu }>(
+        `https://kitsu.io/api/edge/anime/${kitsuId}`,
+        signal,
+      );
+      const image = data.data.attributes.posterImage;
+      urls.push(
+        ...[image?.large, image?.medium, image?.original, image?.small].map(
+          https,
+        ),
+      );
+    }
+  }
+  return [...new Set(urls.filter((url): url is string => !!url))];
 }
 export async function searchPeople(
   query: string,

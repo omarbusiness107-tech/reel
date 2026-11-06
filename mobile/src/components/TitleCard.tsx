@@ -1,11 +1,15 @@
 import React, { memo, useState } from "react";
 import { View, Pressable, ScrollView } from "react-native";
 import { Image } from "expo-image";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { queryClient } from "../providers/AppProvider";
 import type { Title, Person } from "../core/types";
 import { useTheme } from "../theme";
 import { Copy } from "./ui";
+import { posterUrls } from "../core/artwork";
+import { resolvePosters } from "../services/catalog";
 export function openTitle(t: Title) {
   const id = t.catalogId || t.id;
   queryClient.setQueryData(["title-seed", id], t);
@@ -24,8 +28,31 @@ export const Artwork = memo(function Artwork({
   title: Title;
   width?: number;
 }) {
+  return (
+    <Poster
+      key={`${title.catalogId || title.id}:${title.cover || ""}`}
+      title={title}
+      width={width}
+    />
+  );
+});
+function Poster({ title, width }: { title: Title; width: number }) {
   const c = useTheme();
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string[]>([]);
+  const recovered = useQuery({
+    queryKey: [
+      "poster-recovery",
+      title.catalogId || title.id,
+      title.cover || "",
+    ],
+    queryFn: ({ signal }) => resolvePosters(title, signal),
+    enabled: !title.cover || failed.length > 0,
+    staleTime: 86400000,
+    retry: 1,
+  });
+  const uri = posterUrls(title, recovered.data).find(
+    (url) => !failed.includes(url),
+  );
   return (
     <View
       style={{
@@ -36,35 +63,41 @@ export const Artwork = memo(function Artwork({
         overflow: "hidden",
       }}
     >
-      {title.cover && !failed ? (
+      {uri ? (
         <Image
-          source={{ uri: title.cover }}
-          recyclingKey={title.cover}
+          key={uri}
+          source={{ uri }}
+          recyclingKey={uri}
+          accessibilityLabel={`Poster for ${title.title}`}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           transition={0}
-          onError={() => setFailed(true)}
+          onError={() =>
+            setFailed((previous) =>
+              previous.includes(uri) ? previous : [...previous, uri],
+            )
+          }
         />
       ) : (
         <View
           style={{
             flex: 1,
-            padding: 12,
-            justifyContent: "flex-end",
-            borderWidth: 1,
-            borderColor: c.line,
-            borderRadius: 10,
+            alignItems: "center",
+            justifyContent: "center",
           }}
+          accessibilityLabel={`Poster unavailable for ${title.title}`}
+          accessibilityRole="image"
         >
-          <Copy kind="label" style={{ color: c.accent }}>
-            REEL
-          </Copy>
-          <Copy style={{ fontWeight: "600" }}>{title.title}</Copy>
+          <Ionicons
+            name="film-outline"
+            size={Math.min(32, width / 3)}
+            color={c.muted}
+          />
         </View>
       )}
     </View>
   );
-});
+}
 export const TitleCard = memo(function TitleCard({
   title,
   width = 136,

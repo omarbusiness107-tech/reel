@@ -4,6 +4,14 @@ Updated: 2026-11-06. Branch: `feat/reel-native-android`.
 
 ## Scope and evidence
 
+### 1.0.1 follow-up — search, artwork and Android Back
+
+The user confirms 1.0.0 runs on their phone and reports a missing movie (*No Hard Feelings*), text-only poster fallbacks and system Back exiting the app. Live Cinemeta currently returns the 2023 movie, so the original absence is not reproduced as a catalog omission. Search previously depended on one movie endpoint and waited for all catalogs; it now queries an independent public IMDb movie index alongside Cinemeta/TVMaze/Kitsu and renders each source as it arrives. Exact titles and existing library state retain priority. Real search/HTTP checks find *No Hard Feelings*, *Office Space* and *Dune: Part Two* with image responses.
+
+Artwork now tries unique HTTPS candidates, then recovers by exact provider ID; different-year namesakes cannot supply each other's posters. Image errors belong to a specific URL/title rather than a sticky boolean. When no actual artwork exists, a quiet film icon replaces duplicate title text. Focused Android Back handlers use the same back-or-home action as the visible header; tabs remember history, and predictive-back opt-in is disabled for device compatibility. Home with no history retains Android's normal exit/background behavior. Physical 1.0.1 button/gesture verification remains necessary.
+
+The follow-up has 21 passing mobile tests (10 new search/artwork/navigation regressions), typecheck/lint passes and a generated 1.0.1/code-2 native manifest. The targeted rendered outage test displays the film in approximately 1.3 seconds with anime deliberately pending and recovers both failed and absent artwork. APK evidence is recorded in `mobile-verification.md` after the build.
+
 Native Expo client in `mobile/`; the website remains independently runnable. Current repository source is authoritative. NotebookLM recall was attempted with notebook `03cc1bfa-6547-4f80-96b4-be709357a773` but failed certificate validation. Existing `graphify-out/` contains no `graph.json`. Context comes from versioned project-memory documents and targeted source inspection.
 
 ## Milestones

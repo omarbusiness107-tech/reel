@@ -64,6 +64,7 @@ def backend(route):
     return fulfill(route,{})
 def catalogs(route):
     path=urlparse(route.request.url).path
+    if 'media-imdb.com' in route.request.url:return fulfill(route,{'d':[]})
     if 'v3-cinemeta' in route.request.url:return fulfill(route,{'meta':FILM} if '/meta/' in path else {'metas':[FILM]})
     if 'kitsu' in route.request.url:return fulfill(route,{'data':[]})
     if 'wikidata' in route.request.url:return fulfill(route,{'search':[],'results':{'bindings':[]}})
@@ -79,7 +80,8 @@ def run():
     page=browser.new_page(viewport={'width':412,'height':915},reduced_motion='reduce')
     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
     page.route('**/*.supabase.co/**',backend)
-    for host in ['v3-cinemeta.strem.io','api.tvmaze.com','kitsu.io','www.wikidata.org','query.wikidata.org']:page.route('**/'+host+'/**',catalogs)
+    for host in ['v3-cinemeta.strem.io','v3.sg.media-imdb.com','api.tvmaze.com','kitsu.io','www.wikidata.org','query.wikidata.org']:page.route('**/'+host+'/**',catalogs)
+    page.route('**/images.metahub.space/**',lambda route:route.abort())
     def ai(route):
         b=route.request.post_data_json
         if b['action']=='interpret':return fulfill(route,{'update':{'mediaType':'movie','genres':['Drama']},'question':None,'suggestions':[],'searchHints':[{'title':FILM['name'],'type':'movie'}]})

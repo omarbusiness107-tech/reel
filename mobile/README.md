@@ -36,6 +36,8 @@ Use only the free build allowance; do not purchase a plan. No Play upload is con
 
 ## Implemented boundaries
 
+Version 1.0.1 improves movie search with a second IMDb source and independent result loading, recovers missing/broken posters by exact provider ID, and routes Android system Back through the same action as the visible Back control. Tabs retain navigation history. Predictive-back opt-in is disabled for compatibility. A genuine artwork outage ends with a quiet icon, not duplicate title text. The version-1.0.1 APK and its checksum are recorded below after the preview build completes; hardware Back still needs phone confirmation.
+
 Discover, local rating-based suggestions when explicitly enabled, Ask Reel with real catalog retrieval and the existing authenticated AI API, unified title/people search, details and people credits, watchlists/saved picks, private ratings/notes/collections, episode progress, movie watches/rewatches, activity and date editing, calendar, statistics, appearance, haptics and sign-out. Lumi is an original scalable vector character with ten expressions and reduced-motion-aware feedback.
 
 `supabase/migrations/20261106165224_mobile_add_my_title.sql` adds single-title insertion without replacing a library. It has been deployed to the existing backend and recorded in migration history. Personal updates keep existing RLS and watch RPCs. The hosted auth allowlist now includes both `reel://auth/callback` and its recovery variant while preserving the website URL. Google login is hidden because the existing provider is disabled. Email sign-in/registration and recovery use the existing account system; live email links still need physical-device validation.

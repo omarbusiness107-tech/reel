@@ -4,6 +4,14 @@ Updated 2026-11-06. Branch: `feat/reel-native-android`.
 
 ## Evidence collected
 
+### 1.0.1 regression verification
+
+The user reports 1.0.0 running on their phone. The 1.0.1 changes add independent movie search/progressive rendering, provider-ID artwork recovery and shared header/system Back handling. Typecheck and lint pass; 21 mobile/core/database tests pass, including 10 new search/artwork/navigation cases. The existing 16 rendered scenarios still pass with zero page errors. Eight targeted rendered assertions cover a failed movie source, an outstanding anime source, No Hard Feelings (2023), broken/missing artwork recovery, header/browser Back and preserved tab state. A movie row appears in approximately 1.3 seconds while anime remains pending.
+
+Read-only live checks find No Hard Feelings (2023), Office Space (1999) and Dune: Part Two (2024) and load actual posters, both through catalog HTTP checks and rendered web components. Screenshot `mobile/artifacts/search-no-hard-feelings-live.png` was visually inspected. Live catalog currently returns No Hard Feelings from the original source as well; the user's missing result was not reproduced as a permanent catalog omission. Kitsu remains unavailable in these live checks and is labeled honestly.
+
+The generated Android manifest is version 1.0.1/code 2 with predictive-back opt-in false. Focused Back subscriptions share the tested back-or-home policy and are removed on blur; tabs use history. Header and browser history checks pass. These checks do not prove a physical Android key/gesture dispatch: that requires retesting the updated APK on the Redmi. APK build/signature evidence follows after cloud completion. Earlier 1.0.0 evidence is retained below as the baseline.
+
 | Boundary | Evidence | Limit |
 | --- | --- | --- |
 | Existing website | 91 existing tests pass; 13 JavaScript scripts parse | Browser website regression suite not rerun because its source is unchanged |
