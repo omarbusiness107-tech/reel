@@ -136,6 +136,18 @@ def run():
     assert 'Account A private notes' not in page.locator('body').inner_text()
     stored=page.evaluate('JSON.stringify(localStorage)')
     assert 'access_token' not in stored and 'fixture-refresh' not in stored
+    tab('Ask Reel');page.set_viewport_size({'width':915,'height':412})
+    expect(page.get_by_label('Your request to Reel',exact=True)).to_have_count(1)
+    page.screenshot(path=str(OUT/'ask-landscape-fixture.png'))
+    box=page.get_by_label('Your request to Reel',exact=True).bounding_box()
+    assert box and box['y']+box['height']<=412,box
+    page.set_viewport_size({'width':320,'height':640});tab('Discover')
+    assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+    page.screenshot(path=str(OUT/'discover-narrow-fixture.png'))
+    page.goto('http://127.0.0.1:8092/onboarding',wait_until='networkidle')
+    page.get_by_role('button',name='Meet your next watch',exact=True).scroll_into_view_if_needed()
+    expect(page.get_by_role('button',name='Meet your next watch',exact=True)).to_be_visible()
+    page.screenshot(path=str(OUT/'onboarding-narrow.png'))
     assert not errors,errors
     print(json.dumps({'passed':['onboarding','discover','auth','account library','episode watch','future episode guard','search details','save title','private notes/collections','Ask Reel','activity date edit','statistics','calendar','light appearance','sign-out/account isolation','no plaintext tokens'],'account_http_calls':len(calls),'page_errors':errors,'screenshots':str(OUT)},ensure_ascii=False))
     browser.close()

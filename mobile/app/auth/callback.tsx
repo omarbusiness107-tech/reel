@@ -12,6 +12,7 @@ import {
   Loading,
 } from "../../src/components/ui";
 import { useApp } from "../../src/providers/AppProvider";
+import { showAccountLibrary } from "../../src/navigation";
 export default function Callback() {
   const params = useLocalSearchParams<{
     code?: string;
@@ -38,7 +39,7 @@ export default function Callback() {
         if (recovery) setRecovery(true);
         else {
           await setPreferences({ onboarded: true });
-          router.replace("/(tabs)/library");
+          showAccountLibrary();
         }
       } catch (e) {
         if (alive) setError(e);
@@ -71,7 +72,7 @@ export default function Callback() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       await setPreferences({ onboarded: true });
-      router.replace("/(tabs)/library");
+      showAccountLibrary();
     } catch (e) {
       setError(e);
     } finally {

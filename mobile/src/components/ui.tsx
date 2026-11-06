@@ -204,15 +204,18 @@ export function Chips<T extends string>({
   values,
   value,
   onChange,
+  style,
 }: {
   values: readonly { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   const c = useTheme();
   return (
     <ScrollView
       horizontal
+      style={style}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
     >

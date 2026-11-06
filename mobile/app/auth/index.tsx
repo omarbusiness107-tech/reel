@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
-import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "../../src/services/supabase";
 import { config } from "../../src/services/config";
@@ -16,6 +15,7 @@ import {
 import { Lumi } from "../../src/components/Lumi";
 import { useTheme } from "../../src/theme";
 import { useApp } from "../../src/providers/AppProvider";
+import { showAccountLibrary } from "../../src/navigation";
 WebBrowser.maybeCompleteAuthSession();
 export default function Auth() {
   const c = useTheme();
@@ -65,7 +65,7 @@ export default function Auth() {
       if (result.error) throw result.error;
       if (result.data.session) {
         await setPreferences({ onboarded: true });
-        router.replace("/(tabs)/library");
+        showAccountLibrary();
       } else
         setNotice("Check your email to confirm your account, then sign in.");
     } catch (e) {
@@ -94,7 +94,7 @@ export default function Auth() {
       if (result.type === "success") {
         await completeAuth(result.url);
         await setPreferences({ onboarded: true });
-        router.replace("/(tabs)/library");
+        showAccountLibrary();
       }
     } catch (e) {
       setError(e);

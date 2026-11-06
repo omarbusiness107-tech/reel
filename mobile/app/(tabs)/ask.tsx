@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useApp } from "../../src/providers/AppProvider";
 import { useLibrary, useLibraryAction } from "../../src/services/hooks";
@@ -44,6 +50,7 @@ export default function Ask() {
   );
 }
 function AskConversation({ initialPrompt }: { initialPrompt: string }) {
+  const compact = useWindowDimensions().height < 600;
   const c = useTheme();
   const { session, preferences } = useApp();
   const library = useLibrary();
@@ -59,6 +66,7 @@ function AskConversation({ initialPrompt }: { initialPrompt: string }) {
   const request = useRef<AbortController | null>(null);
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const sequence = useRef(0);
+  const revealedMessage = useRef<number | undefined>(undefined);
   const [toast, setToast] = useState("");
   const save = useLibraryAction(async (t: Title, id: string) =>
     addTitle({ ...t, status: "suggested" }, id),
@@ -149,7 +157,14 @@ function AskConversation({ initialPrompt }: { initialPrompt: string }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Page scroll={false}>
-        <View style={{ padding: 20, paddingBottom: 10, gap: 12 }}>
+        <View
+          style={{
+            paddingHorizontal: 20,
+            paddingTop: compact ? 8 : 20,
+            paddingBottom: compact ? 4 : 10,
+            gap: compact ? 6 : 12,
+          }}
+        >
           <View
             style={{
               flexDirection: "row",
@@ -170,35 +185,36 @@ function AskConversation({ initialPrompt }: { initialPrompt: string }) {
             </View>
             <Button label="New chat" variant="quiet" onPress={reset} />
           </View>
-          <Chips
-            values={[
-              { value: "mix", label: "Discover + library" },
-              { value: "library", label: "My library" },
-            ]}
-            value={source}
-            onChange={(v) => {
-              setSource(v);
-              rec.current.intent.source = v;
-            }}
-          />
-          <Chips
-            values={[
-              { value: "watch", label: "Any watch" },
-              { value: "movie", label: "Films" },
-              { value: "series", label: "Series" },
-              { value: "anime", label: "Anime" },
-            ]}
-            value={format}
-            onChange={setFormat}
-          />
+          <View style={{ flexDirection: compact ? "row" : "column", gap: 8 }}>
+            <Chips
+              style={compact ? { flex: 1 } : undefined}
+              values={[
+                { value: "mix", label: "Discover + library" },
+                { value: "library", label: "My library" },
+              ]}
+              value={source}
+              onChange={(v) => {
+                setSource(v);
+                rec.current.intent.source = v;
+              }}
+            />
+            <Chips
+              style={compact ? { flex: 1 } : undefined}
+              values={[
+                { value: "watch", label: "Any watch" },
+                { value: "movie", label: "Films" },
+                { value: "series", label: "Series" },
+                { value: "anime", label: "Anime" },
+              ]}
+              value={format}
+              onChange={setFormat}
+            />
+          </View>
         </View>
         <ScrollView
           ref={scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: 20, gap: 22, paddingBottom: 28 }}
-          onContentSizeChange={() =>
-            scroll.current?.scrollToEnd({ animated: false })
-          }
         >
           {!messages.length ? (
             <View style={{ gap: 18, paddingVertical: 20 }}>
@@ -218,6 +234,18 @@ function AskConversation({ initialPrompt }: { initialPrompt: string }) {
           {messages.map((m) => (
             <View
               key={m.id}
+              onLayout={(event) => {
+                if (
+                  messages.at(-1)?.id === m.id &&
+                  revealedMessage.current !== m.id
+                ) {
+                  revealedMessage.current = m.id;
+                  scroll.current?.scrollTo({
+                    y: Math.max(0, event.nativeEvent.layout.y - 16),
+                    animated: false,
+                  });
+                }
+              }}
               style={{
                 gap: 12,
                 padding: 16,
@@ -316,13 +344,24 @@ function AskConversation({ initialPrompt }: { initialPrompt: string }) {
               loading={busy}
               disabled={!draft.trim()}
             />
+            {compact ? (
+              <Button
+                label={list ? "3 picks" : "One pick"}
+                variant="secondary"
+                onPress={() => setList((v) => !v)}
+              />
+            ) : null}
           </View>
-          <Button
-            label={list ? "3 picks · tap for one" : "One pick · tap for a list"}
-            variant="quiet"
-            onPress={() => setList((v) => !v)}
-            style={{ minHeight: 36, paddingVertical: 4 }}
-          />
+          {!compact ? (
+            <Button
+              label={
+                list ? "3 picks · tap for one" : "One pick · tap for a list"
+              }
+              variant="quiet"
+              onPress={() => setList((v) => !v)}
+              style={{ minHeight: 36, paddingVertical: 4 }}
+            />
+          ) : null}
         </View>
       </Page>
     </KeyboardAvoidingView>
