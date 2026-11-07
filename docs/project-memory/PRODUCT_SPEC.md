@@ -1,11 +1,14 @@
 # Reel product specification
 
-Last verified: 2026-11-06 (native addition; Continue 2026-10-28; other web sections 2026-10-16)
+Last verified: 2026-11-07 (native addition; Continue 2026-10-28; other web sections 2026-10-16)
 Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Intended product behavior, with emphasis on the recommendation experience.
 
 ## Product behavior
+
+Native 1.0.2 presents title details with one poster beside facts (stacked at large font sizes), horizontal swipeable cast circles with full names, and a responsive library poster grid with the existing search/status/collection controls and private progress. Actor taps open dedicated provider-qualified profiles, preserving known portrait/name and the originating public work even when optional credits fail. Real source portraits are preferred; unavailable photos use an honest silhouette. Profiles show available birth/country/profession facts and source links; credits are explicitly incomplete rather than invented.
+
 
 The Android client adds native Discover / Ask Reel / Search / Library / You tabs, onboarding, existing-account sign-in/registration/recovery, poster and person details, watchlists/saved picks, private notes/ratings/collection tags, dated movie/episode actions, activity date editing, calendar, viewing statistics, local dark/light/system appearance and optional haptics. Lumi is an original contextual character. The website and existing user data remain authoritative and compatible.
 

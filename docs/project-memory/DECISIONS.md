@@ -1,9 +1,14 @@
 # Reel decisions
 
-Last verified: 2026-11-06 (native decisions; earlier web decisions last verified 2026-09-25)
+Last verified: 2026-11-07 (native decisions; earlier web decisions last verified 2026-09-25)
 Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Preserve confirmed product and engineering choices without inventing rationale.
+
+## Native detail, cast and library refinement
+
+Native refinement decision, 2026-11-07: retain the existing visual identity and remove the detail banner entirely, giving the title a single poster; use horizontal circular cast portraits and a responsive library poster grid. Keep actor identity provider-qualified and profile requests independent from optional filmography so catalog outages cannot turn a known actor into a missing page. Resolve name-only cast conservatively through exact professional IMDb results; ambiguous candidates remain unresolved. Reuse public providers without adding a paid API, backend proxy or schema. Browser-only inspection may bridge live IMDb HTTP because its native endpoint lacks CORS; document this verification boundary.
+
 
 ## Decision: isolate native mobile while retaining the website
 

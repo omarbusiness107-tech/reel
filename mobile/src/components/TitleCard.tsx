@@ -10,15 +10,45 @@ import { useTheme } from "../theme";
 import { Copy } from "./ui";
 import { posterUrls } from "../core/artwork";
 import { resolvePosters } from "../services/catalog";
+import { personRecord, personKey } from "../core/people";
 export function openTitle(t: Title) {
   const id = t.catalogId || t.id;
   queryClient.setQueryData(["title-seed", id], t);
   router.push({ pathname: "/title/[id]", params: { id } });
 }
-export function openPerson(p: Person) {
+export function openPerson(value: Person, work?: Title) {
+  const p = personRecord(value);
+  const key = personKey(p);
+  queryClient.setQueryData(["person-seed", key], p);
+  if (work) {
+    const {
+      id,
+      catalogId,
+      title,
+      type,
+      year,
+      cover,
+      genres,
+      imdb,
+      tvmaze,
+      kitsu,
+    } = work;
+    queryClient.setQueryData(["person-context", key], {
+      id,
+      catalogId,
+      title,
+      type,
+      year,
+      cover,
+      genres,
+      imdb,
+      tvmaze,
+      kitsu,
+    });
+  }
   router.push({
     pathname: "/person/[id]",
-    params: { id: p.id, provider: p.provider },
+    params: { id: key, name: p.name },
   });
 }
 export const Artwork = memo(function Artwork({
@@ -69,6 +99,7 @@ function Poster({ title, width }: { title: Title; width: number }) {
           source={{ uri }}
           recyclingKey={uri}
           accessibilityLabel={`Poster for ${title.title}`}
+          accessible
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           transition={0}

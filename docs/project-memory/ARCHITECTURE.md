@@ -1,11 +1,14 @@
 # Reel architecture
 
-Last verified: 2026-11-06 (native addition; web sections last verified 2026-10-10)
+Last verified: 2026-11-07 (native addition; web sections last verified 2026-10-10)
 Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree and Supabase migrations through reading_progress_corrections
 Purpose: Technical map of stable application boundaries and important data flows.
 
 ## Application shape
+
+Native 1.0.2 separates person identity/routes (`core/people.ts`) and public profile/credit retrieval (`services/people.ts`). Movie cast names resolve through exact professional IMDb matches; ambiguous names remain unresolved. TVMaze facts/credits and optional Wikidata film credits fail independently. Provider-qualified person routes retain public originating-title context only. DetailHero uses one poster, CastRail is horizontal, and LibraryCard supplies a responsive poster grid. No account schema, website or backend change is required.
+
 
 The native Android client is isolated in `mobile/`: Expo SDK 58, React Native 0.88, TypeScript, Expo Router, TanStack Query, Reanimated and native StyleSheet primitives. It shares the exact pure account, search, recommendation and tracking modules in root `assets/` through a typed boundary and Metro watch folder. It does not embed or replace the static website. `docs/mobile-architecture.md` describes the client boundaries.
 

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Reel",
     "slug": "reel-android",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "default",
     "scheme": "reel",
     "icon": "./assets/icon.png",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "app.reel.discovery",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [],
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",

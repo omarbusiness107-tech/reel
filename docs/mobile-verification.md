@@ -2,6 +2,14 @@
 
 Updated 2026-11-06. Branch: `feat/reel-native-android`.
 
+## 1.0.2 detail, cast and library verification ? 2026-11-07
+
+Typecheck/lint pass; all 28 mobile tests pass, including seven new person identity/profile/credit regressions. The existing 16 rendered flow scenarios pass. `test_detail_library.py` passes ten assertion groups across 320?720 dark, 412?915 dark/light and 915?412 dark: larger posters, responsive grid, one detail poster, circular cast/full names, actor destination, partial-credit failure, Back, favorite/search filters and real horizontal cast scrolling. These use isolated account fixtures and real public catalog imagery, with zero page errors and no production-account writes.
+
+`inspect_people_live.py` also passes No Hard Feelings ? Jennifer Lawrence (`imdb:nm2225369`) ? birth date 1990-08-15/profile ? Back, with a genuinely loaded photo and zero page errors. IMDb HTTP is fetched live through the test-only browser bridge because its native endpoint omits browser CORS headers; all other calls remain direct. This is explicitly not direct browser-CORS support or native-device evidence. Wikimedia requests returned 403; optional filmography remains incomplete and does not hide the profile.
+
+Independent fresh visual review inspected 12 captures and returned **ship**, with no material fixes in scope. It approved the single-poster composition, horizontal cast/profile separation and larger library grid while preserving the incumbent palette and typography. Evidence boundaries: rendered React Native Web only; Android hardware Back, gestures, safe areas, TalkBack, OS text scaling and frame pacing still need device acceptance. Design rules are in `mobile-design-system.md` and `mobile-detail-library-direction.md`.
+
 ## Evidence collected
 
 ### 1.0.1 regression verification

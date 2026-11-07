@@ -17,8 +17,14 @@ export interface Person {
   id: string;
   name: string;
   image?: string;
+  imageCandidates?: string[];
   role?: string;
-  provider: "tvmaze" | "wikidata";
+  provider: "tvmaze" | "wikidata" | "imdb" | "name";
+  imdb?: string;
+  tvmazeId?: string;
+  sourceUrl?: string;
+  birthday?: string;
+  country?: string;
 }
 export interface Episode {
   id?: number;

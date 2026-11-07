@@ -3,7 +3,6 @@ import { Alert, Platform, View, Linking } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import { Image } from "expo-image";
 import {
   titleDetails,
   episodes,
@@ -32,7 +31,9 @@ import {
   Field,
   Chips,
 } from "../../src/components/ui";
-import { Artwork, Shelf, openPerson } from "../../src/components/TitleCard";
+import { Shelf } from "../../src/components/TitleCard";
+import { DetailHero } from "../../src/components/DetailHero";
+import { CastRail } from "../../src/components/People";
 const statusOptions: { value: Status; label: string }[] = [
   { value: "want", label: "Watchlist" },
   { value: "going", label: "Watching" },
@@ -228,43 +229,7 @@ function DetailsScreen({ id }: { id: string }) {
         title={t.type === "movie" ? "A film for your collection" : t.type}
       />
       <ErrorNote error={detail.error} retry={() => void detail.refetch()} />
-      {t.banner ? (
-        <View
-          style={{
-            height: 190,
-            borderRadius: 16,
-            overflow: "hidden",
-            backgroundColor: c.surface,
-          }}
-        >
-          <Image
-            source={t.banner}
-            contentFit="cover"
-            style={{ width: "100%", height: "100%" }}
-            accessibilityLabel={`${t.title} artwork`}
-          />
-        </View>
-      ) : null}
-      <View style={{ flexDirection: "row", gap: 18, alignItems: "flex-end" }}>
-        <Artwork title={t} width={110} />
-        <View style={{ gap: 10, flex: 1 }}>
-          <Copy kind="label" style={{ color: c.accent }}>
-            {t.type.toUpperCase()} · {t.year || "YEAR UNKNOWN"}
-          </Copy>
-          <Copy kind="title" style={{ fontSize: 30, lineHeight: 35 }}>
-            {t.title}
-          </Copy>
-          <Copy kind="small" style={{ color: c.muted }}>
-            {[
-              t.score ? `★ ${t.score.toFixed(1)}` : "",
-              t.runtime ? `${t.runtime} min` : "",
-              t.country,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </Copy>
-        </View>
-      </View>
+      <DetailHero title={t} />
       <View style={{ gap: 10 }}>
         <Button
           label={saved ? "In your library" : "Add to watchlist"}
@@ -308,34 +273,7 @@ function DetailsScreen({ id }: { id: string }) {
         </Copy>
         {t.creator ? <Copy>Created by {t.creator}</Copy> : null}
       </View>
-      {t.people?.length || t.cast?.length ? (
-        <Section title="The people behind it">
-          <View style={{ gap: 8 }}>
-            {(t.people || t.cast || []).slice(0, 16).map((p, i) =>
-              typeof p === "string" ? (
-                <Button
-                  key={`${p}-${i}`}
-                  label={p}
-                  variant="secondary"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(tabs)/search",
-                      params: { q: p },
-                    })
-                  }
-                />
-              ) : (
-                <Button
-                  key={`${p.provider}:${p.id}`}
-                  label={p.role ? `${p.name} · ${p.role}` : p.name}
-                  variant="secondary"
-                  onPress={() => openPerson(p)}
-                />
-              ),
-            )}
-          </View>
-        </Section>
-      ) : null}
+      <CastRail title={t} />
       {episodic ? (
         <Section title="One episode at a time" kicker="Your progress">
           <ErrorNote error={guide.error} retry={() => void guide.refetch()} />

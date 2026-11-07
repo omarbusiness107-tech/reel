@@ -36,3 +36,7 @@ Lumi is a small coral projection aperture: an asymmetric rounded frame with a fo
 ## Limits
 
 No reference animations were screen-recorded or measured. No authenticated Mobbin flow was accessible. Public links may change. The interface needs release-build testing on the Redmi Note 12 for frame pacing, keyboard behavior, haptics, text scaling and real touch ergonomics.
+
+## Detail and library refinement ? 2026-11-07
+
+TMDB?s [Barbie detail page](https://www.themoviedb.org/movie/346698-barbie), read through Agent Reach?s public Jina reader, separates poster/facts and provides image-led Top Billed Cast links to people. This informed the native hierarchy and actor affordances without copying its screen or branding. Letterboxd?s old mobile URL returned 404 and provides no inspected evidence. Final native rules and evidence are in `mobile-detail-library-direction.md`.

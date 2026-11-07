@@ -1,6 +1,6 @@
 # Reel code map
 
-Last verified: 2026-11-06 (native addition; Continue 2026-10-28; other web entries 2026-10-16)
+Last verified: 2026-11-07 (native addition; Continue 2026-10-28; other web entries 2026-10-16)
 Repository/branch: Reel / feat/reel-native-android; web baseline from main
 Verified against: current working tree
 Purpose: Locate the first files to inspect for substantial changes.
@@ -8,6 +8,13 @@ Purpose: Locate the first files to inspect for substantial changes.
 ## Product shell, library, navigation, details, and auth
 
 ### Native Android client
+
+- `mobile/src/core/people.ts`: normalized provider-qualified actor identities and compatible legacy routes.
+- `mobile/src/services/people.ts`: exact actor resolution, portraits, independent profile and partial-credit retrieval.
+- `mobile/src/components/DetailHero.tsx`, `People.tsx`, `LibraryCard.tsx`: single-poster title identity, horizontal circular cast rail and larger library grid cards.
+- `mobile/app/person/[id].tsx`: seeded actor details, source attribution and independent credit retry; movie-cast names no longer route to a missing page.
+- `mobile/tools/test_detail_library.py`: isolated-account rendered layout/navigation checks; `inspect_people_live.py`: read-only public-provider check with an explicitly documented browser-only IMDb HTTP bridge.
+
 
 - `mobile/app/`: native tab navigation, onboarding, authentication/callback, Discover, Ask, Search, Library, profile, details, people, activity, calendar and statistics.
 - `mobile/src/core/shared.ts`: typed access to the existing root pure modules; `safety.ts`, `secure-storage.ts` and `dates.ts` own native-specific invariants.

@@ -487,74 +487,14 @@ export async function personDetails(
   id: string,
   signal?: AbortSignal,
 ): Promise<{ person: Person; bio: string; works: Title[] }> {
-  if (provider === "tvmaze" && /^\d+$/.test(id)) {
-    const [p, cast, crew] = await Promise.all([
-      json<{
-        id: number;
-        name: string;
-        image?: { original?: string };
-        country?: { name: string };
-        birthday?: string;
-      }>(`${TV}/people/${id}`, signal),
-      json<{ _embedded: { show: TvShow } }[]>(
-        `${TV}/people/${id}/castcredits?embed=show`,
-        signal,
-      ),
-      json<{ _embedded: { show: TvShow } }[]>(
-        `${TV}/people/${id}/crewcredits?embed=show`,
-        signal,
-      ),
-    ]);
-    return {
-      person: {
-        id,
-        name: p.name,
-        image: p.image?.original,
-        provider: "tvmaze",
-      },
-      bio: [p.country?.name, p.birthday ? `Born ${p.birthday}` : ""]
-        .filter(Boolean)
-        .join(" · "),
-      works: searchCore.dedupe(
-        [...cast, ...crew].map((c) => tvTitle(c._embedded.show)),
-      ),
-    };
-  }
-  if (provider === "wikidata" && /^Q\d+$/.test(id)) {
-    const d = await json<{
-      entities: Record<
-        string,
-        {
-          labels: { en?: { value: string } };
-          descriptions: { en?: { value: string } };
-        }
-      >;
-    }>(
-      `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${id}&props=labels%7Cdescriptions&languages=en&format=json&origin=*`,
-      signal,
-    );
-    const entity = d.entities[id];
-    const sparql = `SELECT DISTINCT ?imdb WHERE { ?work (wdt:P161|wdt:P57) wd:${id}; wdt:P345 ?imdb. } LIMIT 24`;
-    const credits = await json<{
-      results: { bindings: { imdb: { value: string } }[] };
-    }>(
-      `https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(sparql)}`,
-      signal,
-    );
-    const results = await Promise.allSettled(
-      credits.results.bindings
-        .slice(0, 18)
-        .map((row) =>
-          titleDetails(`imdb:${row.imdb.value}`, undefined, signal),
-        ),
-    );
-    return {
-      person: { id, name: entity.labels.en?.value || id, provider: "wikidata" },
-      bio: entity.descriptions.en?.value || "",
-      works: results.flatMap((r) =>
-        r.status === "fulfilled" ? [r.value] : [],
-      ),
-    };
-  }
-  throw new Error("This person could not be resolved.");
+  const { getPersonProfile, getPersonCredits } = await import("./people");
+  const profile = await getPersonProfile(
+    { provider: provider as Person["provider"], id, name: "" },
+    signal,
+  );
+  return {
+    person: profile.person,
+    bio: profile.bio,
+    works: await getPersonCredits(profile, signal),
+  };
 }
