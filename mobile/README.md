@@ -16,7 +16,7 @@ The app already points to `https://reel-navy.vercel.app` and the same public Sup
 
 The Android preview workflow builds an **arm64 release-mode APK signed with a preview/debug key**. It is for device testing, not a Google Play release. No emulator or local Android SDK is needed.
 
-The current APK is [`artifacts/reel-android-1.0.1.apk`](artifacts/reel-android-1.0.1.apk), 33.12 MiB, version 1.0.1/code 2. It was built from `e2db1c6` in [successful run 42282413661](https://github.com/omarbusiness107-tech/reel/actions/runs/42282413661). Signature, archive integrity and native manifest are verified. Its signing certificate matches 1.0.0, so install it **over the existing app**, without uninstalling or clearing data. Minimum Android version: 7. SHA-256: `678609a601cb064b5d539ecc20160d00e77c98330610f01114298c42bd0402d5`. The original 1.0.0 APK remains at `artifacts/reel-android-preview.apk` for rollback. Local APKs are not committed to Git; cloud artifacts expire after seven days.
+The current APK is [`artifacts/reel-android-1.0.2.apk`](artifacts/reel-android-1.0.2.apk), 33.14 MiB, version 1.0.2/code 3. It was built from `09e2603` in [successful run 42406167474](https://github.com/omarbusiness107-tech/reel/actions/runs/42406167474). Signature, archive integrity and native manifest are verified. Its signing certificate matches 1.0.0 and 1.0.1, so install it **over the existing app**, without uninstalling or clearing data. Minimum Android version: 7. SHA-256: `44c84388f4c8695d33d33ebf1d5a6e95a0002a56b8d5c18e7c5aaa4cf0e9d6fd`. Earlier APKs remain under `artifacts/` for rollback. Local APKs are not committed to Git; cloud artifacts expire after seven days.
 
 1. Download the `reel-android-preview` artifact from the latest successful [Android workflow](https://github.com/omarbusiness107-tech/reel/actions/workflows/android-preview.yml), then extract `app-release.apk`.
 2. Transfer the APK to your phone by USB or a private file transfer you control.
@@ -36,7 +36,9 @@ Use only the free build allowance; do not purchase a plan. No Play upload is con
 
 ## Implemented boundaries
 
-Version 1.0.1 improves movie search with a second IMDb source and independent result loading, recovers missing/broken posters by exact provider ID, and routes Android system Back through the same action as the visible Back control. Tabs retain navigation history. Predictive-back opt-in is disabled for compatibility. A genuine artwork outage ends with a quiet icon, not duplicate title text. The verified version-1.0.1 APK is linked above; hardware Back still needs phone confirmation.
+Version 1.0.2 replaces the duplicate detail banner/poster with one responsive poster header, uses a swipeable cast rail with circular portraits and full names, opens dedicated actor profiles, and enlarges Library into a responsive poster grid. Existing title actions, private progress and filters remain supported. Optional filmography failures leave the profile available.
+
+Version 1.0.1 improves movie search with a second IMDb source and independent result loading, recovers missing/broken posters by exact provider ID, and routes Android system Back through the same action as the visible Back control. Tabs retain navigation history. Predictive-back opt-in is disabled for compatibility. A genuine artwork outage ends with a quiet icon, not duplicate title text. These fixes remain in 1.0.2; hardware Back still needs phone confirmation.
 
 Discover, local rating-based suggestions when explicitly enabled, Ask Reel with real catalog retrieval and the existing authenticated AI API, unified title/people search, details and people credits, watchlists/saved picks, private ratings/notes/collections, episode progress, movie watches/rewatches, activity and date editing, calendar, statistics, appearance, haptics and sign-out. Lumi is an original scalable vector character with ten expressions and reduced-motion-aware feedback.
 
@@ -62,9 +64,12 @@ npx expo export --platform web --output-dir dist-web --max-workers 2
 python tools/preview_server.py --port 8092
 # In another terminal:
 python tools/test_preview.py
+python tools/test_detail_library.py
+# Optional read-only live public-provider check:
+python tools/inspect_people_live.py
 ```
 
-Python Playwright is a local QA dependency, not an app dependency. Fixture account traffic is intercepted only by `tools/test_preview.py`; the shipped app always uses real services. Web sessions intentionally stay in memory. Native sessions use encrypted SecureStore chunks. No tokens are persisted in unencrypted preferences/recent-search storage.
+Python Playwright is a local QA dependency, not an app dependency. Fixture account traffic is intercepted only by the QA scripts (the detail/library test reuses `test_preview.py`); the shipped app always uses real services. The optional live actor check bridges live IMDb HTTP only in its browser harness because the native endpoint does not send browser CORS headers. Web sessions intentionally stay in memory. Native sessions use encrypted SecureStore chunks. No tokens are persisted in unencrypted preferences/recent-search storage.
 
 ## Physical-device checklist
 
@@ -72,6 +77,8 @@ Python Playwright is a local QA dependency, not an app dependency. Fixture accou
 - Sign in; force-close/reopen to verify secure session restoration. Sign out and switch accounts.
 - Confirm email registration/recovery links open the installed app and exchange the PKCE code once.
 - Search film, series, actor and director; open details, credits and Back.
+- Confirm one detail poster, swipe the cast row, open Jennifer Lawrence from No Hard Feelings, then return using both visible and Android Back.
+- Inspect the larger library posters in portrait/landscape and verify search/status/collection filters retain the correct titles.
 - Save a title, then verify it on the website. Change notes/rating and verify only that account changes.
 - Mark/undo a released episode, log a film and a rewatch; confirm Activity and the website agree.
 - Check activity dates, calendar and statistics in the device timezone.

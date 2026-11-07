@@ -10,6 +10,16 @@ Typecheck/lint pass; all 28 mobile tests pass, including seven new person identi
 
 Independent fresh visual review inspected 12 captures and returned **ship**, with no material fixes in scope. It approved the single-poster composition, horizontal cast/profile separation and larger library grid while preserving the incumbent palette and typography. Evidence boundaries: rendered React Native Web only; Android hardware Back, gestures, safe areas, TalkBack, OS text scaling and frame pacing still need device acceptance. Design rules are in `mobile-design-system.md` and `mobile-detail-library-direction.md`.
 
+### Verified 1.0.2 APK
+
+[GitHub build 42406167474](https://github.com/omarbusiness107-tech/reel/actions/runs/42406167474) successfully built source `09e26036c2a09926ad5c23ca93a619837ecf7c0c`, with cloud typecheck, lint and all 28 tests passing. Local delivery: `mobile/artifacts/reel-android-1.0.2.apk`, 34,745,796 bytes / 33.14 MiB. SHA-256:
+
+```text
+44c84388f4c8695d33d33ebf1d5a6e95a0002a56b8d5c18e7c5aaa4cf0e9d6fd
+```
+
+Official Google Build Tools verify APK Signature Scheme v2 and the compiled manifest; ZIP CRC passes. Package `app.reel.discovery`, version 1.0.2/code 3, ARM64 only, non-debuggable; `reel` callback scheme retained, predictive-back opt-in false, and unused overlay/external-storage permissions absent. Certificate SHA-256 is `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`, matching both earlier delivered APKs for an in-place update. Raw local evidence is `apk-metadata-1.0.2.json`, the versioned checksum and `*-1.0.2-verification.txt` beside the APK. No physical-device acceptance is implied.
+
 ## Evidence collected
 
 ### 1.0.1 regression verification
