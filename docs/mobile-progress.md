@@ -4,11 +4,11 @@ Updated: 2026-11-07. Branch: `feat/reel-native-android`.
 
 ## Scope and evidence
 
-### 1.0.2 ? detail, cast, actor profiles and library
+### 1.0.2 - detail, cast, actor profiles and library
 
 One responsive poster replaces the duplicated banner/poster stack. Cast is a horizontal rail with circular portraits and full wrapping names; movie actors now resolve to provider-qualified detail routes. Profile and credits load independently, preserving known identity and the originating public title during optional-provider outages. Library is a larger responsive poster grid with existing filters, private metadata and actions retained. Version 1.0.2/code 3 is prepared for APK compilation.
 
-All 28 mobile tests, typecheck and lint pass. The original 16 rendered scenarios and ten new layout/navigation assertion groups pass across compact/normal/landscape and dark/light layouts. A live movie-to-actor check loads Jennifer Lawrence?s portrait, birth date and profile and returns to the movie; its browser harness explicitly bridges live IMDb HTTP because the native endpoint lacks CORS. Independent visual review approved shipping within browser evidence. Native phone verification remains required.
+All 28 mobile tests, typecheck and lint pass. The original 16 rendered scenarios and eleven new layout/navigation assertion groups pass across compact/normal/landscape and dark/light layouts. A live movie-to-actor check loads Jennifer Lawrence's portrait, birth date and profile and returns to the movie; its browser harness explicitly bridges live IMDb HTTP because the native endpoint lacks CORS. Independent visual review approved shipping within browser evidence. Native phone verification remains required.
 
 ### 1.0.1 follow-up — search, artwork and Android Back
 

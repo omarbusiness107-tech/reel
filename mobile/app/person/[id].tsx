@@ -47,6 +47,7 @@ export default function PersonScreen() {
   const works = searchCore
     .dedupe([...(context ? [context] : []), ...(credits.data || [])])
     .slice(0, 60);
+  const loadingCredits = profile.isPending || credits.isLoading;
   return (
     <Page>
       <BackHeader title="People & stories" />
@@ -62,7 +63,7 @@ export default function PersonScreen() {
         </View>
       </View>
       {profile.isPending ? (
-        <Copy style={{ color: c.muted }}>Loading the profile?</Copy>
+        <Copy style={{ color: c.muted }}>Loading the profile...</Copy>
       ) : null}
       <ErrorNote error={profile.error} retry={() => void profile.refetch()} />
       {person.birthday ? (
@@ -83,9 +84,9 @@ export default function PersonScreen() {
       ) : null}
       <View style={{ gap: 16 }}>
         <Copy kind="title">On screen</Copy>
-        {credits.isPending ? (
+        {loadingCredits ? (
           <Copy kind="small" style={{ color: c.muted }}>
-            Finding available credits?
+            Finding available credits...
           </Copy>
         ) : null}
         <ErrorNote error={credits.error} retry={() => void credits.refetch()} />
@@ -100,7 +101,7 @@ export default function PersonScreen() {
             initialNumToRender={4}
             windowSize={3}
           />
-        ) : !credits.isPending ? (
+        ) : !loadingCredits ? (
           <State
             title="More stories to discover"
             body="This provider has no available credits for this person right now. Their profile remains available above."

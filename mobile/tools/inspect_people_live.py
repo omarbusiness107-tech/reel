@@ -28,7 +28,7 @@ with sync_playwright() as p:
     page.get_by_role('button',name='About Jennifer Lawrence',exact=True).click()
     expect(page).to_have_url(re.compile('/person/imdb'))
     expect(page.get_by_text('1990-08-15',exact=True)).to_be_visible(timeout=30000)
-    expect(page.get_by_text('Finding available credits…',exact=True)).not_to_be_visible(timeout=45000)
+    expect(page.get_by_text('Finding available credits...',exact=True)).not_to_be_visible(timeout=45000)
     assert 'Page could not be found' not in page.locator('body').inner_text()
     route=page.url
     page.screenshot(path=str(OUT/'jennifer-lawrence-profile-live.png'))
