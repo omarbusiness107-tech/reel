@@ -1,11 +1,15 @@
 # Reel code map
 
-Last verified: 2026-11-07 (native addition; Continue 2026-10-28; other web entries 2026-10-16)
-Repository/branch: Reel / feat/reel-native-android; web baseline from main
+Last verified: 2026-11-15 (Android redesign paths; earlier web entries retain their prior verification dates)
+Repository/branch: Reel / codex/reel-cinema-journal; web baseline from main
 Verified against: current working tree
 Purpose: Locate the first files to inspect for substantial changes.
 
 ## Product shell, library, navigation, details, and auth
+
+- `mobile/src/theme.ts` and `mobile/src/components/ui.tsx` own native semantic colors, text roles, control styles, and responsive page geometry. `SheetFrame.tsx` hosts recommendation options, library filters, episode facts, personal title edits, and watch date edits.
+- `mobile/app/(tabs)/ask.tsx` owns temporary request snapshots, abort and retry, transcript position, and per-response pick selection. `mobile/src/components/RecommendationStage.tsx` presents the active poster, explanation, and actions. Backend retrieval and ranking remain in `mobile/src/services/assistant.ts`.
+- `mobile/src/components/Spotlight.tsx` renders the real Discover banner or poster fallback. `mobile/app/title/[id].tsx` uses a single virtualized list for the detail body and long episode guides. `mobile/app/activity.tsx`, `calendar.tsx` and `stats.tsx` own the redesigned history, agenda and chart controls.
 
 ### Native Android client
 

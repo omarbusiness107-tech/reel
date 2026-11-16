@@ -42,10 +42,14 @@ def backend(route):
         assert re.match(r'^[a-f0-9-]{36}$',body['p_request_id'])
         m=next(m for m in db[user] if m['id']==body['p_user_title_id'])
         for ep in body['p_entries']:
-            if body['p_action']=='unwatch':events[user]=[e for e in events[user] if not(e['user_title_id']==m['id'] and e['episode_number']==ep.get('number'))];m['watched_episodes']=[]
+            if body['p_action']=='unwatch':
+                events[user]=[e for e in events[user] if not(e['user_title_id']==m['id'] and e['season_number']==ep.get('season') and e['episode_number']==ep.get('number'))]
+                m['watched_episodes']=[key for key in m['watched_episodes'] if key != f"{ep.get('season')}:{ep.get('number')}"]
             else:
                 events[user].append({'id':str(uuid.uuid4()),'user_title_id':m['id'],'season_number':ep.get('season'),'episode_number':ep.get('number'),'watched_at':body['p_watched_at'],'media_type':m['title']['media_type'],'event_type':'episode_watched' if ep.get('number') else 'movie_watched','runtime_minutes':ep.get('runtime')})
-                if ep.get('number'):m.update(watched_episodes=[f"{ep['season']}:{ep['number']}"],current_episode=ep['number'],status='going')
+                if ep.get('number'):
+                    keys = list(dict.fromkeys(m['watched_episodes'] + [f"{ep['season']}:{ep['number']}"]))
+                    m.update(watched_episodes=keys,current_episode=ep['number'],status='going')
                 else:m['status']='done'
         return fulfill(route,1)
     if path.endswith('/user_titles'):
@@ -84,6 +88,8 @@ def run():
     page.route('**/images.metahub.space/**',lambda route:route.abort())
     def ai(route):
         b=route.request.post_data_json
+        if b['action']=='interpret' and b.get('message')=='Help me choose something to watch':
+            return fulfill(route,{'update':{},'question':'What kind of story are you looking for?','suggestions':['Something comforting'],'searchHints':[]})
         if b['action']=='interpret':return fulfill(route,{'update':{'mediaType':'movie','genres':['Drama']},'question':None,'suggestions':[],'searchHints':[{'title':FILM['name'],'type':'movie'}]})
         return fulfill(route,{'choices':[{'id':c['id'],'why':'A drama from the supplied catalog.'} for c in b['candidates'][:b['count']]]})
     page.route('https://reel-navy.vercel.app/api/recommend',ai)
@@ -101,6 +107,10 @@ def run():
     tab('Library');signin('a@fixture.test')
     page.get_by_role('button',name='Open Fixture Series',exact=True).click()
     expect(page.get_by_text('S1 E1 · First frame',exact=True)).to_be_visible()
+    page.get_by_role('button',name=re.compile('S1 E1 · First frame')).click()
+    expect(page.get_by_role('heading',name='Episode details',exact=True)).to_be_visible()
+    page.screenshot(path=str(OUT/'episode-sheet-fixture.png'))
+    page.get_by_role('button',name='Close',exact=True).click()
     assert '[object Object]' not in page.locator('body').inner_text()
     expect(page.get_by_role('button',name='Watch',exact=True).last).to_be_disabled()
     page.get_by_role('button',name='Watch',exact=True).first.click()
@@ -116,11 +126,44 @@ def run():
     page.get_by_label('Collections',exact=True).fill('Weekend')
     page.get_by_role('button',name='Save notes & collections',exact=True).click()
     expect(page.get_by_text('Saved to your Reel.',exact=True)).to_be_visible()
+    page.get_by_role('button',name='Your rating',exact=True).click()
+    page.get_by_role('button',name='8',exact=True).click()
+    page.get_by_role('button',name='Save rating',exact=True).click()
+    expect(page.get_by_text('8/10 · Private',exact=True)).to_be_visible()
     page.get_by_role('button',name='Back',exact=True).click();tab('Ask Reel')
     page.get_by_label('Your request to Reel',exact=True).fill('A thoughtful drama movie under two hours')
     page.get_by_role('button',name='Send',exact=True).click()
     expect(page.get_by_text('A story for your next watch.',exact=True)).to_be_visible(timeout=30000)
+    expect(page.get_by_text('Why this fits',exact=True)).to_be_visible()
+    expect(page.get_by_text('A drama from the supplied catalog.',exact=True)).to_be_visible()
+    page.get_by_role('button',name='Details',exact=True).click()
+    page.get_by_role('button',name='Back',exact=True).click()
+    expect(page.get_by_text('Why this fits',exact=True)).to_be_visible()
     page.screenshot(path=str(OUT/'ask-fixture.png'))
+    ai_url = 'https://reel-navy.vercel.app/api/recommend'
+    held = []
+    page.route(ai_url, lambda route: held.append(route))
+    page.get_by_label('Your request to Reel',exact=True).fill('Something with more suspense')
+    page.get_by_role('button',name='Send',exact=True).click()
+    expect(page.get_by_role('button',name='Edit recommendation options',exact=True)).to_be_disabled()
+    page.get_by_role('button',name='Cancel',exact=True).click()
+    expect(page.get_by_role('button',name='Retry request',exact=True)).to_be_visible()
+    for old_request in held:
+        old_request.abort()
+    page.unroute(ai_url)
+    page.route(ai_url, ai)
+    page.get_by_role('button',name='Retry request',exact=True).click()
+    expect(page.get_by_role('button',name='Retry request',exact=True)).to_have_count(0)
+    expect(page.get_by_text('Something with more suspense',exact=True)).to_have_count(1)
+    page.get_by_role('button',name='Edit recommendation options',exact=True).click()
+    page.get_by_role('button',name='My library',exact=True).click()
+    page.get_by_role('button',name='One pick',exact=True).click()
+    page.get_by_role('button',name='Done',exact=True).click()
+    page.get_by_role('button',name='New chat',exact=True).click()
+    expect(page.get_by_text('My library · Any watch · One pick',exact=True)).to_be_visible()
+    page.get_by_role('button',name='Guide me',exact=True).click()
+    expect(page.get_by_text('What kind of story are you looking for?',exact=True)).to_be_visible()
+    expect(page.get_by_role('button',name='Something comforting',exact=True)).to_be_visible()
     tab('You');page.get_by_role('button',name='Activity & watch history',exact=True).click()
     expect(page.get_by_role('button',name='Open Fixture Series',exact=True)).to_be_visible()
     page.get_by_role('button',name='Edit watch date',exact=True).click()
@@ -129,8 +172,17 @@ def run():
     expect(page.get_by_role('button',name='Edit watch date',exact=True)).to_be_visible()
     page.get_by_role('button',name='Back',exact=True).click();page.get_by_role('button',name='Viewing insights',exact=True).click()
     expect(page.get_by_text('Episodes watched',exact=True)).to_be_visible();page.screenshot(path=str(OUT/'stats-fixture.png'))
+    expect(page.get_by_role('button',name='Next day',exact=True)).to_be_disabled()
+    page.get_by_role('button',name='Previous day',exact=True).click()
+    expect(page.get_by_role('button',name='Next day',exact=True)).to_be_enabled()
+    page.get_by_role('button',name='View data',exact=True).click()
+    expect(page.get_by_role('button',name='Hide data',exact=True)).to_be_visible()
     page.get_by_role('button',name='Back',exact=True).click();page.get_by_role('button',name='Watch calendar',exact=True).click()
     expect(page.get_by_text('Tap a day.',exact=False)).to_be_visible();page.screenshot(path=str(OUT/'calendar-fixture.png'))
+    page.get_by_role('button',name='Agenda',exact=True).click()
+    expect(page.get_by_role('heading',name='Monthly agenda',exact=True)).to_be_visible()
+    expect(page.get_by_role('button',name='Open Fixture Series',exact=True)).to_be_visible()
+    page.screenshot(path=str(OUT/'agenda-fixture.png'))
     page.get_by_role('button',name='Back',exact=True).click();page.get_by_role('button',name='Matinee',exact=True).click();page.screenshot(path=str(OUT/'profile-light-fixture.png'))
     page.get_by_role('button',name='Sign out',exact=True).click();tab('Library');signin('b@fixture.test')
     expect(page.get_by_role('button',name='Open Account B private film',exact=True)).to_be_visible()
@@ -151,6 +203,6 @@ def run():
     expect(page.get_by_role('button',name='Meet your next watch',exact=True)).to_be_visible()
     page.screenshot(path=str(OUT/'onboarding-narrow.png'))
     assert not errors,errors
-    print(json.dumps({'passed':['onboarding','discover','auth','account library','episode watch','future episode guard','search details','save title','private notes/collections','Ask Reel','activity date edit','statistics','calendar','light appearance','sign-out/account isolation','no plaintext tokens'],'account_http_calls':len(calls),'page_errors':errors,'screenshots':str(OUT)},ensure_ascii=False))
+    print(json.dumps({'passed':['onboarding','discover','auth','account library','episode watch','future episode guard','episode information sheet','search details','save title','private notes/collections','private rating','Ask Reel and Details return','Ask cancellation and retry','Ask options and Guide me','activity date edit','statistics and chart inspector','calendar month and agenda','light appearance','sign-out/account isolation','no plaintext tokens'],'account_http_calls':len(calls),'page_errors':errors,'screenshots':str(OUT)},ensure_ascii=False))
     browser.close()
 if __name__=='__main__':run()

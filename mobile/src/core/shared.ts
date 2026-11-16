@@ -36,7 +36,12 @@ export const tracking = require("../../../assets/tracking-core.js") as {
   watchedSet(t: Title): Set<string>;
   episodeList(t: Title, at?: number): NonNullable<Title["episodeCatalog"]>;
   episodeLabel(t: Title, season: number, number: number): string;
-  progress(t: Title): { watched: number; total: number; percent?: number };
+  progress(t: Title): {
+    watched: number;
+    total: number;
+    percent: number;
+    next: NonNullable<Title["episodeCatalog"]>[number] | null;
+  };
   overview(e: WatchEvent[]): {
     movies: number;
     episodes: number;

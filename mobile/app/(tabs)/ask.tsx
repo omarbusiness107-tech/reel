@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import Animated, {
+  Easing,
+  FadeInDown,
+  ReduceMotion,
+} from "react-native-reanimated";
 import { useApp } from "../../src/providers/AppProvider";
 import { useLibrary, useLibraryAction } from "../../src/services/hooks";
 import { askReel, type Answer } from "../../src/services/assistant";
@@ -21,136 +20,226 @@ import {
   Button,
   Chips,
   ErrorNote,
-  Loading,
+  usePageLayout,
 } from "../../src/components/ui";
 import { Lumi } from "../../src/components/Lumi";
-import { TitleRow } from "../../src/components/TitleCard";
-const prompts = [
+import { SheetFrame } from "../../src/components/SheetFrame";
+import { RecommendationStage } from "../../src/components/RecommendationStage";
+
+const sources = [
+  { value: "mix", label: "Mix" },
+  { value: "library", label: "My library" },
+];
+const formats = [
+  { value: "watch", label: "Any watch" },
+  { value: "movie", label: "Films" },
+  { value: "series", label: "TV" },
+  { value: "anime", label: "Anime" },
+];
+const starters = [
   "A thoughtful movie under two hours",
   "A comforting series for a long day",
   "American animation with adventure",
 ];
-interface Message {
-  id: number;
-  role: "user" | "reel";
+const reveal = FadeInDown.duration(240)
+  .easing(Easing.bezier(0.16, 1, 0.3, 1))
+  .withInitialValues({ opacity: 0, transform: [{ translateY: 12 }] })
+  .reduceMotion(ReduceMotion.System);
+type Turn =
+  | { id: number; role: "user"; text: string }
+  | { id: number; role: "reel"; answer: Answer; scope: string };
+type Request = {
   text: string;
-  items?: Title[];
-  mode?: Answer["mode"];
-  suggestions?: string[];
-  warning?: string;
-}
+  state: RecSession;
+  regenerate: boolean;
+  scope: string;
+};
+
 export default function Ask() {
   const { session } = useApp();
-  const params = useLocalSearchParams<{ prompt?: string }>();
+  const { prompt } = useLocalSearchParams<{ prompt?: string }>();
   return (
     <AskConversation
-      key={`${session?.user.id || "guest"}:${params.prompt || ""}`}
-      initialPrompt={params.prompt || ""}
+      key={`${session?.user.id || "guest"}:${prompt || ""}`}
+      initialPrompt={prompt || ""}
     />
   );
 }
+
 function AskConversation({ initialPrompt }: { initialPrompt: string }) {
-  const compact = useWindowDimensions().height < 600;
   const c = useTheme();
+  const { gutter, content, height, fontScale } = usePageLayout();
+  const expanded = content >= 840 && fontScale < 1.5;
+  const compact = height < 600 || content < 324 || fontScale >= 1.5;
   const { session, preferences } = useApp();
   const library = useLibrary();
   const [draft, setDraft] = useState(initialPrompt);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<unknown>();
+  const [turns, setTurns] = useState<Turn[]>([]);
   const [source, setSource] = useState("mix");
   const [format, setFormat] = useState("watch");
-  const [list, setList] = useState(true);
-  const [suggestions, setSuggestions] = useState(prompts);
-  const rec = useRef<RecSession>(R.session("mix", "watch"));
-  const request = useRef<AbortController | null>(null);
-  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
-  const sequence = useRef(0);
-  const revealedMessage = useRef<number | undefined>(undefined);
+  const [count, setCount] = useState("3");
+  const [options, setOptions] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>();
+  const [retry, setRetry] = useState<Request>();
   const [toast, setToast] = useState("");
-  const save = useLibraryAction(async (t: Title, id: string) =>
-    addTitle({ ...t, status: "suggested" }, id),
+  const [newResponse, setNewResponse] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<number>();
+  const [selection, setSelection] = useState<Record<number, number>>({});
+  const engine = useRef<RecSession>(R.session("mix", "watch"));
+  const pending = useRef<{ snapshot: Request; abort: AbortController } | null>(
+    null,
   );
-  useEffect(() => () => request.current?.abort(), []);
+  const nextId = useRef(0);
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const following = useRef(true);
+  const revealTurn = useRef<number | undefined>(undefined);
+  const responsePositions = useRef(new Map<number, number>());
+  const last = turns.reduce<Extract<Turn, { role: "reel" }> | undefined>(
+    (previous, turn) => (turn.role === "reel" ? turn : previous),
+    undefined,
+  );
+  const active = turns.find(
+    (turn) => turn.role === "reel" && turn.id === activeGroup,
+  );
+  const scope = [
+    sources.find((v) => v.value === source)?.label,
+    formats.find((v) => v.value === format)?.label,
+    count === "1" ? "One pick" : "3 picks",
+  ].join(" · ");
+  const save = useLibraryAction((title: Title, owner: string) =>
+    addTitle({ ...title, status: "suggested" }, owner),
+  );
+
+  useEffect(
+    () => () => {
+      pending.current?.abort.abort();
+      pending.current = null;
+    },
+    [],
+  );
+
   function reset() {
-    request.current?.abort();
-    sequence.current++;
-    rec.current = R.session(source, format);
-    setMessages([]);
-    setSuggestions(prompts);
-    setError(null);
+    pending.current?.abort.abort();
+    pending.current = null;
+    engine.current = R.session(source, format);
+    setTurns([]);
+    setSelection({});
+    setActiveGroup(undefined);
+    setDraft("");
+    setError(undefined);
+    setRetry(undefined);
     setBusy(false);
     setToast("");
+    setNewResponse(false);
+    following.current = true;
+    revealTurn.current = undefined;
+    responsePositions.current.clear();
   }
-  async function send(text = draft, regenerate = false) {
-    if (busy || (!regenerate && !text.trim())) return;
-    if (text.length > 1200) {
-      setError(new Error("Keep your request under 1,200 characters."));
-      return;
-    }
-    const current = ++sequence.current;
-    const controller = new AbortController();
-    request.current = controller;
+
+  function cancel() {
+    if (!pending.current) return;
+    const { snapshot, abort } = pending.current;
+    pending.current = null;
+    abort.abort();
+    setBusy(false);
+    setRetry(snapshot);
+  }
+
+  async function run(snapshot: Request, appendUser: boolean) {
+    if (pending.current) return;
+    const abort = new AbortController();
+    pending.current = { snapshot, abort };
     setBusy(true);
-    setError(null);
-    setDraft("");
+    setError(undefined);
+    setRetry(undefined);
     setToast("");
-    const prepared = structuredClone(rec.current);
+    if (appendUser) {
+      following.current = true;
+      setNewResponse(false);
+      const id = ++nextId.current;
+      setTurns((value) => [
+        ...value,
+        { id, role: "user", text: snapshot.text },
+      ]);
+    }
+    try {
+      const answer = await askReel(
+        snapshot.state,
+        snapshot.text,
+        library.data || [],
+        abort.signal,
+        { ai: !!session, regenerate: snapshot.regenerate },
+      );
+      if (pending.current?.abort !== abort || abort.signal.aborted) return;
+      engine.current = answer.session;
+      const id = ++nextId.current;
+      if (following.current) revealTurn.current = id;
+      setTurns((value) => [
+        ...value,
+        { id, role: "reel", answer, scope: snapshot.scope },
+      ]);
+      if (answer.items.length) setActiveGroup(id);
+      if (!following.current) setNewResponse(true);
+    } catch (failure) {
+      if (pending.current?.abort !== abort || abort.signal.aborted) return;
+      setError(failure);
+      setRetry(snapshot);
+    } finally {
+      if (pending.current?.abort === abort) {
+        pending.current = null;
+        setBusy(false);
+      }
+    }
+  }
+
+  function send(text = draft, regenerate = false) {
+    if (pending.current || !text.trim()) return;
+    const prepared = structuredClone(engine.current);
     prepared.intent.source = source;
     prepared.intent.mediaType = format;
-    prepared.intent.resultCount = list ? 3 : 1;
+    prepared.intent.resultCount = Number(count);
     prepared.useRatings = preferences.useRatings;
-    if (!regenerate)
-      setMessages((m) => [
-        ...m,
-        { id: Date.now(), role: "user", text: text.trim() },
-      ]);
-    try {
-      const result = await askReel(
-        prepared,
-        text.trim(),
-        library.data || [],
-        controller.signal,
-        { ai: !!session, regenerate },
-      );
-      if (sequence.current !== current || controller.signal.aborted) return;
-      rec.current = result.session;
-      setMessages((m) => [
-        ...m,
-        {
-          id: Date.now() + 1,
-          role: "reel",
-          text: result.message,
-          items: result.items,
-          mode: result.mode,
-          suggestions: result.suggestions,
-          warning: result.warning,
-        },
-      ]);
-      setSuggestions(result.suggestions);
-    } catch (e) {
-      if (!controller.signal.aborted && sequence.current === current)
-        setError(e);
-    } finally {
-      if (sequence.current === current) setBusy(false);
-    }
+    if (!regenerate && text === draft) setDraft("");
+    void run(
+      { text: text.trim(), state: prepared, regenerate, scope },
+      !regenerate,
+    );
   }
-  async function savePick(t: Title) {
+
+  async function savePick(title: Title) {
     if (!session) {
       router.push("/auth");
       return;
     }
-    if ((library.data || []).some((s) => searchCore.sameWork(s, t))) {
-      setToast("Already in your library.");
+    if (
+      save.isPending ||
+      (library.data || []).some((item) => searchCore.sameWork(item, title))
+    )
       return;
-    }
     try {
-      await save.mutateAsync(t);
-      setToast(`${t.title} saved to your picks.`);
+      await save.mutateAsync(title);
+      setToast(`${title.title} saved to your picks.`);
     } catch {
-      /* mutation error rendered below */
+      // The mutation error stays visible above the composer.
     }
   }
+
+  const stage = (turn: Extract<Turn, { role: "reel" }>) => (
+    <RecommendationStage
+      titles={turn.answer.items}
+      selected={selection[turn.id] ?? 0}
+      onSelect={(index) =>
+        setSelection((value) => ({ ...value, [turn.id]: index }))
+      }
+      compact={compact || (expanded && height < 840)}
+      saved={(title) =>
+        (library.data || []).some((item) => searchCore.sameWork(item, title))
+      }
+      saving={save.isPending}
+      onSave={(title) => void savePick(title)}
+    />
+  );
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -159,211 +248,331 @@ function AskConversation({ initialPrompt }: { initialPrompt: string }) {
       <Page scroll={false}>
         <View
           style={{
-            paddingHorizontal: 20,
-            paddingTop: compact ? 8 : 20,
-            paddingBottom: compact ? 4 : 10,
-            gap: compact ? 6 : 12,
+            flex: 1,
+            width: "100%",
+            maxWidth: 1200,
+            alignSelf: "center",
           }}
         >
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
+              paddingHorizontal: gutter,
+              borderBottomWidth: 1,
+              borderColor: c.line,
             }}
           >
             <View
-              style={{ flexDirection: "row", gap: 10, alignItems: "center" }}
+              style={{
+                minHeight: 56,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}
             >
               <Lumi
-                state={
-                  busy ? "thinking" : messages.length ? "ready" : "curious"
-                }
-                size={42}
+                state={busy ? "thinking" : turns.length ? "ready" : "curious"}
+                size={32}
               />
-              <Copy kind="title">Ask Reel</Copy>
-            </View>
-            <Button label="New chat" variant="quiet" onPress={reset} />
-          </View>
-          <View style={{ flexDirection: compact ? "row" : "column", gap: 8 }}>
-            <Chips
-              style={compact ? { flex: 1 } : undefined}
-              values={[
-                { value: "mix", label: "Discover + library" },
-                { value: "library", label: "My library" },
-              ]}
-              value={source}
-              onChange={(v) => {
-                setSource(v);
-                rec.current.intent.source = v;
-              }}
-            />
-            <Chips
-              style={compact ? { flex: 1 } : undefined}
-              values={[
-                { value: "watch", label: "Any watch" },
-                { value: "movie", label: "Films" },
-                { value: "series", label: "Series" },
-                { value: "anime", label: "Anime" },
-              ]}
-              value={format}
-              onChange={setFormat}
-            />
-          </View>
-        </View>
-        <ScrollView
-          ref={scroll}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 20, gap: 22, paddingBottom: 28 }}
-        >
-          {!messages.length ? (
-            <View style={{ gap: 18, paddingVertical: 20 }}>
-              <Copy kind="hero">{"Less searching.\nMore feeling."}</Copy>
-              <Copy style={{ color: c.muted }}>
-                Tell me the kind of story you need. A mood, a filmmaker, or a
-                wonderfully specific idea.
+              <Copy
+                kind="subhead"
+                accessibilityRole="header"
+                style={{ flex: 1 }}
+              >
+                Ask Reel
               </Copy>
-              <Copy kind="small" style={{ color: c.muted }}>
-                {session
-                  ? "AI helps interpret your request; real catalogs supply the facts."
-                  : "Catalog matching is available now. Sign in for AI interpretation."}{" "}
-                Conversations stay in this session.
-              </Copy>
+              <Button label="New chat" variant="quiet" onPress={reset} />
             </View>
-          ) : null}
-          {messages.map((m) => (
             <View
-              key={m.id}
-              onLayout={(event) => {
-                if (
-                  messages.at(-1)?.id === m.id &&
-                  revealedMessage.current !== m.id
-                ) {
-                  revealedMessage.current = m.id;
-                  scroll.current?.scrollTo({
-                    y: Math.max(0, event.nativeEvent.layout.y - 16),
-                    animated: false,
-                  });
-                }
-              }}
               style={{
-                gap: 12,
-                padding: 16,
-                borderRadius: 18,
-                backgroundColor: m.role === "user" ? c.raised : c.surface,
-                marginLeft: m.role === "user" ? 28 : 0,
+                minHeight: 48,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
               }}
             >
-              <Copy
-                kind="label"
-                style={{ color: m.role === "reel" ? c.accent : c.muted }}
-              >
-                {m.role === "user" ? "YOU" : `REEL · ${m.mode}`}
+              <Copy kind="small" style={{ color: c.secondary, flex: 1 }}>
+                {scope}
               </Copy>
-              <Copy>{m.text}</Copy>
-              {m.warning ? (
-                <Copy kind="small" style={{ color: c.muted }}>
-                  {m.warning} Using catalog matching where needed.
-                </Copy>
-              ) : null}
-              {m.items?.map((t) => (
-                <View key={t.recId || t.id} style={{ gap: 8 }}>
-                  <TitleRow title={t} />
-                  <Copy kind="small" style={{ color: c.muted }}>
-                    {t.why}
-                  </Copy>
-                  <Button
-                    label={
-                      (library.data || []).some((s) =>
-                        searchCore.sameWork(s, t),
-                      )
-                        ? "In your library"
-                        : "Save pick"
-                    }
-                    icon="bookmark-outline"
-                    variant="secondary"
-                    loading={save.isPending}
-                    onPress={() => void savePick(t)}
-                  />
-                </View>
-              ))}
-            </View>
-          ))}
-          {busy ? <Loading label="Lumi is connecting the dots…" /> : null}
-          <ErrorNote error={error} />
-          <ErrorNote error={save.error} />
-          {toast ? (
-            <Copy accessibilityRole="alert" style={{ color: c.mint }}>
-              {toast}
-            </Copy>
-          ) : null}
-          {!busy
-            ? suggestions.map((p) => (
-                <Button
-                  key={p}
-                  label={p}
-                  variant="secondary"
-                  onPress={() => void send(p)}
-                />
-              ))
-            : null}
-          {!busy && messages.length ? (
-            <Button
-              label="Find another set"
-              variant="quiet"
-              icon="refresh"
-              onPress={() => void send(rec.current.lastRequest, true)}
-            />
-          ) : null}
-        </ScrollView>
-        <View
-          style={{
-            padding: 16,
-            paddingTop: 8,
-            borderTopWidth: 1,
-            borderTopColor: c.line,
-            gap: 8,
-          }}
-        >
-          <View
-            style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}
-          >
-            <Field
-              accessibilityLabel="Your request to Reel"
-              placeholder="What are you in the mood for?"
-              multiline
-              maxLength={1200}
-              value={draft}
-              onChangeText={setDraft}
-              style={{ flex: 1, maxHeight: 120 }}
-            />
-            <Button
-              label="Send"
-              icon="arrow-up"
-              onPress={() => void send()}
-              loading={busy}
-              disabled={!draft.trim()}
-            />
-            {compact ? (
               <Button
-                label={list ? "3 picks" : "One pick"}
-                variant="secondary"
-                onPress={() => setList((v) => !v)}
+                label="Edit recommendation options"
+                icon="options-outline"
+                iconOnly
+                variant="quiet"
+                disabled={busy}
+                onPress={() => setOptions(true)}
               />
+            </View>
+          </View>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: expanded ? "row" : "column",
+              gap: expanded ? 24 : 0,
+            }}
+          >
+            <View style={{ flex: expanded ? 52 : 1, minWidth: 0 }}>
+              <ScrollView
+                ref={scroll}
+                keyboardShouldPersistTaps="handled"
+                scrollEventThrottle={100}
+                onScroll={({ nativeEvent }) => {
+                  following.current =
+                    nativeEvent.contentSize.height -
+                      nativeEvent.layoutMeasurement.height -
+                      nativeEvent.contentOffset.y <
+                    80;
+                }}
+                onContentSizeChange={() => {
+                  if (revealTurn.current !== undefined) {
+                    const top = responsePositions.current.get(
+                      revealTurn.current,
+                    );
+                    if (top !== undefined) {
+                      scroll.current?.scrollTo({
+                        y: Math.max(0, top - 8),
+                        animated: false,
+                      });
+                      revealTurn.current = undefined;
+                      following.current = false;
+                    }
+                  } else if (pending.current && following.current) {
+                    scroll.current?.scrollToEnd({ animated: false });
+                  }
+                }}
+                contentContainerStyle={{ padding: gutter, gap: 20 }}
+              >
+                {!turns.length ? (
+                  <View style={{ gap: 12 }}>
+                    <Copy
+                      kind={compact ? "headline" : "hero"}
+                      accessibilityRole="header"
+                    >
+                      What are you in the mood for?
+                    </Copy>
+                    <Copy style={{ color: c.secondary }}>
+                      Tell Reel what you feel like watching.{" "}
+                      {session
+                        ? "Chats stay in this session."
+                        : "Catalog matching is available now. Sign in for AI interpretation."}
+                    </Copy>
+                    <Button
+                      label="Guide me"
+                      icon="sparkles-outline"
+                      variant="secondary"
+                      onPress={() => send("Help me choose something to watch")}
+                    />
+                    {starters.map((text) => (
+                      <Button
+                        key={text}
+                        label={text}
+                        variant="quiet"
+                        onPress={() => send(text)}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+                {turns.map((turn) =>
+                  turn.role === "user" ? (
+                    <View
+                      key={turn.id}
+                      style={{
+                        marginLeft: 24,
+                        padding: 12,
+                        borderRadius: 12,
+                        backgroundColor: c.raised,
+                      }}
+                    >
+                      <Copy>{turn.text}</Copy>
+                    </View>
+                  ) : (
+                    <Animated.View
+                      key={turn.id}
+                      entering={reveal}
+                      onLayout={(event) => {
+                        const top = event.nativeEvent.layout.y;
+                        responsePositions.current.set(turn.id, top);
+                        if (revealTurn.current === turn.id) {
+                          revealTurn.current = undefined;
+                          following.current = false;
+                          scroll.current?.scrollTo({
+                            y: Math.max(0, top - 8),
+                            animated: false,
+                          });
+                        }
+                      }}
+                      style={{ gap: 12 }}
+                    >
+                      <Copy kind="label" style={{ color: c.accent }}>
+                        {turn.answer.mode}
+                      </Copy>
+                      <Copy>{turn.answer.message}</Copy>
+                      {turn.answer.warning ? (
+                        <Copy kind="small" style={{ color: c.warning }}>
+                          {turn.answer.warning}
+                        </Copy>
+                      ) : null}
+                      {turn.answer.items.length ? (
+                        <>
+                          <Copy kind="small" style={{ color: c.secondary }}>
+                            {turn.scope}
+                          </Copy>
+                          {expanded ? (
+                            <Button
+                              label={`View ${turn.answer.items.length === 1 ? "pick" : "picks"}`}
+                              variant="secondary"
+                              onPress={() => setActiveGroup(turn.id)}
+                            />
+                          ) : (
+                            stage(turn)
+                          )}
+                        </>
+                      ) : null}
+                    </Animated.View>
+                  ),
+                )}
+                {busy ? (
+                  <Copy
+                    accessibilityRole="progressbar"
+                    style={{ color: c.secondary }}
+                  >
+                    Finding matches…
+                  </Copy>
+                ) : null}
+                {!busy && !retry && last ? (
+                  <>
+                    <View
+                      style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                    >
+                      {last.answer.suggestions.map((text) => (
+                        <Button
+                          key={text}
+                          label={text}
+                          variant="secondary"
+                          onPress={() => send(text)}
+                        />
+                      ))}
+                    </View>
+                    {last.answer.items.length ? (
+                      <Button
+                        label={
+                          last.scope === scope
+                            ? "Find another set"
+                            : "Find with these options"
+                        }
+                        icon="refresh"
+                        variant="quiet"
+                        onPress={() => send(engine.current.lastRequest, true)}
+                      />
+                    ) : null}
+                  </>
+                ) : null}
+              </ScrollView>
+              {newResponse ? (
+                <Button
+                  label="New response"
+                  variant="secondary"
+                  onPress={() => {
+                    following.current = true;
+                    setNewResponse(false);
+                    const top = last && responsePositions.current.get(last.id);
+                    if (typeof top === "number")
+                      scroll.current?.scrollTo({
+                        y: Math.max(0, top - 8),
+                        animated: false,
+                      });
+                    else scroll.current?.scrollToEnd({ animated: false });
+                  }}
+                />
+              ) : null}
+            </View>
+            {expanded && active?.role === "reel" ? (
+              <ScrollView
+                style={{ flex: 48, minWidth: 0 }}
+                contentContainerStyle={{ padding: gutter }}
+              >
+                {stage(active)}
+              </ScrollView>
             ) : null}
           </View>
-          {!compact ? (
-            <Button
-              label={
-                list ? "3 picks · tap for one" : "One pick · tap for a list"
-              }
-              variant="quiet"
-              onPress={() => setList((v) => !v)}
-              style={{ minHeight: 36, paddingVertical: 4 }}
-            />
-          ) : null}
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderColor: c.line,
+              paddingHorizontal: gutter,
+              paddingVertical: 8,
+              gap: 8,
+            }}
+          >
+            <ErrorNote error={error || save.error} />
+            {retry ? (
+              <Button
+                label="Retry request"
+                icon="refresh"
+                variant="quiet"
+                onPress={() => void run(retry, false)}
+              />
+            ) : null}
+            {toast ? (
+              <Copy
+                kind="small"
+                accessibilityRole="alert"
+                style={{ color: c.mint }}
+              >
+                {toast}
+              </Copy>
+            ) : null}
+            <View
+              style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}
+            >
+              <Field
+                accessibilityLabel="Your request to Reel"
+                placeholder="Describe what you want to watch"
+                multiline
+                maxLength={1200}
+                value={draft}
+                onChangeText={setDraft}
+                style={{ flex: 1, maxHeight: 120, minHeight: 52 }}
+              />
+              {busy ? (
+                <Button label="Cancel" variant="secondary" onPress={cancel} />
+              ) : (
+                <Button
+                  label="Send"
+                  icon="arrow-up"
+                  iconOnly={compact}
+                  disabled={!draft.trim()}
+                  onPress={() => send()}
+                />
+              )}
+            </View>
+          </View>
         </View>
       </Page>
+      {options ? (
+        <SheetFrame
+          title="Recommendation options"
+          onClose={() => setOptions(false)}
+        >
+          <Copy kind="subhead">Source</Copy>
+          <Chips values={sources} value={source} onChange={setSource} wrap />
+          <Copy kind="small" style={{ color: c.secondary }}>
+            Mix searches the catalogs and your library.
+          </Copy>
+          <Copy kind="subhead">Format</Copy>
+          <Chips values={formats} value={format} onChange={setFormat} wrap />
+          <Copy kind="subhead">How many?</Copy>
+          <Chips
+            values={[
+              { value: "1", label: "One pick" },
+              { value: "3", label: "3 picks" },
+            ]}
+            value={count}
+            onChange={setCount}
+            wrap
+          />
+          <Button label="Done" onPress={() => setOptions(false)} />
+        </SheetFrame>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

@@ -7,8 +7,17 @@ import { tracking } from "../core/shared";
 import { Artwork, openTitle } from "./TitleCard";
 import { Copy } from "./ui";
 
-export function LibraryCard({ title, width }: { title: Title; width: number }) {
+export function LibraryCard({
+  title,
+  width,
+  row = false,
+}: {
+  title: Title;
+  width: number;
+  row?: boolean;
+}) {
   const c = useTheme();
+  const posterWidth = row ? 64 : width;
   const status =
     title.status === "going"
       ? ["series", "anime"].includes(title.type) && title.episode
@@ -32,10 +41,22 @@ export function LibraryCard({ title, width }: { title: Title; width: number }) {
       onPress={() => openTitle(title)}
       accessibilityRole="button"
       accessibilityLabel={`Open ${title.title}`}
-      style={{ width, gap: 10, paddingBottom: 10 }}
+      accessibilityHint={[
+        status,
+        title.fav ? "Favorite" : "",
+        title.rating ? "Your rating " + title.rating + " out of 10" : "",
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+      style={{
+        width: row ? "100%" : width,
+        gap: 10,
+        paddingBottom: 10,
+        flexDirection: row ? "row" : "column",
+      }}
     >
-      <View style={{ width }}>
-        <Artwork title={title} width={width} />
+      <View style={{ width: posterWidth }}>
+        <Artwork title={title} width={posterWidth} decorative />
         {title.fav ? (
           <View
             style={{
@@ -59,9 +80,9 @@ export function LibraryCard({ title, width }: { title: Title; width: number }) {
           </View>
         ) : null}
       </View>
-      <View style={{ gap: 5 }}>
+      <View style={{ gap: 5, flex: row ? 1 : undefined }}>
         <Copy
-          numberOfLines={3}
+          numberOfLines={row ? undefined : 3}
           style={{ fontWeight: "700", fontSize: 16, lineHeight: 21 }}
         >
           {title.title}

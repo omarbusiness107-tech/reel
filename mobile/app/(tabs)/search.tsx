@@ -14,6 +14,7 @@ import { useTheme } from "../../src/theme";
 import { useApp } from "../../src/providers/AppProvider";
 import {
   Page,
+  usePageLayout,
   Copy,
   Field,
   Chips,
@@ -60,6 +61,7 @@ export default function Search() {
 }
 function SearchResults({ initialQuery }: { initialQuery: string }) {
   const c = useTheme();
+  const { gutter } = usePageLayout();
   const { session } = useApp();
   const [text, setText] = useState(initialQuery);
   const [query, setQuery] = useState("");
@@ -132,27 +134,54 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
     setRecent(next);
     await AsyncStorage.setItem(recentKey, JSON.stringify(next));
   }
+  const waitingForDebounce = text.trim() !== query;
+  const shownResults = waitingForDebounce ? [] : results;
   const loading =
     query.length >= 2 &&
     ((filter !== "library" && filter !== "people" && titles.loading) ||
       (["all", "people"].includes(filter) && people.isPending));
   return (
     <Page scroll={false}>
-      <View style={{ padding: 20, gap: 16 }}>
-        <Copy kind="hero">{"Follow your\ncuriosity."}</Copy>
-        <Field
-          value={text}
-          onChangeText={setText}
-          placeholder="Titles, actors, directors…"
-          accessibilityLabel="Search titles, actors and directors"
-          autoCorrect={false}
-          returnKeyType="search"
-          onSubmitEditing={() => void remember()}
-        />
+      <View
+        style={{
+          padding: gutter,
+          gap: 8,
+          width: "100%",
+          maxWidth: 920,
+          alignSelf: "center",
+        }}
+      >
+        <Copy kind="headline" accessibilityRole="header">
+          Search
+        </Copy>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Field
+            style={{ flex: 1 }}
+            value={text}
+            onChangeText={setText}
+            placeholder="Titles, actors, directors…"
+            accessibilityLabel="Search titles, actors and directors"
+            autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={() => void remember()}
+          />
+          {text ? (
+            <Button
+              label="Clear search"
+              iconOnly
+              icon="close"
+              variant="quiet"
+              onPress={() => {
+                setText("");
+                setQuery("");
+              }}
+            />
+          ) : null}
+        </View>
         <Chips values={filters} value={filter} onChange={setFilter} />
       </View>
-      {query.length < 2 ? (
-        <View style={{ paddingHorizontal: 20, flex: 1 }}>
+      {text.trim().length < 2 ? (
+        <View style={{ paddingHorizontal: gutter, flex: 1 }}>
           {recent.length ? (
             <>
               <Copy kind="label" style={{ color: c.muted }}>
@@ -186,12 +215,15 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
         </View>
       ) : (
         <FlatList
-          data={results}
+          data={shownResults}
           keyboardShouldPersistTaps="handled"
           keyExtractor={(r) =>
             `${r.kind}:${r.kind === "title" ? r.value.id : r.value.provider + ":" + r.value.id}`
           }
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28 }}
+          contentContainerStyle={{
+            paddingHorizontal: gutter,
+            paddingBottom: 28,
+          }}
           ListHeaderComponent={
             <>
               {loading ? (
@@ -236,7 +268,10 @@ function SearchResults({ initialQuery }: { initialQuery: string }) {
             </>
           }
           ListEmptyComponent={
-            !loading ? (
+            !loading &&
+            !waitingForDebounce &&
+            !titles.error &&
+            !people.error ? (
               <State
                 title="No matches yet"
                 body="Try a shorter title, another spelling or a person’s full name."

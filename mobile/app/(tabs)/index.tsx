@@ -1,9 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Pressable, ScrollView } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { discover } from "../../src/services/catalog";
 import { useLibrary } from "../../src/services/hooks";
 import { useApp } from "../../src/providers/AppProvider";
@@ -15,10 +14,12 @@ import {
   Button,
   Loading,
   ErrorNote,
+  Chips,
 } from "../../src/components/ui";
-import { Shelf, openTitle } from "../../src/components/TitleCard";
+import { Shelf, TitleRow } from "../../src/components/TitleCard";
+import { Spotlight } from "../../src/components/Spotlight";
 import { Lumi } from "../../src/components/Lumi";
-import { recommendations as R } from "../../src/core/shared";
+import { recommendations as R, tracking } from "../../src/core/shared";
 export default function Discover() {
   const c = useTheme();
   const { session, preferences } = useApp();
@@ -29,8 +30,12 @@ export default function Discover() {
   });
   const library = useLibrary();
   const items = useMemo(() => catalog.data?.items || [], [catalog.data]);
-  const continued = (library.data || []).filter((t) => t.status === "going");
-  const hero = items.find((t) => t.type === "movie" && t.banner);
+  const [status, setStatus] = useState("going");
+  const continued = (library.data || []).filter((t) => t.status === status);
+  const hero =
+    items.find((t) => t.type === "movie" && t.banner) ||
+    items.find((t) => t.type === "movie") ||
+    items[0];
   const personal = useMemo(() => {
     const saved = library.data || [];
     if (
@@ -48,6 +53,7 @@ export default function Discover() {
   }, [items, library.data, preferences.useRatings]);
   return (
     <Page
+      gap={24}
       refreshing={catalog.isRefetching}
       onRefresh={() => {
         void catalog.refetch();
@@ -83,35 +89,103 @@ export default function Discover() {
           </Copy>
         </Pressable>
       </View>
-      <View style={{ gap: 7 }}>
-        <Copy kind="label" style={{ color: c.muted }}>
-          YOUR DAILY DOSE OF GOOD STORIES
+      <View style={{ gap: 12 }}>
+        <Copy
+          kind="hero"
+          accessibilityRole="header"
+          style={{ fontSize: 28, lineHeight: 34 }}
+        >
+          Find your next story.
         </Copy>
-        <Copy kind="hero">{"What moves\nyou tonight?"}</Copy>
+        <Pressable
+          onPress={() => router.navigate("/(tabs)/ask")}
+          accessibilityRole="button"
+          accessibilityLabel="Ask Reel to find your next watch"
+          style={({ pressed }) => ({
+            backgroundColor: c.accentContainer,
+            opacity: pressed ? 0.85 : 1,
+            minHeight: 72,
+            borderRadius: 12,
+            padding: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          })}
+        >
+          <Lumi state="curious" size={40} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Copy kind="subhead" style={{ color: c.onAccentContainer }}>
+              Ask Reel
+            </Copy>
+            <Copy kind="small" style={{ color: c.onAccentContainer }}>
+              Tell Reel what you’re in the mood for.
+            </Copy>
+          </View>
+          <Ionicons
+            name="arrow-forward"
+            size={19}
+            color={c.onAccentContainer}
+          />
+        </Pressable>
       </View>
-      <Pressable
-        onPress={() => router.push("/(tabs)/ask")}
-        accessibilityRole="button"
-        accessibilityLabel="Ask Reel to find your next watch"
-        style={{
-          backgroundColor: c.surface,
-          borderColor: c.line,
-          borderWidth: 1,
-          borderRadius: 20,
-          padding: 18,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 14,
-        }}
-      >
-        <Lumi state="curious" size={56} />
-        <View style={{ flex: 1, gap: 3 }}>
-          <Copy style={{ fontWeight: "700" }}>A mood. A moment. A movie.</Copy>
-          <Copy kind="small" style={{ color: c.muted }}>
-            Tell Reel what you’re looking for ↗
-          </Copy>
-        </View>
-      </Pressable>
+      {hero ? (
+        <Spotlight title={hero} />
+      ) : catalog.isPending ? (
+        <Loading posters label="Opening the catalogs…" />
+      ) : null}
+      {library.data?.length ? (
+        <Section
+          title="Your watchlist"
+          action={
+            (library.data || []).some(
+              (t) => t.type === "series" || t.type === "anime",
+            )
+              ? { label: "Calendar", onPress: () => router.push("/calendar") }
+              : undefined
+          }
+        >
+          <Chips
+            value={status}
+            onChange={setStatus}
+            values={[
+              { value: "going", label: "In progress" },
+              { value: "want", label: "Watchlist" },
+              { value: "done", label: "Watched" },
+            ]}
+          />
+          {continued.length ? (
+            continued.slice(0, 5).map((t) => {
+              const progress =
+                t.type === "series" || t.type === "anime"
+                  ? tracking.progress(t)
+                  : undefined;
+              const position =
+                status === "going" && t.episode
+                  ? tracking.episodeLabel(t, t.season ?? 1, t.episode)
+                  : undefined;
+              const count = progress?.total
+                ? `${progress.watched} of ${progress.total} watched`
+                : undefined;
+              return (
+                <TitleRow
+                  key={t.id}
+                  title={t}
+                  subtitle={[position, count].filter(Boolean).join(" · ")}
+                />
+              );
+            })
+          ) : (
+            <Copy kind="small" style={{ color: c.muted }}>
+              No titles in this section.
+            </Copy>
+          )}
+          <Button
+            label="View library"
+            variant="quiet"
+            onPress={() => router.navigate("/(tabs)/library")}
+          />
+        </Section>
+      ) : null}
       <Section title="Find your feeling" kicker="A way into the story">
         <ScrollView
           horizontal
@@ -139,54 +213,19 @@ export default function Discover() {
           ))}
         </ScrollView>
       </Section>
-      {continued.length ? (
-        <Section title="Pick up the story" kicker="In progress">
-          <Shelf titles={continued} />
-        </Section>
-      ) : null}
-      {catalog.isPending ? <Loading /> : null}
       <ErrorNote error={catalog.error} retry={() => void catalog.refetch()} />
+      {!hero && !catalog.isPending && !catalog.error ? (
+        <Button
+          label="Search the catalogs"
+          variant="secondary"
+          onPress={() => router.navigate("/(tabs)/search")}
+        />
+      ) : null}
       {catalog.data?.warnings.map((w) => (
-        <Copy key={w} kind="small" style={{ color: c.muted }}>
+        <Copy key={w} kind="small" style={{ color: c.warning }}>
           {w}
         </Copy>
       ))}
-      {hero ? (
-        <Pressable
-          onPress={() => openTitle(hero)}
-          accessibilityRole="button"
-          accessibilityLabel={`Explore ${hero.title}`}
-          style={{
-            height: 320,
-            borderRadius: 20,
-            overflow: "hidden",
-            backgroundColor: c.surface,
-          }}
-        >
-          <Image
-            source={hero.banner}
-            contentFit="cover"
-            style={{ position: "absolute", width: "100%", height: "100%" }}
-          />
-          <LinearGradient
-            colors={["transparent", "rgba(16,17,19,0.95)"]}
-            style={{ flex: 1, justifyContent: "flex-end", padding: 22, gap: 8 }}
-          >
-            <Copy kind="label" style={{ color: "#FFAA8F" }}>
-              IN THE SPOTLIGHT
-            </Copy>
-            <Copy kind="title" style={{ color: "#F3EFE5", fontSize: 32 }}>
-              {hero.title}
-            </Copy>
-            <Copy kind="small" style={{ color: "#D8D6D0" }}>
-              {hero.year} · {hero.genres.slice(0, 2).join(" / ")}
-            </Copy>
-            <Copy style={{ color: "#F3EFE5", fontWeight: "700", marginTop: 4 }}>
-              Meet your next watch →
-            </Copy>
-          </LinearGradient>
-        </Pressable>
-      ) : null}
       {personal.length ? (
         <Section
           title="A little more your taste"

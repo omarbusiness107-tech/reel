@@ -85,7 +85,8 @@ export default function Callback() {
       <ErrorNote error={error} />
       {recovery ? (
         <>
-          <Copy kind="hero">A fresh start.</Copy>
+          <Copy kind="headline">Choose a new password</Copy>
+          <Copy kind="small">New password</Copy>
           <Field
             value={password}
             onChangeText={setPassword}

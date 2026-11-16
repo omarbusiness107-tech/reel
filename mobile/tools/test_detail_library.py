@@ -107,8 +107,11 @@ def run():
       page.get_by_role('button',name='Back',exact=True).click()
       expect(first).to_be_visible()
       if width==412:
-        page.get_by_role('button',name='Favorites',exact=True).click();expect(page.get_by_role('button',name='Open Dune: Part Two',exact=True)).to_have_count(0)
-        page.get_by_role('button',name='All',exact=True).click()
+        page.get_by_role('button',name='Filters',exact=True).click()
+        page.get_by_role('button',name='Favorites',exact=True).click()
+        page.get_by_role('button',name='Apply filters',exact=True).click()
+        expect(page.get_by_role('button',name='Open Dune: Part Two',exact=True)).to_have_count(0)
+        page.get_by_role('button',name='Clear filters',exact=True).click()
         page.get_by_label('Filter your library',exact=True).fill('Office');expect(page.get_by_role('button',name='Open Office Space',exact=True)).to_be_visible();expect(first).to_have_count(0)
         page.get_by_label('Filter your library',exact=True).fill('')
         page.get_by_role('button',name='Open '+show['name'],exact=True).click()

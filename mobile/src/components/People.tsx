@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FlatList, View, Pressable } from "react-native";
+import { FlatList, View, Pressable, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useQuery } from "@tanstack/react-query";
@@ -70,6 +70,7 @@ export function Portrait({
 }
 function CastMember({ person: value, work }: { person: Person; work: Title }) {
   const c = useTheme();
+  const { fontScale } = useWindowDimensions();
   const resolved = useQuery({
     queryKey: ["actor-identity", personKey(value)],
     queryFn: ({ signal }) => resolveActor(value, signal),
@@ -83,9 +84,14 @@ function CastMember({ person: value, work }: { person: Person; work: Title }) {
       accessibilityRole="button"
       accessibilityLabel={`About ${person.name}`}
       onPress={() => openPerson(person, work)}
-      style={{ width: 106, alignItems: "center", gap: 10, paddingBottom: 4 }}
+      style={{
+        width: fontScale >= 1.5 ? 120 : 96,
+        alignItems: "center",
+        gap: 8,
+        paddingBottom: 4,
+      }}
     >
-      <Portrait person={person} />
+      <Portrait person={person} size={72} />
       <Copy
         style={{
           fontSize: 13,

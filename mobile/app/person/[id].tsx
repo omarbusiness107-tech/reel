@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, FlatList, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import type { Person, Title } from "../../src/core/types";
 import { searchCore } from "../../src/core/shared";
 import {
   Page,
+  usePageLayout,
   Copy,
   BackHeader,
   ErrorNote,
@@ -25,6 +26,9 @@ export default function PersonScreen() {
     name,
   } = useLocalSearchParams<{ id: string; provider?: string; name?: string }>();
   const c = useTheme();
+  const { available, fontScale } = usePageLayout();
+  const compact = available < 360 || fontScale >= 1.5;
+  const [showBio, setShowBio] = useState(false);
   const client = useQueryClient();
   const identity = personFromRoute(id, provider, name);
   const key = personKey(identity);
@@ -50,11 +54,23 @@ export default function PersonScreen() {
   const loadingCredits = profile.isPending || credits.isLoading;
   return (
     <Page>
-      <BackHeader title="People & stories" />
-      <View style={{ flexDirection: "row", gap: 22, alignItems: "center" }}>
+      <BackHeader title="People" />
+      <View
+        style={{
+          flexDirection: compact ? "column" : "row",
+          gap: 20,
+          alignItems: "center",
+        }}
+      >
         <Portrait person={person} size={112} />
-        <View style={{ flex: 1, gap: 10 }}>
-          <Copy kind="title" style={{ fontSize: 32, lineHeight: 38 }}>
+        <View
+          style={{
+            flex: compact ? undefined : 1,
+            width: compact ? "100%" : undefined,
+            gap: 8,
+          }}
+        >
+          <Copy kind="headline" accessibilityRole="header">
             {person.name || "Person profile"}
           </Copy>
           {person.country ? (
@@ -77,13 +93,23 @@ export default function PersonScreen() {
       {profile.data?.bio || person.role ? (
         <View style={{ gap: 10 }}>
           <Copy kind="title">About</Copy>
-          <Copy style={{ color: c.muted, lineHeight: 25 }}>
+          <Copy
+            style={{ color: c.secondary }}
+            numberOfLines={showBio ? undefined : 5}
+          >
             {profile.data?.bio || person.role}
           </Copy>
+          {(profile.data?.bio?.length || 0) > 250 ? (
+            <Button
+              label={showBio ? "Show less" : "Read more"}
+              variant="quiet"
+              onPress={() => setShowBio(!showBio)}
+            />
+          ) : null}
         </View>
       ) : null}
       <View style={{ gap: 16 }}>
-        <Copy kind="title">On screen</Copy>
+        <Copy kind="title">Available credits</Copy>
         {loadingCredits ? (
           <Copy kind="small" style={{ color: c.muted }}>
             Finding available credits...

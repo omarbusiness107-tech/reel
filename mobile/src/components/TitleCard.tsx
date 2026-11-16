@@ -54,19 +54,35 @@ export function openPerson(value: Person, work?: Title) {
 export const Artwork = memo(function Artwork({
   title,
   width = 136,
+  fit = "cover",
+  decorative = false,
 }: {
   title: Title;
   width?: number;
+  fit?: "cover" | "contain";
+  decorative?: boolean;
 }) {
   return (
     <Poster
       key={`${title.catalogId || title.id}:${title.cover || ""}`}
       title={title}
       width={width}
+      fit={fit}
+      decorative={decorative}
     />
   );
 });
-function Poster({ title, width }: { title: Title; width: number }) {
+function Poster({
+  title,
+  width,
+  fit,
+  decorative,
+}: {
+  title: Title;
+  width: number;
+  fit: "cover" | "contain";
+  decorative: boolean;
+}) {
   const c = useTheme();
   const [failed, setFailed] = useState<string[]>([]);
   const recovered = useQuery({
@@ -92,6 +108,8 @@ function Poster({ title, width }: { title: Title; width: number }) {
         backgroundColor: c.raised,
         overflow: "hidden",
       }}
+      accessibilityElementsHidden={decorative}
+      importantForAccessibility={decorative ? "no-hide-descendants" : "auto"}
     >
       {uri ? (
         <Image
@@ -99,9 +117,10 @@ function Poster({ title, width }: { title: Title; width: number }) {
           source={{ uri }}
           recyclingKey={uri}
           accessibilityLabel={`Poster for ${title.title}`}
-          accessible
+          accessible={!decorative}
           style={{ width: "100%", height: "100%" }}
-          contentFit="cover"
+          contentFit={fit}
+          cachePolicy="memory-disk"
           transition={0}
           onError={() =>
             setFailed((previous) =>
@@ -144,7 +163,7 @@ export const TitleCard = memo(function TitleCard({
       onPress={() => openTitle(title)}
       style={{ width, gap: 8 }}
     >
-      <Artwork title={title} width={width} />
+      <Artwork title={title} width={width} decorative />
       <Copy
         numberOfLines={2}
         style={{ fontSize: 14, fontWeight: "600", lineHeight: 19 }}
@@ -199,7 +218,7 @@ export const TitleRow = memo(function TitleRow({
         accessibilityLabel={`Open ${title.title}`}
         style={{ flexDirection: "row", gap: 14, alignItems: "center", flex: 1 }}
       >
-        <Artwork title={title} width={64} />
+        <Artwork title={title} width={64} decorative />
         <View style={{ gap: 5, flex: 1 }}>
           <Copy style={{ fontWeight: "600" }}>{title.title}</Copy>
           <Copy kind="small" style={{ color: c.muted }}>

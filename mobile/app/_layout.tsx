@@ -30,7 +30,7 @@ function Routes() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: c.bg },
-          animation: reduced ? "fade" : "default",
+          animation: reduced ? "none" : "default",
         }}
       >
         <Stack.Screen name="(tabs)" />

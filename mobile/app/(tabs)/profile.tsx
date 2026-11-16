@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Switch, Linking } from "react-native";
+import { View, Switch, Linking, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "../../src/services/supabase";
 import { config } from "../../src/services/config";
@@ -14,7 +14,8 @@ import {
   Section,
   ErrorNote,
 } from "../../src/components/ui";
-import { Lumi } from "../../src/components/Lumi";
+import Constants from "expo-constants";
+import { LibraryCard } from "../../src/components/LibraryCard";
 export default function Profile() {
   const c = useTheme();
   const { session, preferences, setPreferences, authError } = useApp();
@@ -39,18 +40,45 @@ export default function Profile() {
       setBusy(false);
     }
   }
+  const rated = (library.data || [])
+    .filter((t) => (t.rating || 0) > 0)
+    .sort(
+      (a, b) => (b.rating || 0) - (a.rating || 0) || a.id.localeCompare(b.id),
+    )
+    .slice(0, 6);
   return (
     <Page>
-      <View style={{ gap: 15, paddingTop: 8 }}>
-        <Lumi state="greeting" size={88} />
-        <Copy kind="hero">{"Your little\ncinema corner."}</Copy>
-        <Copy style={{ color: c.muted }}>
-          {session?.user.email || "A great story starts with you."}
+      <View style={{ gap: 12 }}>
+        <Copy kind="headline" accessibilityRole="header">
+          You
         </Copy>
         {session ? (
-          <Copy kind="small" style={{ color: c.mint }}>
-            {library.data?.length || 0} titles in your collection
-          </Copy>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                backgroundColor: c.accentContainer,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Copy kind="title" style={{ color: c.onAccentContainer }}>
+                {session.user.email?.slice(0, 1).toUpperCase() || "R"}
+              </Copy>
+            </View>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Copy kind="subhead">{session.user.email || "Reel account"}</Copy>
+              <Copy kind="small" style={{ color: c.secondary }}>
+                {library.data
+                  ? library.data.length + " titles in your library"
+                  : library.isPending
+                    ? "Opening your library…"
+                    : "Library unavailable"}
+              </Copy>
+            </View>
+          </View>
         ) : (
           <Button
             label="Sign in / create account"
@@ -59,7 +87,7 @@ export default function Profile() {
         )}
       </View>
       <ErrorNote error={error || authError} />
-      <Section title="Your viewing life">
+      <Section title="Your activity">
         <Button
           label="Activity & watch history"
           icon="time-outline"
@@ -79,7 +107,20 @@ export default function Profile() {
           onPress={() => router.push("/stats")}
         />
       </Section>
-      <Section title="Set the mood">
+      {session && rated.length ? (
+        <Section title="Top rated" kicker="Your ratings">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 12 }}
+          >
+            {rated.map((title) => (
+              <LibraryCard key={title.id} title={title} width={136} />
+            ))}
+          </ScrollView>
+        </Section>
+      ) : null}
+      <Section title="Preferences">
         <Copy kind="label">APPEARANCE</Copy>
         <Chips
           values={
@@ -140,17 +181,10 @@ export default function Profile() {
           haptic preferences stay on this device.
         </Copy>
       </Section>
-      <Section title="Yours stays yours">
-        <Copy style={{ color: c.muted }}>
-          Your library and dated activity use the same protected account as the
-          Reel website. Conversations are temporary and clear on account
-          changes. Passwords and AI provider keys are never stored in the app
-          bundle.
-        </Copy>
-        <Copy kind="small" style={{ color: c.muted }}>
-          Reel does not currently run a mobile notification service. No push
-          permissions are requested. Account deletion and notification delivery
-          are not implemented by the existing backend.
+      <Section title="Account">
+        <Copy style={{ color: c.secondary }}>
+          Your notes are private. Chats stay in this session. Your Reel account
+          works on the website and in the app.
         </Copy>
         <Button
           label="Open Reel website"
@@ -172,9 +206,9 @@ export default function Profile() {
         ) : null}
       </Section>
       <Copy kind="small" style={{ color: c.muted, textAlign: "center" }}>
-        {
-          "REEL / ANDROID · 1.0.0\nA little less scrolling. A little more cinema."
-        }
+        {Constants.expoConfig?.version
+          ? "Reel " + Constants.expoConfig.version
+          : "Reel"}
       </Copy>
     </Page>
   );

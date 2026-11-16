@@ -1,11 +1,15 @@
 # Reel product specification
 
-Last verified: 2026-11-07 (native addition; Continue 2026-10-28; other web sections 2026-10-16)
-Repository/branch: Reel / feat/reel-native-android; web baseline from main
+Last verified: 2026-11-15 (Android redesign; earlier web sections retain their prior verification dates)
+Repository/branch: Reel / codex/reel-cinema-journal; web baseline from main
 Verified against: current working tree
 Purpose: Intended product behavior, with emphasis on the recommendation experience.
 
 ## Product behavior
+
+The Android Cinema journal design puts a catalog spotlight and Ask entry at the top of Discover. The native Ask Reel options offer Mix or My library and retain Any watch, Films, TV, Anime, and the one/three pick controls. Guide me begins a request in the same conversation. Each response keeps its explanation, selected pick and submitted scope. Cancel and Retry retain the submitted request in memory. New chat clears the transcript and keeps its current options. Account changes clear the conversation.
+
+The native Library filters titles by status and private collection tags. Collection tiles are derived from saved titles. Title Details expose private rating and notes editors and show available episode facts in a sheet. Activity groups distinct dated events by local day and edits dates individually. Calendar has a month and agenda view over the same date sources. Viewing insights label counted runtime as Known viewing time and expose the last two weeks of activity through day controls and a data list.
 
 Native 1.0.2 presents title details with one poster beside facts (stacked at large font sizes), horizontal swipeable cast circles with full names, and a responsive library poster grid with the existing search/status/collection controls and private progress. Actor taps open dedicated provider-qualified profiles, preserving known portrait/name and the originating public work even when optional credits fail. Real source portraits are preferred; unavailable photos use an honest silhouette. Profiles show available birth/country/profession facts and source links; credits are explicitly incomplete rather than invented.
 

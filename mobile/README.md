@@ -2,6 +2,8 @@
 
 Native Expo SDK 58 client for the existing Reel service. The website remains in the repository root. Development branch: `feat/reel-native-android`.
 
+The Cinema journal redesign is on `codex/reel-cinema-journal`. Its [implementation checklist](../docs/REEL_IMPLEMENTATION_TASKS.md) tracks the browser and Android checks. The preview workflow builds the redesign APK when this branch is pushed to GitHub. The 1.0.2 APK below predates the redesign.
+
 ## Start on Windows
 
 ```powershell
@@ -65,6 +67,7 @@ python tools/preview_server.py --port 8092
 # In another terminal:
 python tools/test_preview.py
 python tools/test_detail_library.py
+python tools/test_redesign_acceptance.py
 # Optional read-only live public-provider check:
 python tools/inspect_people_live.py
 ```

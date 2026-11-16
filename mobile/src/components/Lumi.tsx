@@ -33,12 +33,12 @@ export function Lumi({
     if (!reduced && state !== "idle")
       angle.set(
         withSequence(
-          withTiming(-7, {
-            duration: 140,
-            easing: Easing.bezier(0.23, 1, 0.32, 1),
+          withTiming(-4, {
+            duration: 100,
+            easing: Easing.bezier(0.2, 0, 0, 1),
             reduceMotion: ReduceMotion.System,
           }),
-          withTiming(0, { duration: 200, reduceMotion: ReduceMotion.System }),
+          withTiming(0, { duration: 160, reduceMotion: ReduceMotion.System }),
         ),
       );
   }, [state, reduced, angle]);

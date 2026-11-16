@@ -1,5 +1,12 @@
 import React, { useRef, useMemo, useState } from "react";
-import { Alert, Platform, View, Linking } from "react-native";
+import {
+  Alert,
+  Platform,
+  View,
+  Linking,
+  Pressable,
+  FlatList,
+} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
@@ -30,10 +37,13 @@ import {
   Section,
   Field,
   Chips,
+  usePageLayout,
 } from "../../src/components/ui";
 import { Shelf } from "../../src/components/TitleCard";
 import { DetailHero } from "../../src/components/DetailHero";
 import { CastRail } from "../../src/components/People";
+import { SheetFrame } from "../../src/components/SheetFrame";
+
 const statusOptions: { value: Status; label: string }[] = [
   { value: "want", label: "Watchlist" },
   { value: "going", label: "Watching" },
@@ -48,6 +58,7 @@ export default function Details() {
 }
 function DetailsScreen({ id }: { id: string }) {
   const c = useTheme();
+  const { gutter } = usePageLayout();
   const { session } = useApp();
   const client = useQueryClient();
   const library = useLibrary();
@@ -80,9 +91,14 @@ function DetailsScreen({ id }: { id: string }) {
   const [showAll, setShowAll] = useState(false);
   const [notes, setNotes] = useState("");
   const [tags, setTags] = useState("");
-  const [editing, setEditing] = useState(false);
+  const [editor, setEditor] = useState<"notes" | "rating">();
+  const [rating, setRating] = useState("0");
+  const [episodeInfo, setEpisodeInfo] = useState<Episode>();
+  const [synopsisOpen, setSynopsisOpen] = useState(false);
+  const [synopsisOverflows, setSynopsisOverflows] = useState(false);
+  const inFlight = useRef(false);
   const [notice, setNotice] = useState("");
-  const pendingWatch = useRef<{ key: string; requestId: string } | null>(null);
+  const pendingWatch = useRef(new Map<string, { action: string; id: string }>());
   const mutate = useLibraryAction(
     async (
       args: {
@@ -136,24 +152,22 @@ function DetailsScreen({ id }: { id: string }) {
       router.push("/auth");
       return;
     }
+    if (inFlight.current) return false;
+    inFlight.current = true;
     setNotice("");
+    mutate.reset();
     try {
+      let requestId: string | undefined;
+      let watchKey: string | undefined;
       if (args.kind === "watch") {
-        const key = JSON.stringify([
-          id,
-          args.action || "watch",
-          args.episode?.season,
-          args.episode?.number,
-        ]);
-        if (pendingWatch.current?.key !== key)
-          pendingWatch.current = { key, requestId: Crypto.randomUUID() };
+        watchKey = JSON.stringify([args.episode?.season, args.episode?.number]);
+        const action = args.action || "watch";
+        const previous = pendingWatch.current.get(watchKey);
+        requestId = previous?.action === action ? previous.id : Crypto.randomUUID();
+        pendingWatch.current.set(watchKey, { action, id: requestId });
       }
-      await mutate.mutateAsync({
-        ...args,
-        requestId:
-          args.kind === "watch" ? pendingWatch.current!.requestId : undefined,
-      });
-      if (args.kind === "watch") pendingWatch.current = null;
+      await mutate.mutateAsync({ ...args, requestId });
+      if (watchKey) pendingWatch.current.delete(watchKey);
       setNotice(
         args.kind === "watch"
           ? "Watch history updated."
@@ -161,8 +175,11 @@ function DetailsScreen({ id }: { id: string }) {
             ? "Removed from your library."
             : "Saved to your Reel.",
       );
+      return true;
     } catch {
-      /* render exact error */
+      return false;
+    } finally {
+      inFlight.current = false;
     }
   }
   const enriched = useMemo(
@@ -178,6 +195,7 @@ function DetailsScreen({ id }: { id: string }) {
     [t, saved, guide.data],
   );
   const watched = enriched ? tracking.watchedSet(enriched) : new Set<string>();
+  const progress = enriched ? tracking.progress(enriched) : undefined;
   const seasons = [...new Set((guide.data || []).map((ep) => ep.season))].sort(
     (a, b) => a - b,
   );
@@ -223,10 +241,18 @@ function DetailsScreen({ id }: { id: string }) {
     );
   const film = t.type === "movie";
   const episodic = ["series", "anime"].includes(t.type);
-  return (
-    <Page>
+  const header = (
+    <View style={{ gap: 20 }}>
       <BackHeader
-        title={t.type === "movie" ? "A film for your collection" : t.type}
+        title={
+          film
+            ? "Film"
+            : t.type === "series"
+              ? "TV series"
+              : t.type === "anime"
+                ? "Anime"
+                : "Title details"
+        }
       />
       <ErrorNote error={detail.error} retry={() => void detail.refetch()} />
       <DetailHero title={t} />
@@ -257,124 +283,128 @@ function DetailsScreen({ id }: { id: string }) {
             }
           />
         ) : null}
-        <ErrorNote error={mutate.error} />
+        {editor || episodeInfo ? null : <ErrorNote error={mutate.error} />}
         {notice ? (
           <Copy accessibilityRole="alert" style={{ color: c.mint }}>
             {notice}
           </Copy>
         ) : null}
       </View>
-      <View style={{ gap: 12 }}>
-        <Copy kind="small" style={{ color: c.accent }}>
-          {t.genres.join(" / ") || "Genres unavailable"}
-        </Copy>
-        <Copy style={{ lineHeight: 25, color: c.muted }}>
-          {t.synopsis || "A synopsis is not available from this catalog."}
-        </Copy>
-        {t.creator ? <Copy>Created by {t.creator}</Copy> : null}
-      </View>
-      <CastRail title={t} />
       {episodic ? (
-        <Section title="One episode at a time" kicker="Your progress">
+        <Section title="Your progress">
+          {saved?.episode ? (
+            <Copy kind="small" style={{ color: c.secondary }}>
+              Saved position ·{" "}
+              {tracking.episodeLabel(
+                enriched || t,
+                saved.season ?? 1,
+                saved.episode,
+              )}
+            </Copy>
+          ) : null}
           <ErrorNote error={guide.error} retry={() => void guide.refetch()} />
           {guide.isPending ? (
             <Loading label="Loading the episode guide…" />
           ) : seasons.length ? (
             <>
-              <Copy style={{ color: c.muted }}>
-                {enriched ? tracking.progress(enriched).watched : 0} released
-                episodes watched ·{" "}
-                {guide.data?.filter((ep) => isReleased(ep)).length} released in
-                this guide
+              <Copy kind="small" style={{ color: c.secondary }}>
+                {progress?.watched ?? 0} watched · {progress?.total ?? 0}{" "}
+                released in this guide
               </Copy>
+              {progress?.total ? (
+                <View
+                  style={{
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: c.raised,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: `${progress.percent}%`,
+                      height: "100%",
+                      borderRadius: 2,
+                      backgroundColor: c.mint,
+                    }}
+                  />
+                </View>
+              ) : null}
+              {progress?.next ? (
+                <Copy kind="small" style={{ color: c.secondary }}>
+                  Next episode ·{" "}
+                  {tracking.episodeLabel(
+                    enriched || t,
+                    progress.next.season,
+                    progress.next.number,
+                  )}
+                  {progress.next.name ? " · " + progress.next.name : ""}
+                </Copy>
+              ) : null}
               <Chips
                 values={seasons.map((n) => ({
                   value: String(n),
-                  label: n >= 1900 ? String(n) : `Season ${n}`,
+                  label:
+                    n === 0
+                      ? "Specials"
+                      : n >= 1900
+                        ? String(n)
+                        : "Season " + n,
                 }))}
                 value={String(selected)}
-                onChange={(v) => {
-                  setSeason(v);
+                onChange={(value) => {
+                  setSeason(value);
                   setShowAll(false);
                 }}
               />
-              {visible.map((ep) => {
-                const seen = watched.has(tracking.key(ep.season, ep.number));
-                const released = isReleased(ep);
-                return (
-                  <View
-                    key={`${ep.season}:${ep.number}`}
-                    style={{
-                      flexDirection: "row",
-                      gap: 12,
-                      alignItems: "center",
-                      paddingVertical: 10,
-                      borderBottomWidth: 1,
-                      borderBottomColor: c.line,
-                    }}
-                  >
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Copy style={{ fontWeight: "600" }}>
-                        {enriched
-                          ? tracking.episodeLabel(
-                              enriched,
-                              ep.season,
-                              ep.number,
-                            )
-                          : `E${ep.number}`}{" "}
-                        · {ep.name || "Untitled episode"}
-                      </Copy>
-                      <Copy
-                        kind="small"
-                        style={{ color: seen ? c.mint : c.muted }}
-                      >
-                        {seen
-                          ? "Watched"
-                          : released
-                            ? ep.airdate || "Released"
-                            : ep.airdate
-                              ? `Airs ${ep.airdate}`
-                              : "Release date unavailable"}
-                      </Copy>
-                    </View>
-                    <Button
-                      label={seen ? "Undo" : "Watch"}
-                      icon={seen ? "checkmark-circle" : "ellipse-outline"}
-                      variant="quiet"
-                      disabled={!released || mutate.isPending}
-                      onPress={() =>
-                        void act({
-                          kind: "watch",
-                          episode: ep,
-                          action: seen ? "unwatch" : "watch",
-                        })
-                      }
-                    />
-                  </View>
-                );
-              })}
-              {seasonEpisodes.length > 30 ? (
-                <Button
-                  label={
-                    showAll
-                      ? "Show fewer episodes"
-                      : `Show all ${seasonEpisodes.length} episodes`
-                  }
-                  variant="secondary"
-                  onPress={() => setShowAll((v) => !v)}
-                />
-              ) : null}
             </>
-          ) : (
-            <Copy style={{ color: c.muted }}>
-              A dated episode guide is not available for this provider. Your
-              existing saved progress is preserved.
+          ) : !guide.error ? (
+            <Copy style={{ color: c.secondary }}>
+              A dated episode guide is not available. Your saved progress is
+              preserved.
             </Copy>
-          )}
+          ) : null}
         </Section>
       ) : null}
+    </View>
+  );
+  const footer = (
+    <View style={{ gap: 28, paddingTop: 20 }}>
+      {episodic && seasonEpisodes.length > 30 ? (
+        <Button
+          label={
+            showAll
+              ? "Show fewer episodes"
+              : "Show all " + seasonEpisodes.length + " episodes"
+          }
+          variant="secondary"
+          onPress={() => setShowAll(!showAll)}
+        />
+      ) : null}
+      <Section title="Synopsis">
+        <Copy kind="small" style={{ color: c.accent }}>
+          {t.genres.join(" / ") || "Genres unavailable"}
+        </Copy>
+        <Copy
+          numberOfLines={!synopsisOpen ? 5 : undefined}
+          onTextLayout={(event) => {
+            if (event.nativeEvent.lines.length > 5) setSynopsisOverflows(true);
+          }}
+          style={{ color: c.secondary }}
+        >
+          {t.synopsis || "A synopsis is not available from this catalog."}
+        </Copy>
+        {synopsisOverflows || (t.synopsis?.length ?? 0) > 280 ? (
+          <Button
+            label={synopsisOpen ? "Show less" : "Read more"}
+            variant="quiet"
+            onPress={() => setSynopsisOpen(!synopsisOpen)}
+          />
+        ) : null}
+        {t.creator ? <Copy>Created by {t.creator}</Copy> : null}
+      </Section>
+      <CastRail title={t} />
       {saved ? (
-        <Section title="Make it yours">
+        <Section title="Your take">
           <Button
             label={saved.fav ? "Favorited" : "Add to favorites"}
             icon={saved.fav ? "heart" : "heart-outline"}
@@ -393,63 +423,30 @@ function DetailsScreen({ id }: { id: string }) {
               }
             />
           ) : null}
-          <Copy kind="label">YOUR RATING</Copy>
-          <Chips
-            values={[
-              { value: "0", label: "Unrated" },
-              ...Array.from({ length: 10 }, (_, i) => ({
-                value: String(i + 1),
-                label: String(i + 1),
-              })),
-            ]}
-            value={String(saved.rating || 0)}
-            onChange={(v) =>
-              void act({ kind: "patch", patch: { rating: Number(v) } })
-            }
-          />
           <Button
-            label={editing ? "Close notes" : "Notes & collections"}
+            label="Your rating"
+            icon="star-outline"
             variant="secondary"
             onPress={() => {
-              setNotes(saved.notes || "");
-              setTags(saved.tags?.join(", ") || "");
-              setEditing((v) => !v);
+              mutate.reset();
+              setRating(String(saved.rating || 0));
+              setEditor("rating");
             }}
           />
-          {editing ? (
-            <>
-              <Field
-                multiline
-                value={notes}
-                onChangeText={setNotes}
-                placeholder="Your private notes"
-                accessibilityLabel="Private notes"
-                style={{ minHeight: 100 }}
-              />
-              <Field
-                value={tags}
-                onChangeText={setTags}
-                placeholder="Collections, separated by commas"
-                accessibilityLabel="Collections"
-              />
-              <Button
-                label="Save notes & collections"
-                disabled={mutate.isPending}
-                onPress={() =>
-                  void act({
-                    kind: "patch",
-                    patch: {
-                      notes,
-                      tags: tags
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    },
-                  })
-                }
-              />
-            </>
-          ) : null}
+          <Copy kind="small" style={{ color: c.secondary }}>
+            {saved.rating ? saved.rating + "/10 · Private" : "Unrated"}
+          </Copy>
+          <Button
+            label="Notes & collections"
+            icon="reader-outline"
+            variant="secondary"
+            onPress={() => {
+              mutate.reset();
+              setNotes(saved.notes || "");
+              setTags(saved.tags?.join(", ") || "");
+              setEditor("notes");
+            }}
+          />
           <Button
             label="Remove from library"
             variant="danger"
@@ -467,6 +464,7 @@ function DetailsScreen({ id }: { id: string }) {
           />
         </Section>
       ) : null}
+      <ErrorNote error={related.error} retry={() => void related.refetch()} />
       {t.sourceUrl ? (
         <Button
           label="View catalog source"
@@ -479,6 +477,205 @@ function DetailsScreen({ id }: { id: string }) {
         Catalog facts may be incomplete. Reel tracks what you watch; it does not
         stream this title.
       </Copy>
+    </View>
+  );
+
+  function episodeLabel(ep: Episode) {
+    return tracking.episodeLabel(enriched || t!, ep.season, ep.number);
+  }
+  function episodeAction(ep: Episode) {
+    const seen = watched.has(tracking.key(ep.season, ep.number));
+    return (
+      <Button
+        label={seen ? "Undo" : "Watch"}
+        icon={seen ? "checkmark-circle" : "checkmark-outline"}
+        variant="secondary"
+        disabled={!isReleased(ep) || mutate.isPending}
+        onPress={() =>
+          void act({
+            kind: "watch",
+            episode: ep,
+            action: seen ? "unwatch" : "watch",
+          })
+        }
+      />
+    );
+  }
+  function closeEditor() {
+    if (mutate.isPending) return;
+    const dirty =
+      editor === "rating"
+        ? rating !== String(saved?.rating || 0)
+        : notes !== (saved?.notes || "") ||
+          tags !== (saved?.tags?.join(", ") || "");
+    if (
+      !dirty ||
+      (Platform.OS === "web" && globalThis.confirm("Discard unsaved changes?"))
+    ) {
+      setEditor(undefined);
+    } else if (Platform.OS !== "web") {
+      Alert.alert("Discard changes?", "Your saved entry will stay as it was.", [
+        { text: "Keep editing", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => setEditor(undefined),
+        },
+      ]);
+    }
+  }
+  return (
+    <Page scroll={false}>
+      <FlatList
+        data={episodic ? visible : []}
+        keyExtractor={(ep) => ep.season + ":" + ep.number}
+        contentContainerStyle={{
+          padding: gutter,
+          paddingBottom: 40,
+          maxWidth: 1120,
+          width: "100%",
+          alignSelf: "center",
+        }}
+        ListHeaderComponent={header}
+        ListFooterComponent={footer}
+        renderItem={({ item: ep }) => (
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 12,
+              alignItems: "center",
+              minHeight: 88,
+              borderBottomWidth: 1,
+              borderColor: c.line,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                mutate.reset();
+                setEpisodeInfo(ep);
+              }}
+              style={{ flex: 1, gap: 4, paddingVertical: 12 }}
+            >
+              <Copy style={{ fontWeight: "600" }}>
+                {episodeLabel(ep)} · {ep.name || "Untitled episode"}
+              </Copy>
+              <Copy
+                kind="small"
+                style={{
+                  color: watched.has(tracking.key(ep.season, ep.number))
+                    ? c.mint
+                    : c.secondary,
+                }}
+              >
+                {watched.has(tracking.key(ep.season, ep.number))
+                  ? "Watched"
+                  : ep.airdate
+                    ? isReleased(ep)
+                      ? ep.airdate
+                      : "Airs " + ep.airdate
+                    : "Release date unavailable"}
+              </Copy>
+            </Pressable>
+            {episodeAction(ep)}
+          </View>
+        )}
+      />
+      {episodeInfo ? (
+        <SheetFrame
+          title="Episode details"
+          onClose={() => setEpisodeInfo(undefined)}
+        >
+          <Copy kind="small" style={{ color: c.secondary }}>
+            {t.title} · {episodeLabel(episodeInfo)}
+          </Copy>
+          <Copy kind="headline">{episodeInfo.name || "Untitled episode"}</Copy>
+          <Copy kind="small" style={{ color: c.secondary }}>
+            {episodeInfo.airdate || "Release date unavailable"}
+            {episodeInfo.runtime ? " · " + episodeInfo.runtime + " min" : ""}
+          </Copy>
+          {episodeAction(episodeInfo)}
+          <ErrorNote error={mutate.error} />
+        </SheetFrame>
+      ) : null}
+      {editor && saved ? (
+        <SheetFrame
+          title={editor === "rating" ? "Your rating" : "Notes & collections"}
+          onClose={closeEditor}
+        >
+          {editor === "rating" ? (
+            <>
+              <Copy kind="metric">
+                {rating === "0" ? "Unrated" : rating + "/10"}
+              </Copy>
+              <Chips
+                wrap
+                values={Array.from({ length: 11 }, (_, i) => ({
+                  value: String(i),
+                  label: i ? String(i) : "Unrated",
+                }))}
+                value={rating}
+                onChange={setRating}
+              />
+            </>
+          ) : (
+            <>
+              <Copy kind="small">Private notes</Copy>
+              <Field
+                multiline
+                value={notes}
+                onChangeText={setNotes}
+                accessibilityLabel="Private notes"
+                style={{ minHeight: 100 }}
+              />
+              <Copy kind="small">Collections, separated by commas</Copy>
+              <Field
+                value={tags}
+                onChangeText={setTags}
+                accessibilityLabel="Collections"
+              />
+            </>
+          )}
+          <ErrorNote error={mutate.error} />
+          <Button
+            label={
+              editor === "rating" ? "Save rating" : "Save notes & collections"
+            }
+            loading={mutate.isPending}
+            onPress={() => {
+              const patch: Partial<Title> = {};
+              if (editor === "rating") {
+                if (Number(rating) !== (saved.rating || 0))
+                  patch.rating = Number(rating);
+              } else {
+                if (notes !== (saved.notes || "")) patch.notes = notes;
+                const collections = tags
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter(Boolean);
+                if (
+                  JSON.stringify(collections) !==
+                  JSON.stringify(saved.tags || [])
+                )
+                  patch.tags = collections;
+              }
+              if (!Object.keys(patch).length) {
+                setEditor(undefined);
+                return;
+              }
+              void act({ kind: "patch", patch }).then((saved) => {
+                if (saved) setEditor(undefined);
+              });
+            }}
+          />
+          <Button
+            label="Cancel"
+            variant="quiet"
+            disabled={mutate.isPending}
+            onPress={closeEditor}
+          />
+        </SheetFrame>
+      ) : null}
     </Page>
   );
 }

@@ -1,7 +1,7 @@
 name: Android preview APK
 on:
   push:
-    branches: [feat/reel-native-android]
+    branches: [feat/reel-native-android, codex/reel-cinema-journal]
     paths: [mobile/**, assets/**, .github/workflows/android-preview.yml]
   workflow_dispatch:
 permissions:

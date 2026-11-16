@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { View, Pressable } from "react-native";
+import { View } from "react-native";
+import Animated, {
+  cubicBezier,
+  useReducedMotion,
+} from "react-native-reanimated";
 import Svg, { Rect } from "react-native-svg";
 import { router } from "expo-router";
 import { useApp } from "../src/providers/AppProvider";
@@ -16,14 +20,19 @@ import {
   ErrorNote,
   Chips,
   Section,
+  Button,
+  usePageLayout,
 } from "../src/components/ui";
 export default function Stats() {
   const c = useTheme();
+  const { fontScale } = usePageLayout();
+  const reduced = useReducedMotion();
   const { session } = useApp();
   const history = useEvents();
   const library = useLibrary();
   const [range, setRange] = useState("month");
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(13);
+  const [showData, setShowData] = useState(false);
   const data = useMemo(() => {
     const { start } = monthBounds();
     const events = (history.data || []).filter(
@@ -40,6 +49,7 @@ export default function Stats() {
     });
     return { summary, genres, recent };
   }, [range, history.data, library.data]);
+  const largestCount = Math.max(1, ...data.recent.map((day) => day.count));
   if (!session)
     return (
       <Page>
@@ -54,12 +64,6 @@ export default function Stats() {
   return (
     <Page>
       <BackHeader title="Viewing insights" />
-      <View style={{ gap: 8 }}>
-        <Copy kind="label" style={{ color: c.accent }}>
-          THE BIGGER PICTURE
-        </Copy>
-        <Copy kind="hero">{"A life in\nmoving pictures."}</Copy>
-      </View>
       <Chips
         values={[
           { value: "month", label: "This month" },
@@ -79,89 +83,132 @@ export default function Stats() {
         <Loading label="Connecting your watch history…" />
       ) : history.data?.length ? (
         <>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          <View
+            style={{
+              backgroundColor: c.surface,
+              borderRadius: 16,
+              padding: 20,
+              gap: 8,
+            }}
+          >
+            <Copy kind="subhead">Known viewing time</Copy>
+            <Copy kind="metric" style={{ color: c.accent }}>
+              {Math.floor(data.summary.minutes / 60)}h{" "}
+              {data.summary.minutes % 60}m
+            </Copy>
+            <Copy kind="small" style={{ color: c.secondary }}>
+              From dated watches with known runtimes.
+            </Copy>
+            {data.summary.unknownRuntimes ? (
+              <Copy kind="small" style={{ color: c.warning }}>
+                {data.summary.unknownRuntimes} watches without a runtime.
+              </Copy>
+            ) : null}
+          </View>
+          <View
+            style={{
+              flexDirection: fontScale >= 1.5 ? "column" : "row",
+              gap: 8,
+            }}
+          >
             {[
               { n: data.summary.movies, label: "Films watched" },
               { n: data.summary.episodes, label: "Episodes watched" },
-              {
-                n: Math.round((data.summary.minutes / 60) * 10) / 10,
-                label: "Known hours",
-              },
               { n: data.summary.activeDays, label: "Active days" },
-            ].map((m) => (
+            ].map((metric) => (
               <View
-                key={m.label}
+                key={metric.label}
                 style={{
-                  width: "47%",
-                  padding: 18,
-                  borderRadius: 16,
-                  backgroundColor: c.surface,
-                  gap: 8,
+                  flex: 1,
+                  borderTopWidth: 1,
+                  borderColor: c.line,
+                  paddingTop: 12,
+                  gap: 4,
                 }}
               >
-                <Copy
-                  style={{
-                    fontSize: 34,
-                    lineHeight: 40,
-                    fontWeight: "600",
-                    color: c.accent,
-                  }}
-                >
-                  {m.n}
-                </Copy>
-                <Copy kind="small" style={{ color: c.muted }}>
-                  {m.label}
+                <Copy kind="title">{metric.n}</Copy>
+                <Copy kind="small" style={{ color: c.secondary }}>
+                  {metric.label}
                 </Copy>
               </View>
             ))}
           </View>
           <Section title="Your last two weeks">
+            {range === "month" ? (
+              <Copy kind="small" style={{ color: c.secondary }}>
+                Counts are limited to this month.
+              </Copy>
+            ) : null}
             <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
               style={{
                 flexDirection: "row",
-                height: 140,
                 alignItems: "flex-end",
+                height: 120,
                 gap: 4,
+                borderBottomWidth: 1,
+                borderColor: c.outline,
               }}
             >
-              {data.recent.map((d) => (
-                <Pressable
-                  key={d.label}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${d.label}: ${d.count} watches`}
-                  onPress={() =>
-                    setSelected(
-                      `${d.label} · ${d.count} ${d.count === 1 ? "watch" : "watches"}`,
-                    )
-                  }
+              {data.recent.map((day, index) => (
+                <Animated.View
+                  key={day.label}
                   style={{
                     flex: 1,
-                    height: "100%",
-                    justifyContent: "flex-end",
-                    minHeight: 48,
+                    height: 116,
+                    borderTopLeftRadius: 4,
+                    borderTopRightRadius: 4,
+                    backgroundColor: selected === index ? c.accent : c.mint,
+                    transformOrigin: "center bottom",
+                    transform: [{ scaleY: day.count / largestCount }],
+                    transitionProperty: "transform",
+                    transitionDuration: reduced ? 0 : 200,
+                    transitionTimingFunction: cubicBezier(0.2, 0, 0, 1),
                   }}
-                >
-                  <View
-                    style={{
-                      height: Math.max(
-                        3,
-                        (d.count /
-                          Math.max(1, ...data.recent.map((d) => d.count))) *
-                          120,
-                      ),
-                      backgroundColor: selected.startsWith(d.label)
-                        ? c.mint
-                        : c.accent,
-                      borderRadius: 4,
-                    }}
-                  />
-                </Pressable>
+                />
               ))}
             </View>
-            <Copy kind="small" style={{ color: c.muted }}>
-              {selected ||
-                "Tap a bar to inspect a day. Zero days remain visible."}
-            </Copy>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Button
+                label="Previous day"
+                icon="chevron-back"
+                iconOnly
+                variant="quiet"
+                disabled={selected === 0}
+                onPress={() => setSelected((i) => Math.max(i - 1, 0))}
+              />
+              <Copy
+                kind="small"
+                accessibilityLiveRegion="polite"
+                style={{ flex: 1, color: c.secondary, textAlign: "center" }}
+              >
+                {data.recent[selected].label} · {data.recent[selected].count}{" "}
+                watches
+              </Copy>
+              <Button
+                label="Next day"
+                icon="chevron-forward"
+                iconOnly
+                variant="quiet"
+                disabled={selected === 13}
+                onPress={() => setSelected((i) => Math.min(i + 1, 13))}
+              />
+            </View>
+            <Button
+              label={showData ? "Hide data" : "View data"}
+              variant="quiet"
+              onPress={() => setShowData(!showData)}
+            />
+            {showData
+              ? data.recent.map((day) => (
+                  <Copy key={day.label} kind="small">
+                    {day.label} · {day.count} watches
+                  </Copy>
+                ))
+              : null}
           </Section>
           <Section title="Your favorite worlds">
             {data.genres.length ? (
@@ -201,18 +248,16 @@ export default function Stats() {
             )}
           </Section>
           <Copy kind="small" style={{ color: c.muted }}>
-            Statistics use dated watch events, including rewatches. Undated
-            progress and reading sessions are excluded.{" "}
-            {data.summary.unknownRuntimes} events have unknown runtime and are
-            excluded from viewing hours.
+            Dated watches include rewatches. Undated progress and reading
+            sessions are excluded.
           </Copy>
         </>
-      ) : (
+      ) : !history.error ? (
         <State
           title="The first frame is yours"
           body="Log a film or episode to start your viewing insights. Your stats grow from actual watch history."
         />
-      )}
+      ) : null}
     </Page>
   );
 }

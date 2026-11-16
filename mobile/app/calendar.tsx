@@ -9,6 +9,7 @@ import { localDay, monthBounds } from "../src/core/dates";
 import { useTheme } from "../src/theme";
 import {
   Page,
+  usePageLayout,
   Copy,
   BackHeader,
   State,
@@ -26,6 +27,11 @@ interface Release {
 }
 export default function Calendar() {
   const c = useTheme();
+  const { content, available, fontScale } = usePageLayout();
+  const compactGrid = content < 336 && available >= 360;
+  const monthFits = (content >= 336 || compactGrid) && fontScale < 1.5;
+  const [view, setView] = useState<string>();
+  const agenda = !monthFits || view === "agenda";
   const { session } = useApp();
   const library = useLibrary();
   const events = useEvents();
@@ -63,7 +69,7 @@ export default function Calendar() {
                   .filter((ep) => ep.airdate)
                   .map((episode) => ({ title: t, episode })),
               );
-              if (!guide.length) warnings.push(t.title);
+              if (!guide.some((ep) => ep.airdate)) warnings.push(t.title);
             } catch {
               if (signal.aborted) throw new Error("Cancelled");
               warnings.push(t.title);
@@ -91,10 +97,59 @@ export default function Calendar() {
   const chosen = day.startsWith(localDay(start).slice(0, 7))
     ? day
     : localDay(start);
-  const dated = (releases.data?.result || []).filter(
-    (r) => r.episode.airdate === chosen,
+  const releasesByDay = new Map<string, Release[]>();
+  for (const release of releases.data?.result || []) {
+    const date = release.episode.airdate!;
+    const entries = releasesByDay.get(date);
+    if (entries) entries.push(release);
+    else releasesByDay.set(date, [release]);
+  }
+  const watchesByDay = new Map<string, typeof watching>();
+  for (const event of watching) {
+    const date = localDay(event.watchedAt);
+    const entries = watchesByDay.get(date);
+    if (entries) entries.push(event);
+    else watchesByDay.set(date, [event]);
+  }
+  function entries(date: string) {
+    return (
+      <>
+        {(releasesByDay.get(date) || []).map(({ title, episode }) => (
+          <TitleRow
+            key={title.id + ":" + episode.season + ":" + episode.number}
+            title={title}
+            subtitle={
+              "Episode release · S" +
+              episode.season +
+              " E" +
+              episode.number +
+              (episode.name ? " · " + episode.name : "")
+            }
+          />
+        ))}
+        {(watchesByDay.get(date) || []).map((event) => {
+          const title = byId.get(event.titleId);
+          const label =
+            event.season !== null
+              ? "Watched · S" + event.season + " E" + event.episode
+              : event.eventType === "rewatch"
+                ? "Rewatch"
+                : "Movie watched";
+          return title ? (
+            <TitleRow key={event.id} title={title} subtitle={label} />
+          ) : (
+            <Copy key={event.id} kind="small" style={{ color: c.secondary }}>
+              {label} · Title unavailable
+            </Copy>
+          );
+        })}
+      </>
+    );
+  }
+  const agendaDays = cells.filter(
+    (date): date is string =>
+      !!date && (releasesByDay.has(date) || watchesByDay.has(date)),
   );
-  const logged = watching.filter((e) => localDay(e.watchedAt) === chosen);
   if (!session)
     return (
       <Page>
@@ -109,32 +164,52 @@ export default function Calendar() {
   return (
     <Page>
       <BackHeader title="Watch calendar" />
-      <Copy kind="hero">{"Dates with\ngreat stories."}</Copy>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+
+      <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Button
+            label="Previous month"
+            icon="chevron-back"
+            iconOnly
+            variant="quiet"
+            onPress={() => setOffset((n) => n - 1)}
+          />
+          <Copy
+            kind="title"
+            accessibilityLiveRegion="polite"
+            style={{ flex: 1, textAlign: "center" }}
+          >
+            {start.toLocaleDateString(undefined, {
+              month: "long",
+              year: "numeric",
+            })}
+          </Copy>
+          <Button
+            label="Next month"
+            icon="chevron-forward"
+            iconOnly
+            variant="quiet"
+            onPress={() => setOffset((n) => n + 1)}
+          />
+        </View>
         <Button
-          label="Previous"
-          icon="chevron-back"
+          label="Today"
           variant="quiet"
-          onPress={() => setOffset((n) => n - 1)}
+          onPress={() => {
+            setOffset(0);
+            setDay(localDay(new Date()));
+          }}
         />
-        <Copy style={{ fontWeight: "700", flex: 1, textAlign: "center" }}>
-          {start.toLocaleDateString(undefined, {
-            month: "long",
-            year: "numeric",
-          })}
-        </Copy>
-        <Button
-          label="Next"
-          icon="chevron-forward"
-          variant="quiet"
-          onPress={() => setOffset((n) => n + 1)}
-        />
+        {monthFits ? (
+          <Chips
+            value={agenda ? "agenda" : "month"}
+            onChange={setView}
+            values={[
+              { value: "month", label: "Month" },
+              { value: "agenda", label: "Agenda" },
+            ]}
+          />
+        ) : null}
       </View>
       <Chips
         values={[
@@ -144,88 +219,97 @@ export default function Calendar() {
         value={scope}
         onChange={setScope}
       />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 0 }}>
-        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+      {!agenda ? (
+        <>
           <View
-            key={`${d}${i}`}
             style={{
-              width: "14.285%",
-              alignItems: "center",
-              paddingVertical: 8,
+              flexDirection: "row",
+              flexWrap: "wrap",
+              marginHorizontal: compactGrid ? -8 : 0,
             }}
           >
-            <Copy kind="small" style={{ color: c.muted }}>
-              {d}
-            </Copy>
+            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+              <View
+                key={`${d}${i}`}
+                style={{
+                  width: "14.285%",
+                  alignItems: "center",
+                  paddingVertical: 8,
+                }}
+              >
+                <Copy kind="small" style={{ color: c.muted }}>
+                  {d}
+                </Copy>
+              </View>
+            ))}
+            {cells.map((date, i) => {
+              const hasWatch = date && (watchesByDay.get(date)?.length ?? 0);
+              const hasRelease = date && (releasesByDay.get(date)?.length ?? 0);
+              return (
+                <View key={date || `blank${i}`} style={{ width: "14.285%" }}>
+                  {date ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${date}${hasWatch ? ", watched something" : ""}${hasRelease ? ", episode release" : ""}`}
+                      accessibilityState={{ selected: chosen === date }}
+                      onPress={() => setDay(date)}
+                      style={{
+                        minHeight: 48,
+                        borderRadius: 12,
+                        borderWidth:
+                          date === localDay(new Date()) && chosen !== date
+                            ? 1
+                            : 0,
+                        borderColor: c.outline,
+                        backgroundColor: chosen === date ? c.accent : c.surface,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Copy
+                        style={{
+                          color: chosen === date ? c.onAccent : c.text,
+                          fontWeight: "600",
+                        }}
+                      >
+                        {Number(date.slice(-2))}
+                      </Copy>
+                      <View style={{ flexDirection: "row", gap: 3, height: 4 }}>
+                        {hasWatch ? (
+                          <View
+                            style={{
+                              height: 4,
+                              width: 4,
+                              borderRadius: 2,
+                              backgroundColor:
+                                chosen === date ? c.onAccent : c.mint,
+                            }}
+                          />
+                        ) : null}
+                        {hasRelease ? (
+                          <View
+                            style={{
+                              height: 4,
+                              width: 4,
+                              transform: [{ rotate: "45deg" }],
+                              backgroundColor:
+                                chosen === date ? c.onAccent : c.accent,
+                            }}
+                          />
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  ) : null}
+                </View>
+              );
+            })}
           </View>
-        ))}
-        {cells.map((date, i) => {
-          const hasWatch =
-            date && watching.some((e) => localDay(e.watchedAt) === date);
-          const hasRelease =
-            date &&
-            releases.data?.result.some((r) => r.episode.airdate === date);
-          return (
-            <View
-              key={date || `blank${i}`}
-              style={{ width: "14.285%", padding: 2 }}
-            >
-              {date ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${date}${hasWatch ? ", watched something" : ""}${hasRelease ? ", episode release" : ""}`}
-                  accessibilityState={{ selected: chosen === date }}
-                  onPress={() => setDay(date)}
-                  style={{
-                    minHeight: 48,
-                    borderRadius: 12,
-                    backgroundColor: chosen === date ? c.accent : c.surface,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Copy
-                    style={{
-                      color: chosen === date ? c.onAccent : c.text,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {Number(date.slice(-2))}
-                  </Copy>
-                  <View style={{ flexDirection: "row", gap: 3, height: 4 }}>
-                    {hasWatch ? (
-                      <View
-                        style={{
-                          height: 4,
-                          width: 4,
-                          borderRadius: 2,
-                          backgroundColor:
-                            chosen === date ? c.onAccent : c.mint,
-                        }}
-                      />
-                    ) : null}
-                    {hasRelease ? (
-                      <View
-                        style={{
-                          height: 4,
-                          width: 4,
-                          borderRadius: 2,
-                          backgroundColor:
-                            chosen === date ? c.onAccent : c.accent,
-                        }}
-                      />
-                    ) : null}
-                  </View>
-                </Pressable>
-              ) : null}
-            </View>
-          );
-        })}
-      </View>
-      <Copy kind="small" style={{ color: c.muted }}>
-        Mint dot: watched · Accent dot: episode release. Tap a day.
-      </Copy>
+          <Copy kind="small" style={{ color: c.muted }}>
+            Dot: watched · Diamond: episode release. Tap a day.
+          </Copy>
+        </>
+      ) : null}
       <ErrorNote
         error={library.error || events.error || releases.error}
         retry={() => {
@@ -243,41 +327,77 @@ export default function Calendar() {
           titles. Dates are never estimated.
         </Copy>
       ) : null}
-      <Section
-        title={new Date(`${chosen}T12:00:00`).toLocaleDateString(undefined, {
-          weekday: "long",
-          month: "short",
-          day: "numeric",
-        })}
-        kicker="On this day"
-      >
-        {dated.map((r) => (
-          <TitleRow
-            key={`${r.title.id}:${r.episode.season}:${r.episode.number}`}
-            title={r.title}
-            subtitle={`Episode release · S${r.episode.season} E${r.episode.number} · ${r.episode.name || ""}`}
-          />
-        ))}
-        {logged.map((e) => {
-          const t = byId.get(e.titleId);
-          return t ? (
-            <TitleRow
-              key={e.id}
-              title={t}
-              subtitle={
-                e.season
-                  ? `Watched · S${e.season} E${e.episode}`
-                  : "Movie watched"
-              }
-            />
-          ) : null;
-        })}
-        {!dated.length && !logged.length ? (
-          <Copy style={{ color: c.muted }}>
-            No recorded watches or confirmed episode releases for this day.
-          </Copy>
-        ) : null}
-      </Section>
+      {agenda ? (
+        <Section title="Monthly agenda">
+          {agendaDays.length ? (
+            agendaDays.map((date) => {
+              const local = new Date(date + "T12:00:00");
+              return (
+                <View
+                  key={date}
+                  style={{
+                    flexDirection: "row",
+                    gap: 12,
+                    paddingBottom: 12,
+                    borderBottomWidth: 1,
+                    borderColor: c.line,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: fontScale > 1.3 ? 64 : 52,
+                      gap: 2,
+                      paddingTop: 12,
+                    }}
+                    accessibilityLabel={local.toLocaleDateString(undefined, {
+                      dateStyle: "full",
+                    })}
+                  >
+                    <Copy
+                      kind="title"
+                      style={{ color: date === chosen ? c.accent : c.text }}
+                    >
+                      {local.getDate()}
+                    </Copy>
+                    <Copy kind="small" style={{ color: c.secondary }}>
+                      {local.toLocaleDateString(undefined, {
+                        weekday: "short",
+                      })}
+                    </Copy>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>{entries(date)}</View>
+                </View>
+              );
+            })
+          ) : !releases.isFetching &&
+            !events.isPending &&
+            !events.error &&
+            !releases.error ? (
+            <Copy style={{ color: c.secondary }}>
+              No dated releases or watches this month.
+            </Copy>
+          ) : null}
+        </Section>
+      ) : (
+        <Section
+          title={new Date(chosen + "T12:00:00").toLocaleDateString(undefined, {
+            weekday: "long",
+            month: "short",
+            day: "numeric",
+          })}
+        >
+          {entries(chosen)}
+          {!releasesByDay.has(chosen) &&
+          !watchesByDay.has(chosen) &&
+          !releases.isFetching &&
+          !events.isPending &&
+          !events.error ? (
+            <Copy style={{ color: c.secondary }}>
+              No recorded watches or confirmed episode releases for this day.
+            </Copy>
+          ) : null}
+        </Section>
+      )}
       <Copy kind="small" style={{ color: c.muted }}>
         Episode dates: TVMaze. This calendar does not estimate streaming
         availability, undated anime schedules, or future films.

@@ -110,8 +110,8 @@ export default function Auth() {
       <Page>
         <BackHeader title="Your Reel account" />
         <View style={{ gap: 16, paddingTop: 20 }}>
-          <Lumi state="greeting" size={90} />
-          <Copy kind="hero">
+          <Lumi state="greeting" size={48} />
+          <Copy kind="headline">
             {mode === "signup"
               ? "Make it\nyour Reel."
               : mode === "reset"
@@ -123,7 +123,10 @@ export default function Auth() {
             sync.
           </Copy>
         </View>
-        <View style={{ gap: 14 }}>
+        <View
+          style={{ gap: 10, width: "100%", maxWidth: 480, alignSelf: "center" }}
+        >
+          <Copy kind="small">Email address</Copy>
           <Field
             accessibilityLabel="Email address"
             placeholder="Email address"
@@ -135,18 +138,21 @@ export default function Auth() {
             textContentType="emailAddress"
           />
           {mode !== "reset" ? (
-            <Field
-              accessibilityLabel="Password"
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete={
-                mode === "signup" ? "new-password" : "current-password"
-              }
-              onSubmitEditing={() => void submit()}
-            />
+            <View style={{ gap: 8 }}>
+              <Copy kind="small">Password</Copy>
+              <Field
+                accessibilityLabel="Password"
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete={
+                  mode === "signup" ? "new-password" : "current-password"
+                }
+                onSubmitEditing={() => void submit()}
+              />
+            </View>
           ) : null}
           <ErrorNote error={error} />
           {notice ? (
